@@ -1,0 +1,156 @@
+{
+  "content": "RIVERSIDE ONCOLOGY CENTRE\nConsultation Record - 14th March 2024\n\nPATIENT DETAILS\nName: CARTER, David [redacted]\nMRN: [redacted]\nDOB: 23/07/1968\n\nCONSULTATION NOTE - TREATMENT SWITCH DISCUSSION\n\nIt has been a difficult few months for David, but I am pleased to report that we are seeing encouraging signs of improvement, and today we discussed transitioning to a new phase of his treatment journey with cautious optimism.\n\nBACKGROUND\nDavid was diagnosed with a soft tissue sarcoma of the right thigh in September 2022. The initial presentation was a painless mass that had been growing slowly over several months. Following biopsy confirmation, he underwent wide local excision in November 2022 with clear margins achieved. Histopathology confirmed a high-grade pleomorphic sarcoma, staged as T2N0 with no evidence of distant metastases at that time. \n\nDavid lives with his wife Margaret in [redacted], and they have two grown children who visit regularly. He is a retired teacher, non-smoker, and drinks alcohol socially (approximately 4-6 units per week). His wife has been an incredible source of support throughout this challenging time, attending all appointments and helping David maintain his spirits even during the most difficult periods.\n\nTREATMENT COURSE AND COMPLICATIONS\nFollowing surgical recovery, David commenced adjuvant chemotherapy with doxorubicin and ifosfamide in January 2023. Unfortunately, the treatment course was complicated by significant toxicity. After his third cycle in March 2023, David developed severe mucositis and neutropenic sepsis requiring hospital admission for five days. It was a frightening experience for both David and his family, and he described feeling \"utterly defeated\" at that point. We had to reduce the doxorubicin dose by 25% for subsequent cycles, and David completed a modified regimen finishing in June 2023.\n\nDuring chemotherapy, David also experienced profound fatigue, peripheral neuropathy affecting his hands and feet, and lost approximately 12 kilograms in weight. He found the neuropathy particularly distressing as it affected his ability to play guitar, which had been an important emotional outlet for him. We provided supportive care throughout, but David understandably struggled with low mood and anxiety about his prognosis during this period.\n\nCURRENT SITUATION AND RESPONSE TO TREATMENT\nI am genuinely heartened to report that David's surveillance imaging has shown an excellent response. His most recent CT chest, abdomen and pelvis from last week shows no evidence of local recurrence at the surgical site and, importantly, no distant metastatic disease. This represents a significant improvement from the suspicious lymph node changes we were monitoring six months ago, which have now completely resolved. David's weight has stabilised, and he has regained 8 kilograms. His performance status has improved to ECOG 1, though he continues to experience some residual peripheral neuropathy.\n\nMOLECULAR PROFILE\nComprehensive genomic profiling performed on David's original tumor specimen identified a TP53 nonsense mutation p.R213*. This finding is consistent with the aggressive biology of his sarcoma subtype. No other targetable alterations were identified on the extended panel.\n\nPSYCHOLOGICAL WELLBEING\nDavid has been remarkably open about his emotional struggles throughout treatment. He shared today that he experienced significant anxiety and depression following his neutropenic sepsis admission, describing feelings of hopelessness and questioning whether he could continue treatment. He found the physical side effects of chemotherapy \"dehumanising\" at times and worried constantly about disease progression. Margaret confirmed that David had several weeks where he withdrew socially and struggled to engage with activities he previously enjoyed.\n\nHowever, with psychological support from our oncology counselling service and the positive imaging results, David's mood has lifted considerably. He described feeling \"like I can breathe again\" and is cautiously optimistic about the future. He has started playing guitar again, though the neuropathy limits his dexterity, and he is sleeping better. We will continue to monitor his psychological wellbeing closely as we transition to the next phase.\n\nTREATMENT PLAN - SWITCH TO SURVEILLANCE WITH ADJUVANT RADIOTHERAPY CONSIDERATION\nGiven David's excellent response and the significant toxicity he experienced with chemotherapy, we had an in-depth discussion today about stepping back from active systemic treatment and moving to a surveillance approach. David expressed enormous relief at this proposal, stating he felt \"ready to reclaim some normality\" in his life.\n\nHowever, given the T2 staging and high-grade histology, we discussed the option of adjuvant radiotherapy to the surgical bed to reduce local recurrence risk. David was initially hesitant, understandably anxious about further treatment-related side effects. We explored the potential benefits and risks at length. The radiotherapy would involve approximately 28 fractions over 5-6 weeks, targeting the right thigh surgical site. Potential side effects include skin changes, fatigue, and possible long-term fibrosis, but these are generally more manageable than systemic chemotherapy effects.\n\nAfter careful consideration and discussion with Margaret, David agreed that the potential benefit of reducing local recurrence risk outweighed his concerns. He appreciated the opportunity to be involved in this shared decision-making process and felt heard regarding his previous treatment experiences.\n\nNEXT STEPS\nWe will proceed with the following plan:\n\n1. Referral to radiation oncology for assessment and planning for adjuvant radiotherapy to right thigh surgical bed. Target start date early April 2024.\n\n2. Continue three-monthly surveillance imaging (CT chest/abdomen/pelvis) for the next two years, then consider extending to six-monthly intervals if remains disease-free.\n\n3. Ongoing physiotherapy support for peripheral neuropathy and to maintain mobility during radiotherapy.\n\n4. Continue psychological support through oncology counselling service - David has established a good therapeutic relationship with his counsellor.\n\n5. Review in clinic in 4 weeks to assess how radiotherapy is progressing and monitor for acute toxicity.\n\n6. Nutritional support to continue weight restoration - dietitian follow-up arranged.\n\nDavid left the consultation appearing more relaxed and hopeful than I have seen him in many months. He expressed gratitude for the multidisciplinary team's support and said he finally feels he can \"see light at the end of the tunnel.\" Margaret was tearful with relief at the positive imaging results. This transition from intensive chemotherapy to surveillance with adjuvant radiotherapy feels like a turning point in David's journey, and while we remain vigilant, there is genuine reason for cautious optimism.\n\nI will remain closely involved in David's care, coordinating with radiation oncology colleagues and ensuring supportive services are maintained throughout this next phase.\n\nCLINICIAN DETAILS\nElectronically signed by:\nDr. Sarah Chen, MBBS, FRACP\nConsultant Medical Oncologist\nRiverside Oncology Centre\nPhone: [redacted]\nEmail: [redacted]\n\nDISCLAIMER: This document contains confidential patient information and is intended for authorised healthcare professionals only. Any unauthorised review, use, disclosure or distribution is prohibited. If you have received this in error, please contact the issuing department immediately.",
+  "output": {
+    "document_has_primary_cancer_flag": true,
+    "primary_cancer_confirmed_flag": true,
+    "primary_cancer": {
+      "primary_cancer_facts": {
+        "topography": "soft_tissue",
+        "topography_name_desc": "soft tissue of the right thigh",
+        "morphology": "soft_tissue_sarcoma",
+        "morphology_name_desc": "high-grade pleomorphic sarcoma",
+        "is_recurrence": false,
+        "diagnosis_year": 2022,
+        "diagnosis_month": 9,
+        "tnm_stage": "T2N0",
+        "numeric_group_stage": null
+      },
+      "primary_cancer_tumour_facts": {
+        "msi_status": "none",
+        "msi_desc": null,
+        "tmb_status": "none",
+        "tmb_numeric_value": null,
+        "tmb_desc": null,
+        "molecular_biomarker_profiles": [
+          {
+            "biomarker": "tp53",
+            "biomarker_name_desc": "TP53",
+            "biomarker_status": "altered",
+            "biomarker_alteration": "nonsense mutation p.R213*",
+            "biomarker_expression_level": null,
+            "biomarker_vaf_numeric_value": null,
+            "biomarker_vaf_desc": null,
+            "biomarker_desc": "TP53 nonsense mutation p.R213*"
+          }
+        ]
+      },
+      "primary_cancer_scores": null,
+      "primary_cancer_spread": null,
+      "primary_cancer_timeline_events": [
+        {
+          "event_type": "had_surgical_treatment_performed",
+          "event_year": 2022,
+          "event_month": 11,
+          "event_summary": "Wide local excision of right thigh sarcoma with clear margins",
+          "event_desc": "underwent wide local excision in November 2022 with clear margins achieved"
+        },
+        {
+          "event_type": "had_systemic_or_radiotherapy_treatment",
+          "event_year": 2023,
+          "event_month": 1,
+          "event_summary": "Commenced adjuvant chemotherapy with doxorubicin and ifosfamide",
+          "event_desc": "commenced adjuvant chemotherapy with doxorubicin and ifosfamide in January 2023"
+        },
+        {
+          "event_type": "experienced_toxicity_or_complication_related_to_treatment",
+          "event_year": 2023,
+          "event_month": 3,
+          "event_summary": "Severe mucositis and neutropenic sepsis after third chemotherapy cycle requiring hospital admission",
+          "event_desc": "After his third cycle in March 2023, David developed severe mucositis and neutropenic sepsis requiring hospital admission for five days"
+        },
+        {
+          "event_type": "experienced_treatment_reduction_or_stop",
+          "event_year": 2023,
+          "event_month": 3,
+          "event_summary": "Doxorubicin dose reduced by 25% due to toxicity",
+          "event_desc": "We had to reduce the doxorubicin dose by 25% for subsequent cycles"
+        },
+        {
+          "event_type": "positive_treatment_response_on_assessment",
+          "event_year": 2024,
+          "event_month": 3,
+          "event_summary": "Recent CT shows no evidence of local recurrence or distant metastatic disease with resolution of suspicious lymph nodes",
+          "event_desc": "most recent CT chest, abdomen and pelvis from last week shows no evidence of local recurrence at the surgical site and, importantly, no distant metastatic disease. This represents a significant improvement from the suspicious lymph node changes we were monitoring six months ago, which have now completely resolved"
+        }
+      ]
+    },
+    "performance_status": {
+      "ps_scale": "ECOG",
+      "ps_score_value": "1",
+      "ps_desc": "performance status has improved to ECOG 1"
+    },
+    "other_cancers": null,
+    "patient_findings": [
+      {
+        "patient_finding_type": "social_or_family_finding",
+        "patient_finding_name_desc": "Living situation and social support",
+        "patient_finding_desc": "[redacted] lives with his wife [redacted] in [redacted], and they have two grown children who visit regularly. His wife has been an incredible source of support throughout this challenging time",
+        "patient_finding_status": "is_present"
+      },
+      {
+        "patient_finding_type": "social_or_family_finding",
+        "patient_finding_name_desc": "Smoking status",
+        "patient_finding_desc": "non-smoker",
+        "patient_finding_status": "is_not_present"
+      },
+      {
+        "patient_finding_type": "social_or_family_finding",
+        "patient_finding_name_desc": "Alcohol use",
+        "patient_finding_desc": "drinks alcohol socially (approximately 4-6 units per week)",
+        "patient_finding_status": "is_present"
+      },
+      {
+        "patient_finding_type": "symptom_finding",
+        "patient_finding_name_desc": "Fatigue",
+        "patient_finding_desc": "profound fatigue during chemotherapy",
+        "patient_finding_status": "is_present"
+      },
+      {
+        "patient_finding_type": "symptom_finding",
+        "patient_finding_name_desc": "Peripheral neuropathy",
+        "patient_finding_desc": "peripheral neuropathy affecting his hands and feet, continues to experience some residual peripheral neuropathy",
+        "patient_finding_status": "is_present"
+      },
+      {
+        "patient_finding_type": "symptom_finding",
+        "patient_finding_name_desc": "Weight loss",
+        "patient_finding_desc": "lost approximately 12 kilograms in weight during chemotherapy",
+        "patient_finding_status": "is_present"
+      },
+      {
+        "patient_finding_type": "mental_state_finding",
+        "patient_finding_name_desc": "Low mood and anxiety",
+        "patient_finding_desc": "struggled with low mood and anxiety about his prognosis during this period, experienced significant anxiety and depression following his neutropenic sepsis admission, describing feelings of hopelessness",
+        "patient_finding_status": "is_present"
+      },
+      {
+        "patient_finding_type": "mental_state_finding",
+        "patient_finding_name_desc": "Improved mood and optimism",
+        "patient_finding_desc": "mood has lifted considerably, described feeling 'like I can breathe again' and is cautiously optimistic about the future, left the consultation appearing more relaxed and hopeful",
+        "patient_finding_status": "is_present"
+      },
+      {
+        "patient_finding_type": "functional_finding",
+        "patient_finding_name_desc": "Weight stabilisation and gain",
+        "patient_finding_desc": "weight has stabilised, and he has regained 8 kilograms",
+        "patient_finding_status": "is_present"
+      }
+    ],
+    "future_plans": [
+      {
+        "future_plan_type": "planned_systemic_or_radiotherapy_treatment",
+        "future_plan_summary": "Adjuvant radiotherapy to right thigh surgical bed, approximately 28 fractions over 5-6 weeks, target start date early April 2024",
+        "future_plan_desc": "Referral to radiation oncology for assessment and planning for adjuvant radiotherapy to right thigh surgical bed. Target start date early April 2024. The radiotherapy would involve approximately 28 fractions over 5-6 weeks, targeting the right thigh surgical site"
+      },
+      {
+        "future_plan_type": "planned_investigation",
+        "future_plan_summary": "Three-monthly surveillance CT imaging for next two years",
+        "future_plan_desc": "Continue three-monthly surveillance imaging (CT chest/abdomen/pelvis) for the next two years, then consider extending to six-monthly intervals if remains disease-free"
+      }
+    ],
+    "context_summary": {
+      "doc_context": "Oncology consultation note for treatment switch discussion",
+      "doc_summary": "Patient with soft tissue sarcoma of right thigh showing excellent response to adjuvant chemotherapy following surgical resection. Transitioning from active systemic treatment to surveillance with planned adjuvant radiotherapy. Currently disease-free with no evidence of recurrence or metastases."
+    }
+  }
+}

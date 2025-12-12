@@ -1,0 +1,231 @@
+{
+  "content": "ACUTE ONCOLOGY FOLLOW-UP NOTE\n\nPt:[redacted] DOB:[redacted] MRN:[redacted]\n\nBACKGROUND\n63F w/papillary urothelial neoplasm dx 2019. T2N0, Stage II. Dukes equiv not applicable. Initial surgical resection [redacted] Hospital. TMB intermediate (8.1 mut/Mb). Molecular markers not indicated per protocol.\n\nCOMPLEX TREATMENT HISTORY\n2019: TURBT followed by adjuvant intravesical BCG x6 cycles\n2020: Local recurrence, salvage cystectomy + ileal conduit. Margins clear.\n2021: Started on gemcitabine/cisplatin chemo (4 cycles) for peritoneal mets identified on CT. Partial response.\n2021: Enrolled BLAZER trial (investigational agent + pembrolizumab). Discontinued after 8 cycles due to grade 3 colitis.\n2022: Second-line carboplatin/paclitaxel (6 cycles). Stable disease maintained.\n2023: Radiotherapy to pelvic nodes 45Gy in 25# completed [redacted]. Well tolerated.\n2023: CT showed peritoneal progression. Discussed at MDT for further trial options - not suitable due to PS decline.\n2024: Third-line single-agent vinflunine commenced. Dose reduced 20% after cycle 2 for neutropenia.\n\nCURRENT PRESENTATION\nSeen today post A&E attendance 48h ago w/abdominal pain + vomiting. Admitted overnight, discharged yesterday.\n\nEXAMINATION\nECOG 3. Wheelchair dependent, requires assistance for ADLs. Abdominal distension present, mild tenderness RIF. No acute surgical signs. Stoma functioning.\n\nMENTAL STATE\nPt remains remarkably positive despite disease burden. Family well engaged, coping well at home with care package.\n\nRECENT IMAGING\nCT TAP [redacted]: stable peritoneal disease, no new mets. Small volume ascites unchanged. Primary site post-surgical changes only.\n\nASSESSMENT\nPapillary urothelial neoplasm with peritoneal metastases, stable on current systemic therapy despite functional decline. Disease trajectory stable over past 6mo, no significant progression radiologically.\n\nPLAN DISCUSSED\nContinue vinflunine, monitor closely for further toxicity\nArrange CT restaging 8wks\nMDT re-discussion if progression documented\nPalliative care input for symptom management\nCommunity support optimised\n\nPt deteriorated rapidly at home over following 2wks. Re-admitted [redacted] with bowel obstruction, sepsis. Discussed DNACPR. Patient died [redacted] with family present.\n\nDr [redacted]\nAcute Oncology Team",
+  "output": {
+    "document_has_primary_cancer_flag": true,
+    "primary_cancer_confirmed_flag": true,
+    "primary_cancer": {
+      "primary_cancer_facts": {
+        "topography": "bladder",
+        "topography_name_desc": "urothelial",
+        "morphology": "urothelial_carcinoma",
+        "morphology_name_desc": "Papillary urothelial neoplasm",
+        "is_recurrence": false,
+        "diagnosis_year": 2019,
+        "diagnosis_month": null,
+        "tnm_stage": "T2N0",
+        "numeric_group_stage": "II"
+      },
+      "primary_cancer_tumour_facts": {
+        "msi_status": "none",
+        "msi_desc": null,
+        "tmb_status": "tmb_intermediate",
+        "tmb_numeric_value": 8.1,
+        "tmb_desc": "TMB intermediate (8.1 mut/Mb)",
+        "molecular_biomarker_profiles": null
+      },
+      "primary_cancer_scores": [
+        {
+          "score": "other",
+          "score_name_desc": "Dukes",
+          "score_value": null,
+          "score_value_desc": "Dukes equiv not applicable"
+        }
+      ],
+      "primary_cancer_spread": [
+        {
+          "spread_type": "peritoneum",
+          "spread_site_desc": "peritoneal mets"
+        },
+        {
+          "spread_type": "peritoneum",
+          "spread_site_desc": "peritoneal disease"
+        },
+        {
+          "spread_type": "lymph_node",
+          "spread_site_desc": "pelvic nodes"
+        }
+      ],
+      "primary_cancer_timeline_events": [
+        {
+          "event_type": "had_surgical_treatment_performed",
+          "event_year": 2019,
+          "event_month": null,
+          "event_summary": "Initial surgical resection TURBT",
+          "event_desc": "TURBT followed by adjuvant intravesical BCG x6 cycles"
+        },
+        {
+          "event_type": "had_systemic_or_radiotherapy_treatment",
+          "event_year": 2019,
+          "event_month": null,
+          "event_summary": "Adjuvant intravesical BCG 6 cycles",
+          "event_desc": "TURBT followed by adjuvant intravesical BCG x6 cycles"
+        },
+        {
+          "event_type": "experienced_disease_recurrence",
+          "event_year": 2020,
+          "event_month": null,
+          "event_summary": "Local recurrence",
+          "event_desc": "Local recurrence, salvage cystectomy + ileal conduit. Margins clear."
+        },
+        {
+          "event_type": "had_surgical_treatment_performed",
+          "event_year": 2020,
+          "event_month": null,
+          "event_summary": "Salvage cystectomy with ileal conduit",
+          "event_desc": "Local recurrence, salvage cystectomy + ileal conduit. Margins clear."
+        },
+        {
+          "event_type": "had_systemic_or_radiotherapy_treatment",
+          "event_year": 2021,
+          "event_month": null,
+          "event_summary": "Started gemcitabine/cisplatin chemotherapy 4 cycles for peritoneal metastases",
+          "event_desc": "Started on gemcitabine/cisplatin chemo (4 cycles) for peritoneal mets identified on CT. Partial response."
+        },
+        {
+          "event_type": "positive_treatment_response_on_assessment",
+          "event_year": 2021,
+          "event_month": null,
+          "event_summary": "Partial response to gemcitabine/cisplatin",
+          "event_desc": "Started on gemcitabine/cisplatin chemo (4 cycles) for peritoneal mets identified on CT. Partial response."
+        },
+        {
+          "event_type": "enrolled_to_clinical_trial",
+          "event_year": 2021,
+          "event_month": null,
+          "event_summary": "Enrolled to BLAZER trial (investigational agent plus pembrolizumab)",
+          "event_desc": "Enrolled BLAZER trial (investigational agent + pembrolizumab). Discontinued after 8 cycles due to grade 3 colitis."
+        },
+        {
+          "event_type": "experienced_toxicity_or_complication_related_to_treatment",
+          "event_year": 2021,
+          "event_month": null,
+          "event_summary": "Grade 3 colitis on trial treatment",
+          "event_desc": "Enrolled BLAZER trial (investigational agent + pembrolizumab). Discontinued after 8 cycles due to grade 3 colitis."
+        },
+        {
+          "event_type": "experienced_treatment_reduction_or_stop",
+          "event_year": 2021,
+          "event_month": null,
+          "event_summary": "Trial treatment discontinued after 8 cycles due to toxicity",
+          "event_desc": "Enrolled BLAZER trial (investigational agent + pembrolizumab). Discontinued after 8 cycles due to grade 3 colitis."
+        },
+        {
+          "event_type": "had_systemic_or_radiotherapy_treatment",
+          "event_year": 2022,
+          "event_month": null,
+          "event_summary": "Second-line carboplatin/paclitaxel 6 cycles with stable disease",
+          "event_desc": "Second-line carboplatin/paclitaxel (6 cycles). Stable disease maintained."
+        },
+        {
+          "event_type": "had_systemic_or_radiotherapy_treatment",
+          "event_year": 2023,
+          "event_month": null,
+          "event_summary": "Radiotherapy to pelvic nodes 45Gy in 25 fractions",
+          "event_desc": "Radiotherapy to pelvic nodes 45Gy in 25# completed. Well tolerated."
+        },
+        {
+          "event_type": "radiology_evidence_of_disease_progression",
+          "event_year": 2023,
+          "event_month": null,
+          "event_summary": "CT showed peritoneal progression",
+          "event_desc": "CT showed peritoneal progression. Discussed at MDT for further trial options - not suitable due to PS decline."
+        },
+        {
+          "event_type": "considered_for_clinical_trial",
+          "event_year": 2023,
+          "event_month": null,
+          "event_summary": "Discussed at MDT for trial options but not suitable due to performance status decline",
+          "event_desc": "CT showed peritoneal progression. Discussed at MDT for further trial options - not suitable due to PS decline."
+        },
+        {
+          "event_type": "had_systemic_or_radiotherapy_treatment",
+          "event_year": 2024,
+          "event_month": null,
+          "event_summary": "Third-line single-agent vinflunine commenced",
+          "event_desc": "Third-line single-agent vinflunine commenced. Dose reduced 20% after cycle 2 for neutropenia."
+        },
+        {
+          "event_type": "experienced_toxicity_or_complication_related_to_treatment",
+          "event_year": 2024,
+          "event_month": null,
+          "event_summary": "Neutropenia on vinflunine",
+          "event_desc": "Third-line single-agent vinflunine commenced. Dose reduced 20% after cycle 2 for neutropenia."
+        },
+        {
+          "event_type": "experienced_treatment_reduction_or_stop",
+          "event_year": 2024,
+          "event_month": null,
+          "event_summary": "Vinflunine dose reduced 20% after cycle 2 for neutropenia",
+          "event_desc": "Third-line single-agent vinflunine commenced. Dose reduced 20% after cycle 2 for neutropenia."
+        },
+        {
+          "event_type": "patient_died",
+          "event_year": null,
+          "event_month": null,
+          "event_summary": "Patient died with family present following deterioration with bowel obstruction and sepsis",
+          "event_desc": "Pt deteriorated rapidly at home over following 2wks. Re-admitted with bowel obstruction, sepsis. Discussed DNACPR. Patient died with family present."
+        }
+      ]
+    },
+    "performance_status": {
+      "ps_scale": "ECOG",
+      "ps_score_value": "3",
+      "ps_desc": "ECOG 3"
+    },
+    "other_cancers": null,
+    "patient_findings": [
+      {
+        "patient_finding_type": "functional_finding",
+        "patient_finding_name_desc": "Wheelchair dependent",
+        "patient_finding_desc": "Wheelchair dependent, requires assistance for ADLs",
+        "patient_finding_status": "is_present"
+      },
+      {
+        "patient_finding_type": "mental_state_finding",
+        "patient_finding_name_desc": "Positive mental state",
+        "patient_finding_desc": "Pt remains remarkably positive despite disease burden",
+        "patient_finding_status": "is_present"
+      },
+      {
+        "patient_finding_type": "mental_state_finding",
+        "patient_finding_name_desc": "Coping well",
+        "patient_finding_desc": "Family well engaged, coping well at home with care package",
+        "patient_finding_status": "is_present"
+      },
+      {
+        "patient_finding_type": "symptom_finding",
+        "patient_finding_name_desc": "Abdominal pain",
+        "patient_finding_desc": "Seen today post A&E attendance 48h ago w/abdominal pain + vomiting",
+        "patient_finding_status": "is_present"
+      },
+      {
+        "patient_finding_type": "symptom_finding",
+        "patient_finding_name_desc": "Vomiting",
+        "patient_finding_desc": "Seen today post A&E attendance 48h ago w/abdominal pain + vomiting",
+        "patient_finding_status": "is_present"
+      },
+      {
+        "patient_finding_type": "physical_examination_finding",
+        "patient_finding_name_desc": "Abdominal distension",
+        "patient_finding_desc": "Abdominal distension present, mild tenderness RIF",
+        "patient_finding_status": "is_present"
+      }
+    ],
+    "future_plans": [
+      {
+        "future_plan_type": "planned_systemic_or_radiotherapy_treatment",
+        "future_plan_summary": "Continue vinflunine with close monitoring for toxicity",
+        "future_plan_desc": "Continue vinflunine, monitor closely for further toxicity"
+      },
+      {
+        "future_plan_type": "planned_investigation",
+        "future_plan_summary": "CT restaging in 8 weeks",
+        "future_plan_desc": "Arrange CT restaging 8wks"
+      }
+    ],
+    "context_summary": {
+      "doc_context": "Acute oncology follow-up note",
+      "doc_summary": "Patient with metastatic papillary urothelial neoplasm, stable on third-line systemic therapy despite functional decline, complex treatment history including surgery, multiple chemotherapy lines, radiotherapy, and clinical trial. Patient subsequently died."
+    }
+  }
+}

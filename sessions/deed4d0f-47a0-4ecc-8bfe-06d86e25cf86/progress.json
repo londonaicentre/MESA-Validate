@@ -1,0 +1,97 @@
+{
+  "current_file_index": 3,
+  "files": [
+    "predictions/test/normal_001.json",
+    "predictions/test/train_20251204_165754_056.json",
+    "predictions/test/train_20251204_170134_526.json",
+    "predictions/test/train_20251204_170302_911.json",
+    "predictions/test/train_20251204_170503_389.json",
+    "predictions/test/train_20251204_170905_863.json",
+    "predictions/test/train_20251204_171343_181.json",
+    "predictions/test/train_20251204_171913_750.json"
+  ],
+  "results": {
+    "predictions/test/normal_001.json": {
+      "basemodel_class_MolecularBiomarkerProfile": {
+        "items": [],
+        "missed": 0
+      },
+      "enum_value_TimelineEventType_experienced_toxicity_or_complication_related_to_treatment": {
+        "items": [],
+        "missed": 0
+      },
+      "enum_value_TimelineEventType_evidence_of_metastatic_progression": {
+        "items": [],
+        "missed": 0
+      },
+      "basemodel_field_PrimaryCancerFacts_topography": "ABSENT_CORRECT",
+      "basemodel_field_PrimaryCancerFacts_morphology": "ABSENT_CORRECT",
+      "basemodel_field_PrimaryCancerFacts_tnm_stage": "ABSENT_CORRECT"
+    },
+    "predictions/test/train_20251204_165754_056.json": {
+      "basemodel_class_MolecularBiomarkerProfile": {
+        "items": [
+          true
+        ],
+        "missed": 0
+      },
+      "enum_value_TimelineEventType_experienced_toxicity_or_complication_related_to_treatment": {
+        "items": [
+          true
+        ],
+        "missed": 0
+      },
+      "enum_value_TimelineEventType_evidence_of_metastatic_progression": {
+        "items": [],
+        "missed": 0
+      },
+      "basemodel_field_PrimaryCancerFacts_topography": "PRESENT_CORRECT",
+      "basemodel_field_PrimaryCancerFacts_morphology": "PRESENT_CORRECT",
+      "basemodel_field_PrimaryCancerFacts_tnm_stage": "PRESENT_CORRECT"
+    },
+    "predictions/test/train_20251204_170134_526.json": {
+      "basemodel_class_MolecularBiomarkerProfile": {
+        "items": [],
+        "missed": 0
+      },
+      "enum_value_TimelineEventType_experienced_toxicity_or_complication_related_to_treatment": {
+        "items": [
+          true,
+          true
+        ],
+        "missed": 0
+      },
+      "enum_value_TimelineEventType_evidence_of_metastatic_progression": {
+        "items": [],
+        "missed": 0
+      },
+      "basemodel_field_PrimaryCancerFacts_topography": "PRESENT_CORRECT",
+      "basemodel_field_PrimaryCancerFacts_morphology": "PRESENT_CORRECT",
+      "basemodel_field_PrimaryCancerFacts_tnm_stage": "PRESENT_CORRECT"
+    },
+    "predictions/test/train_20251204_170302_911.json": {
+      "basemodel_class_MolecularBiomarkerProfile": {
+        "items": [
+          null,
+          null
+        ],
+        "missed": 0
+      },
+      "enum_value_TimelineEventType_experienced_toxicity_or_complication_related_to_treatment": {
+        "items": [
+          null
+        ],
+        "missed": 0
+      },
+      "enum_value_TimelineEventType_evidence_of_metastatic_progression": {
+        "items": [],
+        "missed": 0
+      }
+    }
+  },
+  "completed_files": [
+    "predictions/test/normal_001.json",
+    "predictions/test/train_20251204_165754_056.json",
+    "predictions/test/train_20251204_170134_526.json"
+  ]
+}

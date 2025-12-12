@@ -1,0 +1,10 @@
+# schemas made available for validation
+# Add Python package module paths here
+#
+# Format:
+#   - module: module_name
+#     root_class: ClassName
+
+schemas:
+  - module: oncollamaschemav3
+    root_class: OncoLlamaModel

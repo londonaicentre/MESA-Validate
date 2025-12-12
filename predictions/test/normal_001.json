@@ -1,0 +1,13 @@
+{
+  "content": "In 2008, the British Conservative Party politician Liam Fox, writing for the website ConservativeHome, lists Bristol Eye Centre as an example of the negative effects of a target culture: by trying to meet government targets to recruit more patients, they failed to make follow-up appointments with existing patients leading to some patients losing some or all of their eyesight.",
+  "output": {
+    "document_has_primary_cancer_flag": false,
+    "primary_cancer_confirmed_flag": false,
+    "primary_cancer": null,
+    "performance_status": null,
+    "other_cancers": null,
+    "patient_findings": null,
+    "future_plans": null,
+    "context_summary": null
+  }
+}

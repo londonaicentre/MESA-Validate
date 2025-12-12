@@ -1,0 +1,183 @@
+{
+  "content": "Dear [redacted],\n\nRE: TRACHEAL ADENOCARCINOMA - TREATMENT REVIEW\n\nCLINICAL SUMMARY\nYou were diagnosed with tracheal adenocarcinoma T2N0, stage unknown, [redacted] 2023. Initial presentation with persistent cough and stridor. You underwent surgical resection [redacted] 2023 followed by adjuvant radiotherapy 54Gy/27# completed [redacted] 2023. Post-RT, commenced platinum-based chemo (cisplatin/pemetrexed) [redacted] 2024 for 4 cycles. CT [redacted] 2024 showed partial response with reduction in local disease.\n\nMOLECULAR PROFILE\nGenomic testing performed [redacted] 2024. No actionable mutations identified. TMB low (2.8 mut/Mb). MSI stable.\n\nCURRENT STATUS\nRecent CT chest [redacted] shows rapid progression with new pulmonary metastases bilateral, largest 2.3cm RLL. Local tracheal disease also increased significantly from prior. You report worsening dyspnoea, difficulty managing stairs, weight loss 8kg over 2 months. O/E: cachexia noted, reduced air entry both bases, no palpable lymphadenopathy.\n\nCOMORBIDITIES & SOCIAL HX\nCOPD - on inhalers, ex-smoker 30 pack-yrs quit [redacted] 2022. Type 2 DM diet-controlled. Lives alone, daughter visits weekly. Expressing significant anxiety re prognosis and functional decline.\n\nPERFORMANCE STATUS\nECOG 3 - limited self-care, confined to bed/chair >50% waking hrs.\n\nTREATMENT TOXICITY\nGrade 2 radiation oesophagitis [redacted] 2023 - resolved. Grade 3 neutropenia during cycle 3 chemo [redacted] 2024 requiring dose reduction. Persistent grade 2 fatigue ongoing.\n\nPLAN\nDisease progression confirmed, limited further options given rare tumour type and poor PS. Discussed ceasing active oncological treatment. Referral to palliative care for symptom management and support. Follow-up [redacted] weeks or sooner if concerns.\n\nYours sincerely,\n[redacted]\nConsultant Medical Oncologist",
+  "output": {
+    "document_has_primary_cancer_flag": true,
+    "primary_cancer_confirmed_flag": true,
+    "primary_cancer": {
+      "primary_cancer_facts": {
+        "topography": "other_respiratory",
+        "topography_name_desc": "Tracheal",
+        "morphology": "adenocarcinoma",
+        "morphology_name_desc": "adenocarcinoma",
+        "is_recurrence": false,
+        "diagnosis_year": 2023,
+        "diagnosis_month": null,
+        "tnm_stage": "T2N0",
+        "numeric_group_stage": null
+      },
+      "primary_cancer_tumour_facts": {
+        "msi_status": "mss",
+        "msi_desc": "MSI stable",
+        "tmb_status": "tmb_low",
+        "tmb_numeric_value": 2.8,
+        "tmb_desc": "TMB low (2.8 mut/Mb)",
+        "molecular_biomarker_profiles": null
+      },
+      "primary_cancer_scores": null,
+      "primary_cancer_spread": [
+        {
+          "spread_type": "lung",
+          "spread_site_desc": "pulmonary metastases bilateral"
+        }
+      ],
+      "primary_cancer_timeline_events": [
+        {
+          "event_type": "had_surgical_treatment_performed",
+          "event_year": 2023,
+          "event_month": null,
+          "event_summary": "Surgical resection of tracheal adenocarcinoma",
+          "event_desc": "You underwent surgical resection [redacted] 2023"
+        },
+        {
+          "event_type": "had_systemic_or_radiotherapy_treatment",
+          "event_year": 2023,
+          "event_month": null,
+          "event_summary": "Adjuvant radiotherapy 54Gy/27# completed",
+          "event_desc": "adjuvant radiotherapy 54Gy/27# completed [redacted] 2023"
+        },
+        {
+          "event_type": "experienced_toxicity_or_complication_related_to_treatment",
+          "event_year": 2023,
+          "event_month": null,
+          "event_summary": "Grade 2 radiation oesophagitis - resolved",
+          "event_desc": "Grade 2 radiation oesophagitis [redacted] 2023 - resolved"
+        },
+        {
+          "event_type": "had_systemic_or_radiotherapy_treatment",
+          "event_year": 2024,
+          "event_month": null,
+          "event_summary": "Commenced platinum-based chemotherapy cisplatin/pemetrexed for 4 cycles",
+          "event_desc": "commenced platinum-based chemo (cisplatin/pemetrexed) [redacted] 2024 for 4 cycles"
+        },
+        {
+          "event_type": "positive_treatment_response_on_assessment",
+          "event_year": 2024,
+          "event_month": null,
+          "event_summary": "CT showed partial response with reduction in local disease",
+          "event_desc": "CT [redacted] 2024 showed partial response with reduction in local disease"
+        },
+        {
+          "event_type": "experienced_toxicity_or_complication_related_to_treatment",
+          "event_year": 2024,
+          "event_month": null,
+          "event_summary": "Grade 3 neutropenia during cycle 3 requiring dose reduction",
+          "event_desc": "Grade 3 neutropenia during cycle 3 chemo [redacted] 2024 requiring dose reduction"
+        },
+        {
+          "event_type": "radiology_evidence_of_disease_progression",
+          "event_year": null,
+          "event_month": null,
+          "event_summary": "Recent CT shows rapid progression with new bilateral pulmonary metastases and increased local tracheal disease",
+          "event_desc": "Recent CT chest [redacted] shows rapid progression with new pulmonary metastases bilateral, largest 2.3cm RLL. Local tracheal disease also increased significantly from prior"
+        }
+      ]
+    },
+    "performance_status": {
+      "ps_scale": "ECOG",
+      "ps_score_value": "3",
+      "ps_desc": "ECOG 3 - limited self-care, confined to bed/chair >50% waking hrs"
+    },
+    "other_cancers": null,
+    "patient_findings": [
+      {
+        "patient_finding_type": "symptom_finding",
+        "patient_finding_name_desc": "persistent cough",
+        "patient_finding_desc": "Initial presentation with persistent cough and stridor",
+        "patient_finding_status": "is_present"
+      },
+      {
+        "patient_finding_type": "symptom_finding",
+        "patient_finding_name_desc": "stridor",
+        "patient_finding_desc": "Initial presentation with persistent cough and stridor",
+        "patient_finding_status": "is_present"
+      },
+      {
+        "patient_finding_type": "symptom_finding",
+        "patient_finding_name_desc": "worsening dyspnoea",
+        "patient_finding_desc": "You report worsening dyspnoea",
+        "patient_finding_status": "is_present"
+      },
+      {
+        "patient_finding_type": "symptom_finding",
+        "patient_finding_name_desc": "difficulty managing stairs",
+        "patient_finding_desc": "difficulty managing stairs",
+        "patient_finding_status": "is_present"
+      },
+      {
+        "patient_finding_type": "symptom_finding",
+        "patient_finding_name_desc": "weight loss",
+        "patient_finding_desc": "weight loss 8kg over 2 months",
+        "patient_finding_status": "is_present"
+      },
+      {
+        "patient_finding_type": "physical_examination_finding",
+        "patient_finding_name_desc": "cachexia",
+        "patient_finding_desc": "O/E: cachexia noted",
+        "patient_finding_status": "is_present"
+      },
+      {
+        "patient_finding_type": "physical_examination_finding",
+        "patient_finding_name_desc": "reduced air entry both bases",
+        "patient_finding_desc": "reduced air entry both bases",
+        "patient_finding_status": "is_present"
+      },
+      {
+        "patient_finding_type": "comorbidity_finding",
+        "patient_finding_name_desc": "COPD",
+        "patient_finding_desc": "COPD - on inhalers",
+        "patient_finding_status": "is_present"
+      },
+      {
+        "patient_finding_type": "comorbidity_finding",
+        "patient_finding_name_desc": "Type 2 DM",
+        "patient_finding_desc": "Type 2 DM diet-controlled",
+        "patient_finding_status": "is_present"
+      },
+      {
+        "patient_finding_type": "social_or_family_finding",
+        "patient_finding_name_desc": "ex-smoker",
+        "patient_finding_desc": "ex-smoker 30 pack-yrs quit [redacted] 2022",
+        "patient_finding_status": "is_present"
+      },
+      {
+        "patient_finding_type": "social_or_family_finding",
+        "patient_finding_name_desc": "Lives alone",
+        "patient_finding_desc": "Lives alone, daughter visits weekly",
+        "patient_finding_status": "is_present"
+      },
+      {
+        "patient_finding_type": "mental_state_finding",
+        "patient_finding_name_desc": "significant anxiety",
+        "patient_finding_desc": "Expressing significant anxiety re prognosis and functional decline",
+        "patient_finding_status": "is_present"
+      },
+      {
+        "patient_finding_type": "symptom_finding",
+        "patient_finding_name_desc": "grade 2 fatigue",
+        "patient_finding_desc": "Persistent grade 2 fatigue ongoing",
+        "patient_finding_status": "is_present"
+      }
+    ],
+    "future_plans": [
+      {
+        "future_plan_type": "planned_investigation",
+        "future_plan_summary": "Follow-up in weeks or sooner if concerns",
+        "future_plan_desc": "Follow-up [redacted] weeks or sooner if concerns"
+      }
+    ],
+    "context_summary": {
+      "doc_context": "Treatment review letter to patient",
+      "doc_summary": "Patient with tracheal adenocarcinoma showing rapid disease progression with new pulmonary metastases after surgery, radiotherapy and chemotherapy. Ceasing active treatment, transitioning to palliative care."
+    }
+  }
+}

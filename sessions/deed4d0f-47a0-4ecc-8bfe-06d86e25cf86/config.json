@@ -1,0 +1,47 @@
+{
+  "id": "deed4d0f-47a0-4ecc-8bfe-06d86e25cf86",
+  "name": "test_val",
+  "schema_module": "oncollamaschemav3",
+  "root_class": "OncoLlamaModel",
+  "predictions_folder": "predictions/test",
+  "sample_size": 8,
+  "selections": [
+    {
+      "selection_type": "basemodel_class",
+      "class_name": "MolecularBiomarkerProfile",
+      "field_name": null,
+      "enum_value": null
+    },
+    {
+      "selection_type": "basemodel_field",
+      "class_name": "PrimaryCancerFacts",
+      "field_name": "topography",
+      "enum_value": null
+    },
+    {
+      "selection_type": "basemodel_field",
+      "class_name": "PrimaryCancerFacts",
+      "field_name": "morphology",
+      "enum_value": null
+    },
+    {
+      "selection_type": "basemodel_field",
+      "class_name": "PrimaryCancerFacts",
+      "field_name": "tnm_stage",
+      "enum_value": null
+    },
+    {
+      "selection_type": "enum_value",
+      "class_name": "TimelineEventType",
+      "field_name": null,
+      "enum_value": "experienced_toxicity_or_complication_related_to_treatment"
+    },
+    {
+      "selection_type": "enum_value",
+      "class_name": "TimelineEventType",
+      "field_name": null,
+      "enum_value": "evidence_of_metastatic_progression"
+    }
+  ],
+  "created_at": "2025-12-12 22:13:02.768268"
+}

@@ -1,0 +1,229 @@
+{
+  "content": "BRISTOL ONCOLOGY CENTRE\nDate: 14/08/2024\n\nRe: Mr David Thompson\nDOB: [redacted]\nNHS No: [redacted]\n\nDear Mr Thompson,\n\nThank you for attending clinic on 12/08/2024. This letter summarises our discussion regarding your rectal adeno and ongoing treatment.\n\nBACKGROUND\nYou were dx 03/2022 with rectal adeno, T3N1b stage IIIC. Also hx of basal cell carcinoma left temple excised 2019, no recurrence. Molecular testing showed RAS wt, BRAF wt. Initial tx Apr-Jul 2022 long-course chemoRT (capecitabine + 50.4Gy) followed by APR 09/2022. Path confirmed ypT2N0 with good response. Commenced adj FOLFOX 11/2022.\n\nTREATMENT HISTORY\nCompleted 8 cycles FOLFOX by 05/2023. Cycle 6 developed grade 2 neuropathy, dose reduced 80%. Stopped after C8 due to persistent paraesthesia both hands. CT 06/2023 showed PR, no mets. Discussed at MDM for IDEA trial but excluded due to neuropathy. Surveillance CT 11/2023 stable. CT 04/2024 showed slowly progressive pelvic LN (12mm to 18mm) and new 8mm lung nodule RLL. Biopsy confirmed recurrent rectal adeno. MDM 05/2024 discussed PARADIGM trial but pt declined. Started FOLFIRI + cetuximab 06/2024 (2nd line).\n\nCURRENT STATUS\nNow completed 4 cycles. Cycle 3 developed grade 2 rash, managed with doxycycline and emollients. Recent CT 08/2024 shows PR - pelvic LN reduced 18mm to 11mm, lung nodule stable 8mm. No new mets confirmed. CEA dropped 87 to 34.\n\nYou report improved energy levels, able to walk 2 miles daily. ECOG PS 1. Some ongoing fatigue but manageable. Denies pain, wt stable at 76kg. Appetite good.\n\nCOMORBIDITIES\nT2DM on metformin, HbA1c 52. HTN on ramipril, well controlled.\n\nPLAN\nContinue FOLFIRI + cetuximab, aiming 8-12 cycles total. Repeat CT chest/abdo/pelvis in 8 wks. Monitor CEA monthly. Dermatology r/v for rash management. Discussed possibility reintroduction to trial discussion if CR achieved. Will review in clinic 6 wks.\n\nYours sincerely,\n\nDr Rebecca Singh\nConsultant Medical Oncologist",
+  "output": {
+    "document_has_primary_cancer_flag": true,
+    "primary_cancer_confirmed_flag": true,
+    "primary_cancer": {
+      "primary_cancer_facts": {
+        "topography": "rectum",
+        "topography_name_desc": "rectal",
+        "morphology": "adenocarcinoma",
+        "morphology_name_desc": "rectal adeno",
+        "is_recurrence": false,
+        "diagnosis_year": 2022,
+        "diagnosis_month": 3,
+        "tnm_stage": "T3N1b",
+        "numeric_group_stage": "IIIC"
+      },
+      "primary_cancer_tumour_facts": {
+        "msi_status": null,
+        "msi_desc": null,
+        "tmb_status": null,
+        "tmb_numeric_value": null,
+        "tmb_desc": null,
+        "molecular_biomarker_profiles": [
+          {
+            "biomarker": "kras",
+            "biomarker_name_desc": "RAS",
+            "biomarker_status": "negative",
+            "biomarker_alteration": null,
+            "biomarker_expression_level": null,
+            "biomarker_vaf_numeric_value": null,
+            "biomarker_vaf_desc": null,
+            "biomarker_desc": "RAS wt"
+          },
+          {
+            "biomarker": "braf",
+            "biomarker_name_desc": "BRAF",
+            "biomarker_status": "negative",
+            "biomarker_alteration": null,
+            "biomarker_expression_level": null,
+            "biomarker_vaf_numeric_value": null,
+            "biomarker_vaf_desc": null,
+            "biomarker_desc": "BRAF wt"
+          }
+        ]
+      },
+      "primary_cancer_scores": null,
+      "primary_cancer_spread": [
+        {
+          "spread_type": "lymph_node",
+          "spread_site_desc": "pelvic LN"
+        },
+        {
+          "spread_type": "lung",
+          "spread_site_desc": "lung nodule RLL"
+        }
+      ],
+      "primary_cancer_timeline_events": [
+        {
+          "event_type": "had_systemic_or_radiotherapy_treatment",
+          "event_year": 2022,
+          "event_month": 4,
+          "event_summary": "Long-course chemoradiotherapy with capecitabine and 50.4Gy",
+          "event_desc": "Apr-Jul 2022 long-course chemoRT (capecitabine + 50.4Gy)"
+        },
+        {
+          "event_type": "had_surgical_treatment_performed",
+          "event_year": 2022,
+          "event_month": 9,
+          "event_summary": "APR performed, pathology showed ypT2N0 with good response",
+          "event_desc": "APR 09/2022. Path confirmed ypT2N0 with good response"
+        },
+        {
+          "event_type": "had_systemic_or_radiotherapy_treatment",
+          "event_year": 2022,
+          "event_month": 11,
+          "event_summary": "Commenced adjuvant FOLFOX",
+          "event_desc": "Commenced adj FOLFOX 11/2022"
+        },
+        {
+          "event_type": "experienced_toxicity_or_complication_related_to_treatment",
+          "event_year": 2023,
+          "event_month": null,
+          "event_summary": "Grade 2 neuropathy developed during cycle 6 FOLFOX",
+          "event_desc": "Cycle 6 developed grade 2 neuropathy"
+        },
+        {
+          "event_type": "experienced_treatment_reduction_or_stop",
+          "event_year": 2023,
+          "event_month": null,
+          "event_summary": "FOLFOX dose reduced to 80% due to neuropathy",
+          "event_desc": "dose reduced 80%"
+        },
+        {
+          "event_type": "experienced_treatment_reduction_or_stop",
+          "event_year": 2023,
+          "event_month": 5,
+          "event_summary": "Stopped FOLFOX after 8 cycles due to persistent paraesthesia",
+          "event_desc": "Stopped after C8 due to persistent paraesthesia both hands"
+        },
+        {
+          "event_type": "positive_treatment_response_on_assessment",
+          "event_year": 2023,
+          "event_month": 6,
+          "event_summary": "CT showed partial response, no metastases",
+          "event_desc": "CT 06/2023 showed PR, no mets"
+        },
+        {
+          "event_type": "considered_for_clinical_trial",
+          "event_year": 2023,
+          "event_month": null,
+          "event_summary": "Discussed for IDEA trial but excluded due to neuropathy",
+          "event_desc": "Discussed at MDM for IDEA trial but excluded due to neuropathy"
+        },
+        {
+          "event_type": "radiology_evidence_of_disease_progression",
+          "event_year": 2024,
+          "event_month": 4,
+          "event_summary": "CT showed slowly progressive pelvic lymph nodes and new lung nodule",
+          "event_desc": "CT 04/2024 showed slowly progressive pelvic LN (12mm to 18mm) and new 8mm lung nodule RLL"
+        },
+        {
+          "event_type": "experienced_disease_recurrence",
+          "event_year": 2024,
+          "event_month": null,
+          "event_summary": "Biopsy confirmed recurrent rectal adenocarcinoma",
+          "event_desc": "Biopsy confirmed recurrent rectal adeno"
+        },
+        {
+          "event_type": "considered_for_clinical_trial",
+          "event_year": 2024,
+          "event_month": 5,
+          "event_summary": "Discussed PARADIGM trial but patient declined",
+          "event_desc": "MDM 05/2024 discussed PARADIGM trial but pt declined"
+        },
+        {
+          "event_type": "had_systemic_or_radiotherapy_treatment",
+          "event_year": 2024,
+          "event_month": 6,
+          "event_summary": "Started second-line FOLFIRI plus cetuximab",
+          "event_desc": "Started FOLFIRI + cetuximab 06/2024 (2nd line)"
+        },
+        {
+          "event_type": "experienced_toxicity_or_complication_related_to_treatment",
+          "event_year": 2024,
+          "event_month": null,
+          "event_summary": "Grade 2 rash during cycle 3, managed with doxycycline and emollients",
+          "event_desc": "Cycle 3 developed grade 2 rash, managed with doxycycline and emollients"
+        },
+        {
+          "event_type": "positive_treatment_response_on_assessment",
+          "event_year": 2024,
+          "event_month": 8,
+          "event_summary": "CT showed partial response with reduced pelvic lymph nodes and stable lung nodule",
+          "event_desc": "Recent CT 08/2024 shows PR - pelvic LN reduced 18mm to 11mm, lung nodule stable 8mm. No new mets confirmed"
+        }
+      ]
+    },
+    "performance_status": {
+      "ps_scale": "ECOG",
+      "ps_score_value": "1",
+      "ps_desc": "ECOG PS 1"
+    },
+    "other_cancers": [
+      {
+        "other_topography": "skin",
+        "other_topography_name_desc": "left temple",
+        "other_morphology": "carcinoma_other",
+        "other_morphology_name_desc": "basal cell carcinoma",
+        "other_diagnosis_year": 2019,
+        "other_diagnosis_month": null,
+        "other_latest_situation_summary": "Excised 2019, no recurrence"
+      }
+    ],
+    "patient_findings": [
+      {
+        "patient_finding_type": "symptom_finding",
+        "patient_finding_name_desc": "fatigue",
+        "patient_finding_desc": "Some ongoing fatigue but manageable",
+        "patient_finding_status": "is_present"
+      },
+      {
+        "patient_finding_type": "symptom_finding",
+        "patient_finding_name_desc": "pain",
+        "patient_finding_desc": "Denies pain",
+        "patient_finding_status": "is_not_present"
+      },
+      {
+        "patient_finding_type": "functional_finding",
+        "patient_finding_name_desc": "energy levels and walking ability",
+        "patient_finding_desc": "improved energy levels, able to walk 2 miles daily",
+        "patient_finding_status": "is_present"
+      },
+      {
+        "patient_finding_type": "comorbidity_finding",
+        "patient_finding_name_desc": "Type 2 diabetes mellitus",
+        "patient_finding_desc": "T2DM on metformin, HbA1c 52",
+        "patient_finding_status": "is_present"
+      },
+      {
+        "patient_finding_type": "comorbidity_finding",
+        "patient_finding_name_desc": "Hypertension",
+        "patient_finding_desc": "HTN on ramipril, well controlled",
+        "patient_finding_status": "is_present"
+      }
+    ],
+    "future_plans": [
+      {
+        "future_plan_type": "planned_systemic_or_radiotherapy_treatment",
+        "future_plan_summary": "Continue FOLFIRI plus cetuximab, aiming for 8-12 cycles total",
+        "future_plan_desc": "Continue FOLFIRI + cetuximab, aiming 8-12 cycles total"
+      },
+      {
+        "future_plan_type": "planned_investigation",
+        "future_plan_summary": "Repeat CT chest/abdomen/pelvis in 8 weeks",
+        "future_plan_desc": "Repeat CT chest/abdo/pelvis in 8 wks"
+      },
+      {
+        "future_plan_type": "planned_clinical_trial_involvement",
+        "future_plan_summary": "Discussed possibility of reintroduction to trial discussion if complete remission achieved",
+        "future_plan_desc": "Discussed possibility reintroduction to trial discussion if CR achieved"
+      }
+    ],
+    "context_summary": {
+      "doc_context": "Clinic letter to patient",
+      "doc_summary": "Patient with recurrent stage IIIC rectal adenocarcinoma currently on second-line FOLFIRI plus cetuximab showing partial response after disease progression on first-line adjuvant FOLFOX"
+    }
+  }
+}

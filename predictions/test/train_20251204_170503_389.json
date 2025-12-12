@@ -1,0 +1,161 @@
+{
+  "content": "ROYALVICTORIAHOSPITAL\nOncologyDepartment\n142WestminsterRoad,Manchester,M139TP\nTel:0161-[redacted] Fax:0161-[redacted]\nEmail:oncology@[redacted]\n\nPatientName:PETERSON,Michael DOB:17/08/1958 NHSNumber:[redacted]\nHospitalNumber:MRH447829 Consultant:Dr.SarahWilliams\nDateofLetter:14/January/2025\n\nDearMr.Peterson,\n\nRe:RoutineOncologyFollow-upAppointment-Aryepiglotticfoldtumor\n\nIamwritingtosummariseyourrecentfollow-upappointmentonl0/Jan/2025regardingyourtreatmentforaryepiglotticfoldtumor.\n\nDIAGNOSISANDSTAGING\nYouwerediagnosedwithsquamouscellcarcinomaofthearyepiglotticfoldinMarch2022.Initialstagingwas T3N1,StageIVA.Noevidenceofmetastaticdiseasehasbeenidentified.\n\nMOLECULARPROFILE\nTumourtestingshowed:PD-L1(SP263assay)CPS75,TP53Exon8mutation.\n\nTREATMENTHISTORY\n-April-June2022:Completedconcurrentchemoradiotherapy(cisplatin+70Gy)withinCLINICALTRIALHPV-NEG-01.\n-August2022:Achievedpartialremission(PR)onpost-treatmentimaging.\n-Sept2023:ProgressionnotedwithlocaltumourgrowthonMRIneck.\n-October2023-May2024:Receivednab-paclitaxel+carboplatinx6cycles.\n-July2024:Imagingshowedminimalresponse,diseaseremainedstable.\n\nCURRENTSITUATION\nYouattendedclinicwithyourwife.Sincelastappointment,youhaveexperiencedworseningfatigueanddysphagia.Youdescribeweightlossofapprox4kgover3months.Paincontrolisadequatewithcurrentanalgesia.\n\nPhysicalexamination:ECOG3,reducedenergy,requiresassistancewithmobility.Visiblecachexia.Youappearanxiousanddiscussedfeelingsoffrustrationregardingprogressingdisease.\n\nSocialhistory:Ex-smoker,40pack-yearhx,quitJan2022.Formeralcoholuse(20units/week),abstinentsincediagnosis.Youlivewithyourwifewhoisprimarycaregiver.\n\nLatestimagingshowsslowprogressionofthelocaltumorwithincreasedsizefrom3.2cmto3.8cm.Noevidentmetastaticdisease.\n\nPLAN\n-Continuesupportivecare.\n-Referredtopalliativecareteamforsymptommanagement.\n-Dieticianreviewfornuritionalsupport.\n-Psychologyreviewforfurtherpsychologicalsupport.\n-Repeatimagingin8weeks.\n-Discussfurthertherapyoptionsatnextreview.\n\nPleasedonothesitatetocontactusifyouhaveanyquestions.\n\nYourssincere|y,\n\nDr.SarahWilliams,MBBS,MRCP,MD\nConsultantMedicalOnco|ogist\nRoyalVictoriaHospital,Manchester\nTel:0161-[redacted]\nEmail:s.williams@[redacted]\n\nThisdocumentcontainsconfidentialpatientinformation.Pleasedisposeofseurely.",
+  "output": {
+    "document_has_primary_cancer_flag": true,
+    "primary_cancer_confirmed_flag": true,
+    "primary_cancer": {
+      "primary_cancer_facts": {
+        "topography": "larynx",
+        "topography_name_desc": "aryepiglottic fold",
+        "morphology": "squamous_cell_carcinoma",
+        "morphology_name_desc": "squamous cell carcinoma",
+        "is_recurrence": false,
+        "diagnosis_year": 2022,
+        "diagnosis_month": 3,
+        "tnm_stage": "T3N1",
+        "numeric_group_stage": "IVA"
+      },
+      "primary_cancer_tumour_facts": {
+        "msi_status": null,
+        "msi_desc": null,
+        "tmb_status": null,
+        "tmb_numeric_value": null,
+        "tmb_desc": null,
+        "molecular_biomarker_profiles": [
+          {
+            "biomarker": "pdl1",
+            "biomarker_name_desc": "PD-L1",
+            "biomarker_status": "altered",
+            "biomarker_alteration": null,
+            "biomarker_expression_level": "CPS 75",
+            "biomarker_vaf_numeric_value": null,
+            "biomarker_vaf_desc": null,
+            "biomarker_desc": "PD-L1 (SP263 assay) CPS 75"
+          },
+          {
+            "biomarker": "tp53",
+            "biomarker_name_desc": "TP53",
+            "biomarker_status": "altered",
+            "biomarker_alteration": "Exon 8 mutation",
+            "biomarker_expression_level": null,
+            "biomarker_vaf_numeric_value": null,
+            "biomarker_vaf_desc": null,
+            "biomarker_desc": "TP53 Exon 8 mutation"
+          }
+        ]
+      },
+      "primary_cancer_scores": null,
+      "primary_cancer_spread": null,
+      "primary_cancer_timeline_events": [
+        {
+          "event_type": "had_systemic_or_radiotherapy_treatment",
+          "event_year": 2022,
+          "event_month": 4,
+          "event_summary": "Completed concurrent chemoradiotherapy with cisplatin and 70Gy",
+          "event_desc": "April-June 2022: Completed concurrent chemoradiotherapy (cisplatin + 70Gy)"
+        },
+        {
+          "event_type": "enrolled_to_clinical_trial",
+          "event_year": 2022,
+          "event_month": 4,
+          "event_summary": "Enrolled in CLINICAL TRIAL HPV-NEG-01",
+          "event_desc": "within CLINICAL TRIAL HPV-NEG-01"
+        },
+        {
+          "event_type": "experienced_disease_remission",
+          "event_year": 2022,
+          "event_month": 8,
+          "event_summary": "Achieved partial remission on post-treatment imaging",
+          "event_desc": "August 2022: Achieved partial remission (PR) on post-treatment imaging"
+        },
+        {
+          "event_type": "radiology_evidence_of_disease_progression",
+          "event_year": 2023,
+          "event_month": 9,
+          "event_summary": "Progression with local tumor growth on MRI neck",
+          "event_desc": "Sept 2023: Progression noted with local tumor growth on MRI neck"
+        },
+        {
+          "event_type": "had_systemic_or_radiotherapy_treatment",
+          "event_year": 2023,
+          "event_month": 10,
+          "event_summary": "Received nab-paclitaxel and carboplatin for 6 cycles",
+          "event_desc": "October 2023-May 2024: Received nab-paclitaxel + carboplatin x6 cycles"
+        }
+      ]
+    },
+    "performance_status": {
+      "ps_scale": "ECOG",
+      "ps_score_value": "3",
+      "ps_desc": "ECOG 3"
+    },
+    "other_cancers": null,
+    "patient_findings": [
+      {
+        "patient_finding_type": "symptom_finding",
+        "patient_finding_name_desc": "fatigue",
+        "patient_finding_desc": "worsening fatigue",
+        "patient_finding_status": "is_present"
+      },
+      {
+        "patient_finding_type": "symptom_finding",
+        "patient_finding_name_desc": "dysphagia",
+        "patient_finding_desc": "worsening dysphagia",
+        "patient_finding_status": "is_present"
+      },
+      {
+        "patient_finding_type": "symptom_finding",
+        "patient_finding_name_desc": "weight loss",
+        "patient_finding_desc": "weight loss of approx 4kg over 3 months",
+        "patient_finding_status": "is_present"
+      },
+      {
+        "patient_finding_type": "physical_examination_finding",
+        "patient_finding_name_desc": "cachexia",
+        "patient_finding_desc": "Visible cachexia",
+        "patient_finding_status": "is_present"
+      },
+      {
+        "patient_finding_type": "functional_finding",
+        "patient_finding_name_desc": "reduced mobility",
+        "patient_finding_desc": "reduced energy, requires assistance with mobility",
+        "patient_finding_status": "is_present"
+      },
+      {
+        "patient_finding_type": "mental_state_finding",
+        "patient_finding_name_desc": "anxiety",
+        "patient_finding_desc": "You appear anxious and discussed feelings of frustration regarding progressing disease",
+        "patient_finding_status": "is_present"
+      },
+      {
+        "patient_finding_type": "social_or_family_finding",
+        "patient_finding_name_desc": "smoking history",
+        "patient_finding_desc": "Ex-smoker, 40 pack-year hx, quit Jan 2022",
+        "patient_finding_status": "is_present"
+      },
+      {
+        "patient_finding_type": "social_or_family_finding",
+        "patient_finding_name_desc": "alcohol use",
+        "patient_finding_desc": "Former alcohol use (20 units/week), abstinent since diagnosis",
+        "patient_finding_status": "is_present"
+      },
+      {
+        "patient_finding_type": "social_or_family_finding",
+        "patient_finding_name_desc": "living situation",
+        "patient_finding_desc": "You live with your wife who is primary caregiver",
+        "patient_finding_status": "is_present"
+      }
+    ],
+    "future_plans": [
+      {
+        "future_plan_type": "planned_investigation",
+        "future_plan_summary": "Repeat imaging in 8 weeks",
+        "future_plan_desc": "Repeat imaging in 8 weeks"
+      }
+    ],
+    "context_summary": {
+      "doc_context": "Routine follow-up letter to patient",
+      "doc_summary": "Patient with Stage IVA aryepiglottic fold squamous cell carcinoma showing slow progression after chemoradiotherapy and chemotherapy, enrolled in clinical trial, achieved partial remission but now progressing, on supportive care"
+    }
+  }
+}
