@@ -1,6 +1,6 @@
 # MESA Validate
 
-A Streamlit application for human-in-the-loop validation of LLM-extracted structured outputs against Pydantic schemas within the MESA (Medical-concept Extraction with Structured Alignment) framework.
+A Streamlit application for human-in-the-loop validation of LLM-extracted structured outputs against Pydantic schemas within the MESA (Medical-concept Extraction with Schema Alignment) framework.
 
 ## Repo Structure
 
