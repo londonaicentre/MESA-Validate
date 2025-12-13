@@ -16,7 +16,7 @@ if "progress" not in st.session_state:
 st.title("MESA Validate")
 
 st.markdown("""
-This is a basic validation tool for LLM outputs generated via the MESA (Medical-concept Extraction with Structured Alignment) framework for fine-tuned, privacy first LLMs. 
+This is a basic validation tool for LLM outputs generated via the MESA (Medical-concept Extraction with Schema Alignment) framework for fine-tuned, privacy first LLMs. 
 
 ### Workflow
 
