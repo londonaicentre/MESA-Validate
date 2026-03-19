@@ -1,0 +1,1466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MESA Validate</title>
+<style>
+:root {
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --border: #e2e8f0;
+  --text: #1e293b;
+  --text-secondary: #64748b;
+  --success: #16a34a;
+  --warning: #d97706;
+  --danger: #dc2626;
+  --info: #0284c7;
+  --radius: 8px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+.app-header { background: var(--surface); border-bottom: 2px solid var(--primary); padding: 12px 24px; display: flex; align-items: center; gap: 16px; }
+.app-header h1 { font-size: 1.4rem; color: var(--primary); }
+.tab-bar { display: flex; gap: 0; background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; }
+.tab-btn { padding: 12px 24px; border: none; background: none; cursor: pointer; font-size: 0.95rem; color: var(--text-secondary); border-bottom: 3px solid transparent; transition: all 0.2s; }
+.tab-btn:hover { color: var(--text); background: #f1f5f9; }
+.tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+.tab-content { display: none; padding: 24px; max-width: 1400px; margin: 0 auto; }
+.tab-content.active { display: block; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+.card h2 { font-size: 1.2rem; margin-bottom: 12px; }
+.card h3 { font-size: 1.05rem; margin-bottom: 8px; }
+button, .btn { padding: 8px 16px; border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; font-size: 0.9rem; background: var(--surface); transition: all 0.15s; }
+button:hover, .btn:hover { background: #f1f5f9; }
+.btn-primary { background: var(--primary); color: white; border-color: var(--primary); }
+.btn-primary:hover { background: var(--primary-dark); }
+.btn-danger { background: var(--danger); color: white; border-color: var(--danger); }
+.btn-danger:hover { background: #b91c1c; }
+.btn-success { background: var(--success); color: white; border-color: var(--success); }
+.btn-success:hover { background: #15803d; }
+input[type="text"], input[type="number"], select, input[type="file"] { padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 0.9rem; width: 100%; }
+input[type="text"]:focus, input[type="number"]:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+label { font-weight: 500; display: block; margin-bottom: 4px; font-size: 0.9rem; }
+.form-group { margin-bottom: 16px; }
+.badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; }
+.badge-info { background: #dbeafe; color: #1e40af; }
+.badge-success { background: #dcfce7; color: #166534; }
+.badge-warning { background: #fef3c7; color: #92400e; }
+.alert { padding: 12px 16px; border-radius: var(--radius); margin-bottom: 12px; font-size: 0.9rem; }
+.alert-info { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+.alert-success { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+.alert-warning { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+.alert-danger { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+.progress-bar { width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; margin: 8px 0; }
+.progress-fill { height: 100%; background: var(--primary); border-radius: 4px; transition: width 0.3s; }
+.two-pane { display: flex; gap: 16px; height: 80vh; }
+.pane { flex: 1; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+.doc-pane { background: #f8fafc; font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 0.85rem; white-space: pre-wrap; word-wrap: break-word; }
+.val-pane { background: var(--surface); }
+details { border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 8px; }
+details > summary { padding: 10px 14px; cursor: pointer; font-weight: 600; background: #f8fafc; border-radius: var(--radius); list-style: none; display: flex; align-items: center; gap: 8px; }
+details > summary::-webkit-details-marker { display: none; }
+details > summary::before { content: '\25B6'; font-size: 0.7rem; transition: transform 0.2s; }
+details[open] > summary::before { transform: rotate(90deg); }
+details > .details-content { padding: 12px 14px; }
+.radio-group { display: flex; gap: 12px; margin: 6px 0; flex-wrap: wrap; }
+.radio-group label { display: flex; align-items: center; gap: 4px; cursor: pointer; font-weight: 400; padding: 4px 8px; border-radius: 4px; border: 1px solid transparent; }
+.radio-group label:hover { background: #f1f5f9; }
+.radio-group input[type="radio"] { width: auto; }
+.radio-group input[type="radio"]:checked + span { font-weight: 600; }
+table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+th { background: #f8fafc; font-weight: 600; font-size: 0.85rem; color: var(--text-secondary); }
+tr:hover { background: #f8fafc; }
+.metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; text-align: center; }
+.metric-card .value { font-size: 1.8rem; font-weight: 700; color: var(--primary); }
+.metric-card .label { font-size: 0.8rem; color: var(--text-secondary); margin-top: 2px; }
+.session-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.session-row .name { font-weight: 600; flex: 2; }
+.session-row .info { flex: 1; color: var(--text-secondary); font-size: 0.9rem; }
+.session-row .actions { display: flex; gap: 8px; }
+.wizard-steps { display: flex; gap: 8px; margin-bottom: 20px; }
+.wizard-step { padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; background: #e2e8f0; color: var(--text-secondary); }
+.wizard-step.active { background: var(--primary); color: white; }
+.wizard-step.done { background: var(--success); color: white; }
+.checkbox-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 4px; }
+.checkbox-grid label { display: flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: 400; font-size: 0.9rem; }
+.checkbox-grid label:hover { background: #f1f5f9; }
+.checkbox-grid input[type="checkbox"] { width: auto; }
+.field-value { margin: 4px 0; padding: 4px 8px; background: #f8fafc; border-radius: 4px; font-size: 0.9rem; }
+.field-value .label { font-weight: 600; color: var(--text); font-size: 0.85rem; }
+.field-value .val { color: var(--text-secondary); }
+.field-value .absent { color: #94a3b8; font-style: italic; }
+.item-block { border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 12px; margin: 6px 0; background: #fafbfc; }
+.nav-bar { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; }
+.nav-bar .center { font-weight: 600; }
+.hidden { display: none !important; }
+.json-preview { background: #1e293b; color: #e2e8f0; padding: 12px; border-radius: var(--radius); font-family: monospace; font-size: 0.8rem; max-height: 200px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
+.flex-row { display: flex; gap: 12px; align-items: center; }
+.flex-row > * { flex: 1; }
+.mt-8 { margin-top: 8px; }
+.mt-16 { margin-top: 16px; }
+.mb-8 { margin-bottom: 8px; }
+.mb-16 { margin-bottom: 16px; }
+hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+.selection-summary { font-size: 0.85rem; padding: 4px 0; color: var(--text-secondary); }
+.completed-check { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #f0fdf4; border: 1px solid #86efac; border-radius: var(--radius); margin-top: 12px; }
+.completed-check input { width: auto; }
+.completed-check label { font-weight: 500; margin: 0; }
+.import-export-bar { display: flex; gap: 8px; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <h1>MESA Validate</h1>
+  <span style="color: var(--text-secondary); font-size: 0.85rem;">Human-in-the-Loop Validation Tool</span>
+</div>
+
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="MESA.switchTab('home')">Home</button>
+  <button class="tab-btn" onclick="MESA.switchTab('sessions')">Sessions</button>
+  <button class="tab-btn" onclick="MESA.switchTab('validate')">Validate</button>
+  <button class="tab-btn" onclick="MESA.switchTab('analysis')">Analysis</button>
+</div>
+
+<!-- HOME TAB -->
+<div id="tab-home" class="tab-content active">
+  <div class="card">
+    <h2>Welcome to MESA Validate (Web Edition)</h2>
+    <p style="margin-top:8px; color: var(--text-secondary);">
+      MESA Validate is a human-in-the-loop validation tool for LLM-extracted structured data.
+      This is a fully self-contained web version -- no Python or server required. Just open this file in your browser.
+    </p>
+  </div>
+  <div class="card">
+    <h3>How It Works</h3>
+    <ol style="padding-left: 20px; margin-top: 8px; line-height: 2;">
+      <li><strong>Sessions tab</strong> -- Create a new validation session by selecting a schema, choosing fields to validate, and loading prediction JSON files from your computer.</li>
+      <li><strong>Validate tab</strong> -- Review each document side-by-side with LLM extractions. Mark each field as correct or incorrect using the validation controls.</li>
+      <li><strong>Analysis tab</strong> -- View aggregate metrics (precision, recall, F1, accuracy) across all validated documents. Export results as CSV.</li>
+    </ol>
+  </div>
+  <div class="card">
+    <h3>Prediction File Format</h3>
+    <p style="margin-top:4px; color: var(--text-secondary);">Each prediction JSON file should have:</p>
+    <div class="json-preview" style="margin-top:8px;">
+{
+  "content": "The original document text...",
+  "output": {
+    // LLM extraction result matching the schema
+  }
+}
+    </div>
+  </div>
+  <div class="card">
+    <h3>Data Storage</h3>
+    <p style="margin-top: 4px; color: var(--text-secondary);">
+      All session data and validation progress is stored locally in your browser using IndexedDB.
+      Nothing is sent to any server. You can export and import sessions to back up your work or share with colleagues.
+    </p>
+  </div>
+</div>
+
+<!-- SESSIONS TAB -->
+<div id="tab-sessions" class="tab-content">
+  <h2 style="margin-bottom: 16px;">Sessions</h2>
+  <div class="import-export-bar">
+    <button class="btn" onclick="MESA.importSession()">Import Session</button>
+    <input type="file" id="import-session-file" accept=".json" style="display:none" onchange="MESA.handleSessionImport(event)">
+  </div>
+  <div id="session-list"></div>
+  <hr>
+  <div class="card" id="wizard-card">
+    <h2>Create New Session</h2>
+    <div class="wizard-steps" id="wizard-steps"></div>
+    <div id="wizard-body"></div>
+  </div>
+</div>
+
+<!-- VALIDATE TAB -->
+<div id="tab-validate" class="tab-content">
+  <div id="validate-no-session" class="alert alert-warning">
+    No active session. Please load a session from the Sessions tab.
+  </div>
+  <div id="validate-main" class="hidden">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <h2 id="validate-session-name"></h2>
+      <span id="validate-file-info" style="color:var(--text-secondary); font-size:0.9rem;"></span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="validate-progress"></div></div>
+    <div class="two-pane" style="margin-top:12px;">
+      <div class="pane doc-pane" id="doc-pane"></div>
+      <div class="pane val-pane" id="val-pane"></div>
+    </div>
+    <div class="nav-bar">
+      <button id="nav-prev" onclick="MESA.navigateFile(-1)">Previous</button>
+      <span class="center" id="nav-center"></span>
+      <button id="nav-next" onclick="MESA.navigateFile(1)">Next</button>
+    </div>
+  </div>
+</div>
+
+<!-- ANALYSIS TAB -->
+<div id="tab-analysis" class="tab-content">
+  <h2 style="margin-bottom: 16px;">Results Analysis</h2>
+  <div class="form-group" style="max-width:400px;">
+    <label for="analysis-session-select">Select Session</label>
+    <select id="analysis-session-select" onchange="MESA.loadAnalysis()"></select>
+  </div>
+  <div id="analysis-body"></div>
+</div>
+
+<script>
+// ===== EMBEDDED DEFAULT SCHEMA =====
+var DEFAULT_SCHEMA = {"schema_name":"oncollamaschemav3","root_class":"OncoLlamaModel","json_schema":{"$defs":{"BiomarkerStatus":{"enum":["altered","negative","equivocal","hypothetical"],"title":"BiomarkerStatus","type":"string"},"CancerScoreName":{"enum":["pathological_grade","gleason","figo","dukes","breslow","clark","binet","child_pugh","other"],"title":"CancerScoreName","type":"string"},"ContextSummary":{"properties":{"doc_context":{"description":"Short description of document context (e.g. MDM note, clinic letter, genomics report)","title":"Doc Context","type":"string"},"doc_summary":{"description":"Short summary of current cancer treatment status with focus on phase of care","title":"Doc Summary","type":"string"}},"required":["doc_context","doc_summary"],"title":"ContextSummary","type":"object"},"FuturePlan":{"properties":{"future_plan_type":{"$ref":"#/$defs/FuturePlanType","description":"Type of plan"},"future_plan_summary":{"description":"Short summary of future plan with essential facts only","title":"Future Plan Summary","type":"string"},"future_plan_desc":{"description":"Direct extract of descriptive text for plan","title":"Future Plan Desc","type":"string"}},"required":["future_plan_type","future_plan_summary","future_plan_desc"],"title":"FuturePlan","type":"object"},"FuturePlanType":{"enum":["planned_systemic_or_radiotherapy_treatment","planned_surgery_treatment","planned_investigation","planned_clinical_trial_involvement"],"title":"FuturePlanType","type":"string"},"MSIStatus":{"enum":["msi_high","mss","none"],"title":"MSIStatus","type":"string"},"MolecularBiomarkerProfile":{"properties":{"biomarker":{"$ref":"#/$defs/MolecularBiomarkerType","description":"Gene or protein biomarker. Use OTHER if specific biomarker not listed."},"biomarker_name_desc":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null,"description":"Name of biomarker as described in clinical text","title":"Biomarker Name Desc"},"biomarker_status":{"$ref":"#/$defs/BiomarkerStatus","description":"Crude status of marker"},"biomarker_alteration":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null,"description":"Description of specific alteration (e.g. V600E, G12C)","title":"Biomarker Alteration"},"biomarker_expression_level":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null,"description":"Description of expression level for protein markers if exists (e.g. 3+, 90% positive, 4/8)","title":"Biomarker Expression Level"},"biomarker_vaf_numeric_value":{"anyOf":[{"type":"number"},{"type":"null"}],"default":null,"description":"Numeric value for variant allele frequency in %","title":"Biomarker Vaf Numeric Value"},"biomarker_vaf_desc":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null,"description":"Direct extract of descriptive text for biomarker VAF","title":"Biomarker Vaf Desc"},"biomarker_desc":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null,"description":"Direct extract of descriptive text that fully describes biomarker and status, including alterations and numeric values","title":"Biomarker Desc"}},"required":["biomarker","biomarker_status"],"title":"MolecularBiomarkerProfile","type":"object"},"MolecularBiomarkerType":{"enum":["other","braf","ntrk1","ntrk2","ntrk3","ret","erbb2_her2","tp53","brca1","brca2","mlh1","msh2","msh6","pms2","palb2","rad51","egfr","alk","ros1","met","kras","nras","pik3ca","esr1_er","pgr_pr","ki_67","kit","pdgfra","fgfr1","fgfr2","fgfr3","idh1","idh2","pdl1","nf1","nf2","mgmt","npm1","flt3","bcr_abl1","jak2","bcl2","myc"],"title":"MolecularBiomarkerType","type":"string"},"MorphologyType":{"enum":["unknown_morphology","other","adenocarcinoma","squamous_cell_carcinoma","urothelial_carcinoma","renal_cell_carcinoma","hepatocellular_carcinoma","small_cell_carcinoma","non_small_cell_carcinoma","carcinoma_other","mesothelioma","melanoma","neuroendocrine","carcinoid","sarcoma_nos","gastrointestinal_stromal_tumour","osteosarcoma","chondrosarcoma","ewing_sarcoma","rhabdomyosarcoma","kaposi_sarcoma","soft_tissue_sarcoma","acute_lymphoblastic_leukaemia","acute_myeloid_leukaemia","chronic_lymphocytic_leukaemia","chronic_myeloid_leukaemia","hodgkin_lymphoma","non_hodgkin_lymphoma","multiple_myeloma","leukaemia_other","myelodysplastic","glioblastoma","astrocytoma","oligodendroglioma","meningioma","seminoma","teratoma","choriocarcinoma","wilms_tumour","retinoblastoma","hepatoblastoma"],"title":"MorphologyType","type":"string"},"OtherCancerFacts":{"properties":{"other_topography":{"$ref":"#/$defs/TopographyType","description":"Confirmed topography of historical or concurrent cancer"},"other_topography_name_desc":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null,"description":"Name of anatomical site as described in clinical text","title":"Other Topography Name Desc"},"other_morphology":{"anyOf":[{"$ref":"#/$defs/MorphologyType"},{"type":"null"}],"default":null,"description":"Confirmed morphology of historical or concurrent cancer"},"other_morphology_name_desc":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null,"description":"Name of histological classification as described in clinical text","title":"Other Morphology Name Desc"},"other_diagnosis_year":{"anyOf":[{"maximum":2100,"minimum":1900,"type":"integer"},{"type":"null"}],"default":null,"description":"Year of initial diagnosis","title":"Other Diagnosis Year"},"other_diagnosis_month":{"anyOf":[{"maximum":12,"minimum":1,"type":"integer"},{"type":"null"}],"default":null,"description":"Month of initial diagnosis","title":"Other Diagnosis Month"},"other_latest_situation_summary":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null,"description":"Short summary of latest situation for this cancer","title":"Other Latest Situation Summary"}},"required":["other_topography"],"title":"OtherCancerFacts","type":"object"},"PatientFinding":{"properties":{"patient_finding_type":{"$ref":"#/$defs/PatientFindingType","description":"Type of patient finding"},"patient_finding_name_desc":{"description":"Name of specific finding as described in clinical text","title":"Patient Finding Name Desc","type":"string"},"patient_finding_desc":{"description":"Direct extract of descriptive text for the finding","title":"Patient Finding Desc","type":"string"},"patient_finding_status":{"$ref":"#/$defs/PatientFindingStatus","description":"Whether the specific finding is present, is not present, or is uncertain/hypothetical"}},"required":["patient_finding_type","patient_finding_name_desc","patient_finding_desc","patient_finding_status"],"title":"PatientFinding","type":"object"},"PatientFindingStatus":{"enum":["is_present","is_not_present","uncertain"],"title":"PatientFindingStatus","type":"string"},"PatientFindingType":{"enum":["comorbidity_finding","social_or_family_finding","symptom_finding","physical_examination_finding","functional_finding","mental_state_finding"],"title":"PatientFindingType","type":"string"},"PerformanceStatus":{"properties":{"ps_scale":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null,"description":"Scale used for performance status if given, e.g. ECOG, Karnofsky","title":"Ps Scale"},"ps_score_value":{"description":"Score value (e.g. '0', '1', '70', '100')","title":"Ps Score Value","type":"string"},"ps_desc":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null,"description":"Direct extract of descriptive text for performance status","title":"Ps Desc"}},"required":["ps_score_value"],"title":"PerformanceStatus","type":"object"},"PrimaryCancer":{"properties":{"primary_cancer_facts":{"$ref":"#/$defs/PrimaryCancerFacts","description":"Main facts about primary cancer"},"primary_cancer_tumour_facts":{"anyOf":[{"$ref":"#/$defs/PrimaryCancerTumourFacts"},{"type":"null"}],"default":null,"description":"Molecular and genomic characteristics of the tumour"},"primary_cancer_scores":{"anyOf":[{"items":{"$ref":"#/$defs/PrimaryCancerScore"},"type":"array"},{"type":"null"}],"default":null,"description":"Specialist cancer staging or grading scores","title":"Primary Cancer Scores"},"primary_cancer_spread":{"anyOf":[{"items":{"$ref":"#/$defs/PrimaryCancerSpread"},"type":"array"},{"type":"null"}],"default":null,"description":"Locations of cancer spread - confirmed sites only","title":"Primary Cancer Spread"},"primary_cancer_timeline_events":{"anyOf":[{"items":{"$ref":"#/$defs/PrimaryCancerTimelineEvent"},"type":"array"},{"type":"null"}],"default":null,"description":"Timeline of historical events","title":"Primary Cancer Timeline Events"}},"required":["primary_cancer_facts"],"title":"PrimaryCancer","type":"object"},"PrimaryCancerFacts":{"properties":{"topography":{"$ref":"#/$defs/TopographyType","description":"Most suitable anatomical site of primary cancer. Use OTHER where there is ambiguity, or no suitable found in enum."},"topography_name_desc":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null,"description":"Name of anatomical site as described in clinical text","title":"Topography Name Desc"},"morphology":{"anyOf":[{"$ref":"#/$defs/MorphologyType"},{"type":"null"}],"default":null,"description":"Most suitable histological classification of primary cancer. Use OTHER where there is ambiguity, or no suitable found in enum."},"morphology_name_desc":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null,"description":"Name of histological classification as described in clinical text","title":"Morphology Name Desc"},"is_recurrence":{"description":"TRUE if the primary cancer is explicitly described as a recurrence or relapse of a previous cancer","title":"Is Recurrence","type":"boolean"},"diagnosis_year":{"anyOf":[{"maximum":2100,"minimum":1900,"type":"integer"},{"type":"null"}],"default":null,"description":"Year of initial diagnosis","title":"Diagnosis Year"},"diagnosis_month":{"anyOf":[{"maximum":12,"minimum":1,"type":"integer"},{"type":"null"}],"default":null,"description":"Month of initial diagnosis","title":"Diagnosis Month"},"tnm_stage":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null,"description":"Confirmed, latest, TNM staging for main cancer (e.g. T2N1bM0)","title":"Tnm Stage"},"numeric_group_stage":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null,"description":"Confirmed group staging for main cancer using Roman numerals (e.g. I, IIa, IV etc)","title":"Numeric Group Stage"}},"required":["topography","is_recurrence"],"title":"PrimaryCancerFacts","type":"object"},"PrimaryCancerScore":{"properties":{"score":{"$ref":"#/$defs/CancerScoreName","description":"Name of a single specialist staging or grading measurement. Use OTHER where ambiguity or score not in enum."},"score_name_desc":{"description":"Name of a staging or grading measurement as described in clinical text","title":"Score Name Desc","type":"string"},"score_value":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null,"description":"Value if score is quantified","title":"Score Value"},"score_value_desc":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null,"description":"Direct extract of score value as described in clinical text","title":"Score Value Desc"}},"required":["score","score_name_desc"],"title":"PrimaryCancerScore","type":"object"},"PrimaryCancerSpread":{"properties":{"spread_type":{"$ref":"#/$defs/SpreadType","description":"Most suitable type of spread. Use OTHER where ambiguity or no suitable found."},"spread_site_desc":{"description":"Name of specific metastastic site or node as described in clinical text","title":"Spread Site Desc","type":"string"}},"required":["spread_type","spread_site_desc"],"title":"PrimaryCancerSpread","type":"object"},"PrimaryCancerTimelineEvent":{"properties":{"event_type":{"$ref":"#/$defs/TimelineEventType","description":"Select type of event"},"event_year":{"anyOf":[{"maximum":2100,"minimum":1900,"type":"integer"},{"type":"null"}],"default":null,"description":"Year of event","title":"Event Year"},"event_month":{"anyOf":[{"maximum":12,"minimum":1,"type":"integer"},{"type":"null"}],"default":null,"description":"Month of event","title":"Event Month"},"event_summary":{"description":"Short summary for specific event with essential facts","title":"Event Summary","type":"string"},"event_desc":{"description":"Direct extract of descriptive text for event","title":"Event Desc","type":"string"}},"required":["event_type","event_summary","event_desc"],"title":"PrimaryCancerTimelineEvent","type":"object"},"PrimaryCancerTumourFacts":{"properties":{"msi_status":{"anyOf":[{"$ref":"#/$defs/MSIStatus"},{"type":"null"}],"default":null,"description":"Microsatellite instability status"},"msi_desc":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null,"description":"Direct extract of descriptive text for MSI","title":"Msi Desc"},"tmb_status":{"anyOf":[{"$ref":"#/$defs/TMBStatus"},{"type":"null"}],"default":null,"description":"Tumour mutation burden status"},"tmb_numeric_value":{"anyOf":[{"type":"number"},{"type":"null"}],"default":null,"description":"TMB numeric value in mutations/Mb if provided","title":"Tmb Numeric Value"},"tmb_desc":{"anyOf":[{"type":"string"},{"type":"null"}],"default":null,"description":"Direct extract of descriptive text for TMB","title":"Tmb Desc"},"molecular_biomarker_profiles":{"anyOf":[{"items":{"$ref":"#/$defs/MolecularBiomarkerProfile"},"type":"array"},{"type":"null"}],"default":null,"description":"Genomic alterations and protein expression findings","title":"Molecular Biomarker Profiles"}},"title":"PrimaryCancerTumourFacts","type":"object"},"SpreadType":{"enum":["other","lymph_node","liver","lung","spine","other_bone","brain","other_cns","adrenal","kidney","pleura","peritoneum","skin","pancreas","spleen","ovary","testis","thyroid","stomach","bowel","bladder","prostate","breast","head_and_neck"],"title":"SpreadType","type":"string"},"TMBStatus":{"enum":["tmb_high","tmb_low","tmb_intermediate","none"],"title":"TMBStatus","type":"string"},"TimelineEventType":{"enum":["had_systemic_or_radiotherapy_treatment","had_surgical_treatment_performed","experienced_toxicity_or_complication_related_to_treatment","experienced_treatment_reduction_or_stop","considered_for_clinical_trial","enrolled_to_clinical_trial","positive_treatment_response_on_assessment","evidence_of_metastatic_progression","radiology_evidence_of_disease_progression","experienced_disease_remission","experienced_disease_recurrence","patient_died"],"title":"TimelineEventType","type":"string"},"TopographyType":{"enum":["unknown_primary","other","haematological","lung","pleura","other_respiratory","oesophagus","stomach","small_intestine","colon","rectum","pancreas","liver","gallbladder","bile_duct","other_gi","kidney","bladder","prostate","testis","other_gu","breast","cervix","uterus","ovary","other_gynae","brain","spinal_cord","other_cns","oral","hypo_oro_naso_pharynx","larynx","salivary_gland","nasal_cavity","paranasal_sinus","thyroid","adrenal_gland","other_endocrine","skin","soft_tissue","bone"],"title":"TopographyType","type":"string"}},"properties":{"document_has_primary_cancer_flag":{"description":"TRUE if the document concerns a patient and a cancer diagnosis","title":"Document Has Primary Cancer Flag","type":"boolean"},"primary_cancer_confirmed_flag":{"description":"TRUE = there is confirmed primary cancer diagnosis, FALSE = hypothetical/under investigation or not cancer","title":"Primary Cancer Confirmed Flag","type":"boolean"},"primary_cancer":{"anyOf":[{"$ref":"#/$defs/PrimaryCancer"},{"type":"null"}],"default":null},"performance_status":{"anyOf":[{"$ref":"#/$defs/PerformanceStatus"},{"type":"null"}],"default":null,"description":"Most recent performance status"},"other_cancers":{"anyOf":[{"items":{"$ref":"#/$defs/OtherCancerFacts"},"type":"array"},{"type":"null"}],"default":null,"title":"Other Cancers"},"patient_findings":{"anyOf":[{"items":{"$ref":"#/$defs/PatientFinding"},"type":"array"},{"type":"null"}],"default":null,"title":"Patient Findings"},"future_plans":{"anyOf":[{"items":{"$ref":"#/$defs/FuturePlan"},"type":"array"},{"type":"null"}],"default":null,"title":"Future Plans"},"context_summary":{"anyOf":[{"$ref":"#/$defs/ContextSummary"},{"type":"null"}],"default":null}},"required":["document_has_primary_cancer_flag","primary_cancer_confirmed_flag"],"title":"OncoLlamaModel","type":"object"},"_mesa_metadata":{"classes":{"BiomarkerStatus":{"type":"Enum","values":["altered","negative","equivocal","hypothetical"]},"CancerScoreName":{"type":"Enum","values":["pathological_grade","gleason","figo","dukes","breslow","clark","binet","child_pugh","other"]},"ContextSummary":{"type":"BaseModel","fields":{"doc_context":{"type":"str","is_list":false,"is_enum":false,"is_basemodel":false},"doc_summary":{"type":"str","is_list":false,"is_enum":false,"is_basemodel":false}}},"FuturePlan":{"type":"BaseModel","fields":{"future_plan_type":{"type":"FuturePlanType","is_list":false,"is_enum":true,"is_basemodel":false},"future_plan_summary":{"type":"str","is_list":false,"is_enum":false,"is_basemodel":false},"future_plan_desc":{"type":"str","is_list":false,"is_enum":false,"is_basemodel":false}}},"FuturePlanType":{"type":"Enum","values":["planned_systemic_or_radiotherapy_treatment","planned_surgery_treatment","planned_investigation","planned_clinical_trial_involvement"]},"MSIStatus":{"type":"Enum","values":["msi_high","mss","none"]},"MolecularBiomarkerProfile":{"type":"BaseModel","fields":{"biomarker":{"type":"MolecularBiomarkerType","is_list":false,"is_enum":true,"is_basemodel":false},"biomarker_name_desc":{"type":"str","is_list":false,"is_enum":false,"is_basemodel":false},"biomarker_status":{"type":"BiomarkerStatus","is_list":false,"is_enum":true,"is_basemodel":false},"biomarker_alteration":{"type":"str","is_list":false,"is_enum":false,"is_basemodel":false},"biomarker_expression_level":{"type":"str","is_list":false,"is_enum":false,"is_basemodel":false},"biomarker_vaf_numeric_value":{"type":"float","is_list":false,"is_enum":false,"is_basemodel":false},"biomarker_vaf_desc":{"type":"str","is_list":false,"is_enum":false,"is_basemodel":false},"biomarker_desc":{"type":"str","is_list":false,"is_enum":false,"is_basemodel":false}}},"MolecularBiomarkerType":{"type":"Enum","values":["other","braf","ntrk1","ntrk2","ntrk3","ret","erbb2_her2","tp53","brca1","brca2","mlh1","msh2","msh6","pms2","palb2","rad51","egfr","alk","ros1","met","kras","nras","pik3ca","esr1_er","pgr_pr","ki_67","kit","pdgfra","fgfr1","fgfr2","fgfr3","idh1","idh2","pdl1","nf1","nf2","mgmt","npm1","flt3","bcr_abl1","jak2","bcl2","myc"]},"MorphologyType":{"type":"Enum","values":["unknown_morphology","other","adenocarcinoma","squamous_cell_carcinoma","urothelial_carcinoma","renal_cell_carcinoma","hepatocellular_carcinoma","small_cell_carcinoma","non_small_cell_carcinoma","carcinoma_other","mesothelioma","melanoma","neuroendocrine","carcinoid","sarcoma_nos","gastrointestinal_stromal_tumour","osteosarcoma","chondrosarcoma","ewing_sarcoma","rhabdomyosarcoma","kaposi_sarcoma","soft_tissue_sarcoma","acute_lymphoblastic_leukaemia","acute_myeloid_leukaemia","chronic_lymphocytic_leukaemia","chronic_myeloid_leukaemia","hodgkin_lymphoma","non_hodgkin_lymphoma","multiple_myeloma","leukaemia_other","myelodysplastic","glioblastoma","astrocytoma","oligodendroglioma","meningioma","seminoma","teratoma","choriocarcinoma","wilms_tumour","retinoblastoma","hepatoblastoma"]},"OncoLlamaModel":{"type":"BaseModel","fields":{"document_has_primary_cancer_flag":{"type":"bool","is_list":false,"is_enum":false,"is_basemodel":false},"primary_cancer_confirmed_flag":{"type":"bool","is_list":false,"is_enum":false,"is_basemodel":false},"primary_cancer":{"type":"PrimaryCancer","is_list":false,"is_enum":false,"is_basemodel":true},"performance_status":{"type":"PerformanceStatus","is_list":false,"is_enum":false,"is_basemodel":true},"other_cancers":{"type":"List","is_list":true,"is_enum":false,"is_basemodel":false},"patient_findings":{"type":"List","is_list":true,"is_enum":false,"is_basemodel":false},"future_plans":{"type":"List","is_list":true,"is_enum":false,"is_basemodel":false},"context_summary":{"type":"ContextSummary","is_list":false,"is_enum":false,"is_basemodel":true}}},"OtherCancerFacts":{"type":"BaseModel","fields":{"other_topography":{"type":"TopographyType","is_list":false,"is_enum":true,"is_basemodel":false},"other_topography_name_desc":{"type":"str","is_list":false,"is_enum":false,"is_basemodel":false},"other_morphology":{"type":"MorphologyType","is_list":false,"is_enum":true,"is_basemodel":false},"other_morphology_name_desc":{"type":"str","is_list":false,"is_enum":false,"is_basemodel":false},"other_diagnosis_year":{"type":"Annotated","is_list":false,"is_enum":false,"is_basemodel":false},"other_diagnosis_month":{"type":"Annotated","is_list":false,"is_enum":false,"is_basemodel":false},"other_latest_situation_summary":{"type":"str","is_list":false,"is_enum":false,"is_basemodel":false}}},"PatientFinding":{"type":"BaseModel","fields":{"patient_finding_type":{"type":"PatientFindingType","is_list":false,"is_enum":true,"is_basemodel":false},"patient_finding_name_desc":{"type":"str","is_list":false,"is_enum":false,"is_basemodel":false},"patient_finding_desc":{"type":"str","is_list":false,"is_enum":false,"is_basemodel":false},"patient_finding_status":{"type":"PatientFindingStatus","is_list":false,"is_enum":true,"is_basemodel":false}}},"PatientFindingStatus":{"type":"Enum","values":["is_present","is_not_present","uncertain"]},"PatientFindingType":{"type":"Enum","values":["comorbidity_finding","social_or_family_finding","symptom_finding","physical_examination_finding","functional_finding","mental_state_finding"]},"PerformanceStatus":{"type":"BaseModel","fields":{"ps_scale":{"type":"str","is_list":false,"is_enum":false,"is_basemodel":false},"ps_score_value":{"type":"str","is_list":false,"is_enum":false,"is_basemodel":false},"ps_desc":{"type":"str","is_list":false,"is_enum":false,"is_basemodel":false}}},"PrimaryCancer":{"type":"BaseModel","fields":{"primary_cancer_facts":{"type":"PrimaryCancerFacts","is_list":false,"is_enum":false,"is_basemodel":true},"primary_cancer_tumour_facts":{"type":"PrimaryCancerTumourFacts","is_list":false,"is_enum":false,"is_basemodel":true},"primary_cancer_scores":{"type":"List","is_list":true,"is_enum":false,"is_basemodel":false},"primary_cancer_spread":{"type":"List","is_list":true,"is_enum":false,"is_basemodel":false},"primary_cancer_timeline_events":{"type":"List","is_list":true,"is_enum":false,"is_basemodel":false}}},"PrimaryCancerFacts":{"type":"BaseModel","fields":{"topography":{"type":"TopographyType","is_list":false,"is_enum":true,"is_basemodel":false},"topography_name_desc":{"type":"str","is_list":false,"is_enum":false,"is_basemodel":false},"morphology":{"type":"MorphologyType","is_list":false,"is_enum":true,"is_basemodel":false},"morphology_name_desc":{"type":"str","is_list":false,"is_enum":false,"is_basemodel":false},"is_recurrence":{"type":"bool","is_list":false,"is_enum":false,"is_basemodel":false},"diagnosis_year":{"type":"Annotated","is_list":false,"is_enum":false,"is_basemodel":false},"diagnosis_month":{"type":"Annotated","is_list":false,"is_enum":false,"is_basemodel":false},"tnm_stage":{"type":"str","is_list":false,"is_enum":false,"is_basemodel":false},"numeric_group_stage":{"type":"str","is_list":false,"is_enum":false,"is_basemodel":false}}},"PrimaryCancerScore":{"type":"BaseModel","fields":{"score":{"type":"CancerScoreName","is_list":false,"is_enum":true,"is_basemodel":false},"score_name_desc":{"type":"str","is_list":false,"is_enum":false,"is_basemodel":false},"score_value":{"type":"str","is_list":false,"is_enum":false,"is_basemodel":false},"score_value_desc":{"type":"str","is_list":false,"is_enum":false,"is_basemodel":false}}},"PrimaryCancerSpread":{"type":"BaseModel","fields":{"spread_type":{"type":"SpreadType","is_list":false,"is_enum":true,"is_basemodel":false},"spread_site_desc":{"type":"str","is_list":false,"is_enum":false,"is_basemodel":false}}},"PrimaryCancerTimelineEvent":{"type":"BaseModel","fields":{"event_type":{"type":"TimelineEventType","is_list":false,"is_enum":true,"is_basemodel":false},"event_year":{"type":"Annotated","is_list":false,"is_enum":false,"is_basemodel":false},"event_month":{"type":"Annotated","is_list":false,"is_enum":false,"is_basemodel":false},"event_summary":{"type":"str","is_list":false,"is_enum":false,"is_basemodel":false},"event_desc":{"type":"str","is_list":false,"is_enum":false,"is_basemodel":false}}},"PrimaryCancerTumourFacts":{"type":"BaseModel","fields":{"msi_status":{"type":"MSIStatus","is_list":false,"is_enum":true,"is_basemodel":false},"msi_desc":{"type":"str","is_list":false,"is_enum":false,"is_basemodel":false},"tmb_status":{"type":"TMBStatus","is_list":false,"is_enum":true,"is_basemodel":false},"tmb_numeric_value":{"type":"float","is_list":false,"is_enum":false,"is_basemodel":false},"tmb_desc":{"type":"str","is_list":false,"is_enum":false,"is_basemodel":false},"molecular_biomarker_profiles":{"type":"List","is_list":true,"is_enum":false,"is_basemodel":false}}},"SpreadType":{"type":"Enum","values":["other","lymph_node","liver","lung","spine","other_bone","brain","other_cns","adrenal","kidney","pleura","peritoneum","skin","pancreas","spleen","ovary","testis","thyroid","stomach","bowel","bladder","prostate","breast","head_and_neck"]},"TMBStatus":{"type":"Enum","values":["tmb_high","tmb_low","tmb_intermediate","none"]},"TimelineEventType":{"type":"Enum","values":["had_systemic_or_radiotherapy_treatment","had_surgical_treatment_performed","experienced_toxicity_or_complication_related_to_treatment","experienced_treatment_reduction_or_stop","considered_for_clinical_trial","enrolled_to_clinical_trial","positive_treatment_response_on_assessment","evidence_of_metastatic_progression","radiology_evidence_of_disease_progression","experienced_disease_remission","experienced_disease_recurrence","patient_died"]},"TopographyType":{"type":"Enum","values":["unknown_primary","other","haematological","lung","pleura","other_respiratory","oesophagus","stomach","small_intestine","colon","rectum","pancreas","liver","gallbladder","bile_duct","other_gi","kidney","bladder","prostate","testis","other_gu","breast","cervix","uterus","ovary","other_gynae","brain","spinal_cord","other_cns","oral","hypo_oro_naso_pharynx","larynx","salivary_gland","nasal_cavity","paranasal_sinus","thyroid","adrenal_gland","other_endocrine","skin","soft_tissue","bone"]}},"list_item_classes":["FuturePlan","MolecularBiomarkerProfile","OtherCancerFacts","PatientFinding","PrimaryCancerScore","PrimaryCancerSpread","PrimaryCancerTimelineEvent"],"class_paths":{"BiomarkerStatus":["primary_cancer","primary_cancer_tumour_facts","molecular_biomarker_profiles","biomarker_status"],"CancerScoreName":["primary_cancer","primary_cancer_scores","score"],"ContextSummary":["context_summary"],"FuturePlan":["future_plans"],"FuturePlanType":["future_plans","future_plan_type"],"MSIStatus":["primary_cancer","primary_cancer_tumour_facts","msi_status"],"MolecularBiomarkerProfile":["primary_cancer","primary_cancer_tumour_facts","molecular_biomarker_profiles"],"MolecularBiomarkerType":["primary_cancer","primary_cancer_tumour_facts","molecular_biomarker_profiles","biomarker"],"MorphologyType":["primary_cancer","primary_cancer_facts","morphology"],"OtherCancerFacts":["other_cancers"],"PatientFinding":["patient_findings"],"PatientFindingStatus":["patient_findings","patient_finding_status"],"PatientFindingType":["patient_findings","patient_finding_type"],"PerformanceStatus":["performance_status"],"PrimaryCancer":["primary_cancer"],"PrimaryCancerFacts":["primary_cancer","primary_cancer_facts"],"PrimaryCancerScore":["primary_cancer","primary_cancer_scores"],"PrimaryCancerSpread":["primary_cancer","primary_cancer_spread"],"PrimaryCancerTimelineEvent":["primary_cancer","primary_cancer_timeline_events"],"PrimaryCancerTumourFacts":["primary_cancer","primary_cancer_tumour_facts"],"SpreadType":["primary_cancer","primary_cancer_spread","spread_type"],"TMBStatus":["primary_cancer","primary_cancer_tumour_facts","tmb_status"],"TimelineEventType":["primary_cancer","primary_cancer_timeline_events","event_type"],"TopographyType":["primary_cancer","primary_cancer_facts","topography"]},"enum_containers":{"BiomarkerStatus":[["MolecularBiomarkerProfile","biomarker_status"]],"CancerScoreName":[["PrimaryCancerScore","score"]],"FuturePlanType":[["FuturePlan","future_plan_type"]],"MSIStatus":[["PrimaryCancerTumourFacts","msi_status"]],"MolecularBiomarkerType":[["MolecularBiomarkerProfile","biomarker"]],"MorphologyType":[["OtherCancerFacts","other_morphology"],["PrimaryCancerFacts","morphology"]],"PatientFindingStatus":[["PatientFinding","patient_finding_status"]],"PatientFindingType":[["PatientFinding","patient_finding_type"]],"SpreadType":[["PrimaryCancerSpread","spread_type"]],"TMBStatus":[["PrimaryCancerTumourFacts","tmb_status"]],"TimelineEventType":[["PrimaryCancerTimelineEvent","event_type"]],"TopographyType":[["OtherCancerFacts","other_topography"],["PrimaryCancerFacts","topography"]]},"enums_in_list_context":["BiomarkerStatus","CancerScoreName","FuturePlanType","MolecularBiomarkerType","PatientFindingStatus","PatientFindingType","SpreadType","TimelineEventType"]}};
+
+// ===== GLOBAL NAMESPACE =====
+window.MESA = {};
+
+(function() {
+'use strict';
+
+var M = window.MESA;
+var DB_NAME = 'mesa_validate_web';
+var DB_VERSION = 1;
+var db = null;
+
+// Current app state
+M.activeSession = null;
+M.activeProgress = null;
+M.currentSchema = null;
+M.wizardStep = 1;
+M.wizardData = { schema: null, selections: [], files: [], sampleSize: 10, sessionName: '' };
+
+// ===== UTILITY =====
+function generateId() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
+
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  var s = String(str);
+  var div = document.createElement('div');
+  div.textContent = s;
+  return div.innerHTML;
+}
+
+function extractFieldValue(data, fieldPath) {
+  if (!data || !fieldPath) return null;
+  var parts = fieldPath.split('.');
+  var current = data;
+  for (var i = 0; i < parts.length; i++) {
+    if (current && typeof current === 'object' && parts[i] in current) {
+      current = current[parts[i]];
+    } else {
+      return null;
+    }
+  }
+  return current;
+}
+
+function isValuePresent(value) {
+  if (value === null || value === undefined) return false;
+  if (typeof value === 'string' && value.trim() === '') return false;
+  if (Array.isArray(value) && value.length === 0) return false;
+  if (typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === 0) return false;
+  return true;
+}
+
+// ===== INDEXEDDB =====
+function openDB() {
+  return new Promise(function(resolve, reject) {
+    if (db) { resolve(db); return; }
+    var request = indexedDB.open(DB_NAME, DB_VERSION);
+    request.onupgradeneeded = function(e) {
+      var d = e.target.result;
+      if (!d.objectStoreNames.contains('sessions')) d.createObjectStore('sessions', { keyPath: 'id' });
+      if (!d.objectStoreNames.contains('progress')) d.createObjectStore('progress', { keyPath: 'sessionId' });
+    };
+    request.onsuccess = function(e) { db = e.target.result; resolve(db); };
+    request.onerror = function(e) { reject(e.target.error); };
+  });
+}
+
+function dbPut(storeName, data) {
+  return openDB().then(function(d) {
+    return new Promise(function(resolve, reject) {
+      var tx = d.transaction(storeName, 'readwrite');
+      tx.objectStore(storeName).put(data);
+      tx.oncomplete = function() { resolve(); };
+      tx.onerror = function(e) { reject(e.target.error); };
+    });
+  });
+}
+
+function dbGet(storeName, key) {
+  return openDB().then(function(d) {
+    return new Promise(function(resolve, reject) {
+      var tx = d.transaction(storeName, 'readonly');
+      var req = tx.objectStore(storeName).get(key);
+      req.onsuccess = function() { resolve(req.result || null); };
+      req.onerror = function(e) { reject(e.target.error); };
+    });
+  });
+}
+
+function dbGetAll(storeName) {
+  return openDB().then(function(d) {
+    return new Promise(function(resolve, reject) {
+      var tx = d.transaction(storeName, 'readonly');
+      var req = tx.objectStore(storeName).getAll();
+      req.onsuccess = function() { resolve(req.result || []); };
+      req.onerror = function(e) { reject(e.target.error); };
+    });
+  });
+}
+
+function dbDelete(storeName, key) {
+  return openDB().then(function(d) {
+    return new Promise(function(resolve, reject) {
+      var tx = d.transaction(storeName, 'readwrite');
+      tx.objectStore(storeName).delete(key);
+      tx.oncomplete = function() { resolve(); };
+      tx.onerror = function(e) { reject(e.target.error); };
+    });
+  });
+}
+
+// ===== SCHEMA INSPECTOR (uses _mesa_metadata) =====
+function getMetadata(schema) {
+  return schema._mesa_metadata || {};
+}
+
+function getClasses(schema) {
+  return getMetadata(schema).classes || {};
+}
+
+function getClassPath(schema, className) {
+  var paths = getMetadata(schema).class_paths || {};
+  return paths[className] || null;
+}
+
+function getListItemClasses(schema) {
+  return getMetadata(schema).list_item_classes || [];
+}
+
+function isListItemClass(schema, className) {
+  return getListItemClasses(schema).indexOf(className) !== -1;
+}
+
+function getEnumContainers(schema, enumClassName) {
+  var containers = getMetadata(schema).enum_containers || {};
+  return containers[enumClassName] || [];
+}
+
+function getEnumsInListContext(schema) {
+  return getMetadata(schema).enums_in_list_context || [];
+}
+
+function isEnumInListContext(schema, enumName) {
+  return getEnumsInListContext(schema).indexOf(enumName) !== -1;
+}
+
+// ===== FIELD SELECTION =====
+function buildSelectionKey(sel) {
+  var key = sel.selectionType + '_' + sel.className;
+  if (sel.fieldName) key += '_' + sel.fieldName;
+  if (sel.enumValue) key += '_' + sel.enumValue;
+  return key;
+}
+
+function selectionLabel(sel) {
+  if (sel.selectionType === 'basemodel_class') return sel.className;
+  if (sel.selectionType === 'basemodel_field') return sel.className + '.' + sel.fieldName;
+  if (sel.selectionType === 'enum_value') return sel.className + '.' + sel.enumValue;
+  return sel.className;
+}
+
+// ===== TAB SWITCHING =====
+M.switchTab = function(tabId) {
+  var contents = document.querySelectorAll('.tab-content');
+  var btns = document.querySelectorAll('.tab-btn');
+  for (var i = 0; i < contents.length; i++) contents[i].classList.remove('active');
+  for (var i = 0; i < btns.length; i++) btns[i].classList.remove('active');
+  document.getElementById('tab-' + tabId).classList.add('active');
+  btns[['home','sessions','validate','analysis'].indexOf(tabId)].classList.add('active');
+  if (tabId === 'sessions') M.renderSessions();
+  if (tabId === 'validate') M.renderValidate();
+  if (tabId === 'analysis') M.renderAnalysisSelector();
+};
+
+// ===== SESSIONS TAB =====
+M.renderSessions = function() {
+  dbGetAll('sessions').then(function(sessions) {
+    var list = document.getElementById('session-list');
+    if (!sessions.length) {
+      list.innerHTML = '<div class="alert alert-info">No sessions found. Create a new session below.</div>';
+    } else {
+      var html = '';
+      var promises = sessions.map(function(s) { return dbGet('progress', s.id); });
+      Promise.all(promises).then(function(progresses) {
+        for (var i = 0; i < sessions.length; i++) {
+          var s = sessions[i];
+          var p = progresses[i];
+          var total = p ? (p.files || []).length : s.sampleSize;
+          var completed = p ? (p.completedFiles || []).length : 0;
+          var pct = total > 0 ? Math.round(completed / total * 100) : 0;
+          var isActive = M.activeSession && M.activeSession.id === s.id;
+          html += '<div class="session-row">';
+          html += '<div class="name">' + escapeHtml(s.name) + '<br><small style="color:var(--text-secondary)">Schema: ' + escapeHtml(s.schemaName) + '</small></div>';
+          html += '<div class="info">Files: ' + total + '</div>';
+          html += '<div class="info">Progress: ' + completed + '/' + total + ' (' + pct + '%)</div>';
+          html += '<div class="actions">';
+          if (isActive) {
+            html += '<span class="badge badge-success">Active</span>';
+          } else {
+            html += '<button class="btn btn-primary" onclick="MESA.loadSession(\'' + s.id + '\')">Load</button>';
+          }
+          html += ' <button class="btn" onclick="MESA.exportSession(\'' + s.id + '\')">Export</button>';
+          html += ' <button class="btn btn-danger" onclick="MESA.deleteSession(\'' + s.id + '\')">Delete</button>';
+          html += '</div></div>';
+        }
+        list.innerHTML = html;
+      });
+    }
+    M.renderWizard();
+  });
+};
+
+M.loadSession = function(sessionId) {
+  Promise.all([dbGet('sessions', sessionId), dbGet('progress', sessionId)]).then(function(results) {
+    M.activeSession = results[0];
+    M.activeProgress = results[1];
+    // Also load the schema for this session
+    if (M.activeSession.schemaData) {
+      M.currentSchema = M.activeSession.schemaData;
+    } else {
+      M.currentSchema = DEFAULT_SCHEMA;
+    }
+    M.renderSessions();
+    M.switchTab('validate');
+  });
+};
+
+M.deleteSession = function(sessionId) {
+  if (!confirm('Are you sure you want to delete this session? This will permanently remove all data and progress.')) return;
+  Promise.all([dbDelete('sessions', sessionId), dbDelete('progress', sessionId)]).then(function() {
+    if (M.activeSession && M.activeSession.id === sessionId) {
+      M.activeSession = null;
+      M.activeProgress = null;
+    }
+    M.renderSessions();
+  });
+};
+
+M.exportSession = function(sessionId) {
+  Promise.all([dbGet('sessions', sessionId), dbGet('progress', sessionId)]).then(function(results) {
+    var exportData = { session: results[0], progress: results[1] };
+    var blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = (results[0] ? results[0].name : 'session') + '_export.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+};
+
+M.importSession = function() {
+  document.getElementById('import-session-file').click();
+};
+
+M.handleSessionImport = function(event) {
+  var file = event.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var data = JSON.parse(e.target.result);
+      if (!data.session || !data.session.id) { alert('Invalid session export file.'); return; }
+      var session = data.session;
+      var progress = data.progress;
+      dbPut('sessions', session).then(function() {
+        if (progress) return dbPut('progress', progress);
+      }).then(function() {
+        alert('Session "' + session.name + '" imported successfully.');
+        M.renderSessions();
+      });
+    } catch (err) {
+      alert('Error importing session: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+};
+
+// ===== WIZARD =====
+M.renderWizard = function() {
+  var stepsEl = document.getElementById('wizard-steps');
+  var bodyEl = document.getElementById('wizard-body');
+  var stepLabels = ['Schema', 'Fields', 'Predictions', 'Review & Create'];
+  var html = '';
+  for (var i = 0; i < stepLabels.length; i++) {
+    var cls = 'wizard-step';
+    if (i + 1 === M.wizardStep) cls += ' active';
+    else if (i + 1 < M.wizardStep) cls += ' done';
+    html += '<div class="' + cls + '">' + (i + 1) + '. ' + stepLabels[i] + '</div>';
+  }
+  stepsEl.innerHTML = html;
+
+  if (M.wizardStep === 1) renderWizardStep1(bodyEl);
+  else if (M.wizardStep === 2) renderWizardStep2(bodyEl);
+  else if (M.wizardStep === 3) renderWizardStep3(bodyEl);
+  else if (M.wizardStep === 4) renderWizardStep4(bodyEl);
+};
+
+function renderWizardStep1(el) {
+  var html = '<h3>Step 1: Schema Selection</h3>';
+  html += '<div class="form-group mt-8">';
+  html += '<label><input type="radio" name="schema-choice" value="default" checked style="width:auto;margin-right:6px;"> Use default schema (' + escapeHtml(DEFAULT_SCHEMA.schema_name) + ')</label>';
+  html += '<label style="margin-top:8px;"><input type="radio" name="schema-choice" value="custom" style="width:auto;margin-right:6px;"> Load custom schema JSON</label>';
+  html += '</div>';
+  html += '<div id="custom-schema-upload" class="hidden form-group">';
+  html += '<input type="file" id="schema-file-input" accept=".json">';
+  html += '</div>';
+  html += '<div class="mt-16"><button class="btn btn-primary" onclick="MESA.wizardNext1()">Next</button></div>';
+  el.innerHTML = html;
+
+  // Toggle custom upload visibility
+  setTimeout(function() {
+    var radios = document.querySelectorAll('input[name="schema-choice"]');
+    for (var i = 0; i < radios.length; i++) {
+      radios[i].addEventListener('change', function() {
+        document.getElementById('custom-schema-upload').classList.toggle('hidden', this.value !== 'custom');
+      });
+    }
+  }, 0);
+}
+
+M.wizardNext1 = function() {
+  var choice = document.querySelector('input[name="schema-choice"]:checked').value;
+  if (choice === 'default') {
+    M.wizardData.schema = DEFAULT_SCHEMA;
+    M.wizardStep = 2;
+    M.renderWizard();
+  } else {
+    var fileInput = document.getElementById('schema-file-input');
+    if (!fileInput.files.length) { alert('Please select a schema JSON file.'); return; }
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        var schema = JSON.parse(e.target.result);
+        if (!schema._mesa_metadata) { alert('Schema missing _mesa_metadata section. Please use a MESA-compatible schema.'); return; }
+        M.wizardData.schema = schema;
+        M.wizardStep = 2;
+        M.renderWizard();
+      } catch (err) {
+        alert('Error parsing schema: ' + err.message);
+      }
+    };
+    reader.readAsText(fileInput.files[0]);
+  }
+};
+
+function renderWizardStep2(el) {
+  var schema = M.wizardData.schema;
+  var classes = getClasses(schema);
+  var html = '<h3>Step 2: Field Selection</h3>';
+  html += '<p style="color:var(--text-secondary);margin-bottom:12px;">Select classes, fields, or enum values to validate.</p>';
+
+  // BaseModel classes
+  var baseModels = [];
+  var enums = [];
+  for (var name in classes) {
+    if (classes[name].type === 'BaseModel') baseModels.push(name);
+    else if (classes[name].type === 'Enum') enums.push(name);
+  }
+
+  html += '<h3 class="mb-8">BaseModel Classes</h3>';
+  for (var bi = 0; bi < baseModels.length; bi++) {
+    var cn = baseModels[bi];
+    var ci = classes[cn];
+    html += '<details><summary>' + escapeHtml(cn) + '</summary><div class="details-content">';
+    html += '<label style="margin-bottom:8px;display:flex;align-items:center;gap:6px;"><input type="checkbox" class="sel-whole-class" data-class="' + cn + '" style="width:auto;"> Select entire ' + escapeHtml(cn) + ' class</label>';
+    html += '<div style="margin-left:16px;">';
+    var fields = ci.fields || {};
+    for (var fn in fields) {
+      var fi = fields[fn];
+      html += '<label style="display:flex;align-items:center;gap:6px;"><input type="checkbox" class="sel-field" data-class="' + cn + '" data-field="' + fn + '" style="width:auto;"> ' + escapeHtml(fn) + ' <small style="color:var(--text-secondary)">(' + escapeHtml(fi.type) + ')</small></label>';
+    }
+    html += '</div></div></details>';
+  }
+
+  // Enum classes (only in list context)
+  var listEnums = enums.filter(function(en) { return isEnumInListContext(schema, en); });
+  if (listEnums.length) {
+    html += '<h3 class="mt-16 mb-8">Enum Values (list context only)</h3>';
+    for (var ei = 0; ei < listEnums.length; ei++) {
+      var en = listEnums[ei];
+      var eci = classes[en];
+      html += '<details><summary>' + escapeHtml(en) + '</summary><div class="details-content">';
+      html += '<p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:6px;">Select specific enum values to filter and validate:</p>';
+      var vals = eci.values || [];
+      for (var vi = 0; vi < vals.length; vi++) {
+        html += '<label style="display:flex;align-items:center;gap:6px;"><input type="checkbox" class="sel-enum" data-class="' + en + '" data-value="' + escapeHtml(vals[vi]) + '" style="width:auto;"> ' + escapeHtml(vals[vi]) + '</label>';
+      }
+      html += '</div></details>';
+    }
+  }
+
+  html += '<div id="selection-count" class="mt-8 alert alert-info">0 selection(s) made</div>';
+  html += '<div class="flex-row mt-16">';
+  html += '<button class="btn" onclick="MESA.wizardStep=1;MESA.renderWizard();">Back</button>';
+  html += '<button class="btn btn-primary" id="wizard-next2-btn" onclick="MESA.wizardNext2()">Next</button>';
+  html += '</div>';
+  el.innerHTML = html;
+
+  // Wire up whole-class checkboxes to disable individual fields
+  setTimeout(function() {
+    var wholeClassCbs = document.querySelectorAll('.sel-whole-class');
+    for (var i = 0; i < wholeClassCbs.length; i++) {
+      wholeClassCbs[i].addEventListener('change', function() {
+        var cn = this.dataset['class'];
+        var fieldCbs = document.querySelectorAll('.sel-field[data-class="' + cn + '"]');
+        for (var j = 0; j < fieldCbs.length; j++) {
+          fieldCbs[j].disabled = this.checked;
+          if (this.checked) fieldCbs[j].checked = false;
+        }
+        updateSelectionCount();
+      });
+    }
+    var allCbs = document.querySelectorAll('.sel-field, .sel-enum, .sel-whole-class');
+    for (var i = 0; i < allCbs.length; i++) {
+      allCbs[i].addEventListener('change', updateSelectionCount);
+    }
+  }, 0);
+}
+
+function updateSelectionCount() {
+  var count = gatherSelections().length;
+  var countEl = document.getElementById('selection-count');
+  if (countEl) {
+    countEl.textContent = count + ' selection(s) made';
+    countEl.className = count > 0 ? 'mt-8 alert alert-success' : 'mt-8 alert alert-warning';
+  }
+}
+
+function gatherSelections() {
+  var selections = [];
+  var wholeCbs = document.querySelectorAll('.sel-whole-class:checked');
+  for (var i = 0; i < wholeCbs.length; i++) {
+    selections.push({ selectionType: 'basemodel_class', className: wholeCbs[i].dataset['class'], fieldName: null, enumValue: null });
+  }
+  var fieldCbs = document.querySelectorAll('.sel-field:checked');
+  for (var i = 0; i < fieldCbs.length; i++) {
+    selections.push({ selectionType: 'basemodel_field', className: fieldCbs[i].dataset['class'], fieldName: fieldCbs[i].dataset.field, enumValue: null });
+  }
+  var enumCbs = document.querySelectorAll('.sel-enum:checked');
+  for (var i = 0; i < enumCbs.length; i++) {
+    selections.push({ selectionType: 'enum_value', className: enumCbs[i].dataset['class'], fieldName: null, enumValue: enumCbs[i].dataset.value });
+  }
+  return selections;
+}
+
+M.wizardNext2 = function() {
+  var sels = gatherSelections();
+  if (!sels.length) { alert('Please select at least one item to continue.'); return; }
+  M.wizardData.selections = sels;
+  M.wizardStep = 3;
+  M.renderWizard();
+};
+
+function renderWizardStep3(el) {
+  var html = '<h3>Step 3: Load Prediction Files</h3>';
+  html += '<div class="form-group mt-8">';
+  html += '<label>Select prediction JSON files</label>';
+  html += '<input type="file" id="prediction-files-input" accept=".json" multiple>';
+  html += '</div>';
+  html += '<div class="form-group">';
+  html += '<label>Sample size (0 = use all files)</label>';
+  html += '<input type="number" id="wizard-sample-size" min="0" value="0" style="max-width:200px;">';
+  html += '</div>';
+  html += '<div id="files-loaded-info" class="alert alert-info">No files selected yet.</div>';
+  html += '<div class="flex-row mt-16">';
+  html += '<button class="btn" onclick="MESA.wizardStep=2;MESA.renderWizard();">Back</button>';
+  html += '<button class="btn btn-primary" onclick="MESA.wizardNext3()">Next</button>';
+  html += '</div>';
+  el.innerHTML = html;
+
+  setTimeout(function() {
+    document.getElementById('prediction-files-input').addEventListener('change', function() {
+      document.getElementById('files-loaded-info').textContent = this.files.length + ' file(s) selected.';
+      document.getElementById('files-loaded-info').className = 'alert alert-success';
+    });
+  }, 0);
+}
+
+M.wizardNext3 = function() {
+  var fileInput = document.getElementById('prediction-files-input');
+  if (!fileInput.files.length) { alert('Please select at least one prediction file.'); return; }
+  var sampleSize = parseInt(document.getElementById('wizard-sample-size').value) || 0;
+
+  var files = Array.from(fileInput.files);
+  // Shuffle and sample if needed
+  if (sampleSize > 0 && sampleSize < files.length) {
+    // Fisher-Yates shuffle
+    for (var i = files.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = files[i]; files[i] = files[j]; files[j] = tmp;
+    }
+    files = files.slice(0, sampleSize);
+  }
+
+  var loaded = [];
+  var remaining = files.length;
+
+  files.forEach(function(file) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        var data = JSON.parse(e.target.result);
+        loaded.push({ name: file.name, content: data.content || '', output: data.output || data });
+      } catch (err) {
+        loaded.push({ name: file.name, content: '', output: {}, error: 'Parse error: ' + err.message });
+      }
+      remaining--;
+      if (remaining === 0) {
+        // Sort by name for consistent ordering
+        loaded.sort(function(a, b) { return a.name.localeCompare(b.name); });
+        M.wizardData.files = loaded;
+        M.wizardData.sampleSize = loaded.length;
+        M.wizardStep = 4;
+        M.renderWizard();
+      }
+    };
+    reader.readAsText(file);
+  });
+};
+
+function renderWizardStep4(el) {
+  var wd = M.wizardData;
+  var html = '<h3>Step 4: Review & Create</h3>';
+  html += '<div class="flex-row mt-8">';
+  html += '<div><strong>Schema:</strong> ' + escapeHtml(wd.schema.schema_name) + '</div>';
+  html += '<div><strong>Files:</strong> ' + wd.files.length + '</div>';
+  html += '<div><strong>Selections:</strong> ' + wd.selections.length + '</div>';
+  html += '</div>';
+
+  html += '<div class="mt-8"><strong>Selections:</strong></div>';
+  html += '<ul style="padding-left:20px;">';
+  for (var i = 0; i < wd.selections.length; i++) {
+    html += '<li>' + escapeHtml(selectionLabel(wd.selections[i]));
+    if (wd.selections[i].selectionType === 'basemodel_class') html += ' <small>(entire class)</small>';
+    html += '</li>';
+  }
+  html += '</ul>';
+
+  html += '<div class="form-group mt-16">';
+  html += '<label>Session Name</label>';
+  html += '<input type="text" id="wizard-session-name" placeholder="e.g., Batch 1 Validation" style="max-width:400px;">';
+  html += '</div>';
+
+  html += '<div class="flex-row mt-16">';
+  html += '<button class="btn" onclick="MESA.wizardStep=3;MESA.renderWizard();">Back</button>';
+  html += '<button class="btn btn-primary" onclick="MESA.createSession()">Create Session</button>';
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+M.createSession = function() {
+  var wd = M.wizardData;
+  var name = document.getElementById('wizard-session-name').value.trim();
+  if (!name) { alert('Please enter a session name.'); return; }
+
+  var sessionId = generateId();
+  var session = {
+    id: sessionId,
+    name: name,
+    schemaName: wd.schema.schema_name,
+    rootClass: wd.schema.root_class,
+    sampleSize: wd.files.length,
+    selections: wd.selections,
+    schemaData: wd.schema,
+    createdAt: new Date().toISOString()
+  };
+
+  var progress = {
+    sessionId: sessionId,
+    currentFileIndex: 0,
+    files: wd.files,
+    results: {},
+    completedFiles: []
+  };
+
+  dbPut('sessions', session).then(function() {
+    return dbPut('progress', progress);
+  }).then(function() {
+    M.activeSession = session;
+    M.activeProgress = progress;
+    M.currentSchema = wd.schema;
+    // Reset wizard
+    M.wizardStep = 1;
+    M.wizardData = { schema: null, selections: [], files: [], sampleSize: 10, sessionName: '' };
+    M.switchTab('validate');
+  });
+};
+
+// ===== VALIDATE TAB =====
+M.renderValidate = function() {
+  var noSession = document.getElementById('validate-no-session');
+  var main = document.getElementById('validate-main');
+
+  if (!M.activeSession || !M.activeProgress) {
+    noSession.classList.remove('hidden');
+    main.classList.add('hidden');
+    return;
+  }
+
+  noSession.classList.add('hidden');
+  main.classList.remove('hidden');
+
+  var session = M.activeSession;
+  var progress = M.activeProgress;
+  var schema = M.currentSchema || DEFAULT_SCHEMA;
+  var files = progress.files || [];
+
+  if (!files.length) {
+    document.getElementById('doc-pane').innerHTML = '<div class="alert alert-danger">No files loaded in this session.</div>';
+    document.getElementById('val-pane').innerHTML = '';
+    return;
+  }
+
+  var idx = progress.currentFileIndex || 0;
+  if (idx >= files.length) idx = files.length - 1;
+  var file = files[idx];
+
+  document.getElementById('validate-session-name').textContent = session.name;
+  document.getElementById('validate-file-info').textContent = escapeHtml(file.name);
+  document.getElementById('validate-progress').style.width = ((idx + 1) / files.length * 100) + '%';
+  document.getElementById('nav-center').textContent = 'File ' + (idx + 1) + ' of ' + files.length;
+
+  // Prev/Next visibility
+  document.getElementById('nav-prev').disabled = idx <= 0;
+  document.getElementById('nav-next').disabled = idx >= files.length - 1;
+
+  // Document pane
+  document.getElementById('doc-pane').textContent = file.content || 'No content available';
+
+  // Validation pane
+  var valHtml = renderValidationPane(session, progress, schema, file, idx);
+  document.getElementById('val-pane').innerHTML = valHtml;
+
+  // Wire up radio buttons and missed inputs for auto-save
+  wireUpValidationEvents(session, progress, schema, file, idx);
+};
+
+function renderValidationPane(session, progress, schema, file, fileIdx) {
+  var html = '';
+  var selections = session.selections || [];
+  var existingResults = (progress.results || {})[file.name] || {};
+  var extractionData = file.output || {};
+
+  for (var i = 0; i < selections.length; i++) {
+    var sel = selections[i];
+    var selKey = buildSelectionKey(sel);
+    var currentValue = existingResults[selKey];
+    var title = selectionLabel(sel);
+    var prefix = 'val_' + fileIdx + '_' + i;
+
+    html += '<details open><summary>' + escapeHtml(title) + '</summary><div class="details-content">';
+    html += renderValidationBlock(sel, extractionData, schema, prefix, currentValue);
+    html += '</div></details>';
+  }
+
+  // Completed checkbox
+  var isCompleted = (progress.completedFiles || []).indexOf(file.name) !== -1;
+  html += '<div class="completed-check">';
+  html += '<input type="checkbox" id="completed-checkbox" ' + (isCompleted ? 'checked' : '') + ' style="width:auto;">';
+  html += '<label for="completed-checkbox">Mark document as fully validated</label>';
+  html += '</div>';
+
+  return html;
+}
+
+function renderValidationBlock(sel, extractionData, schema, prefix, currentValue) {
+  if (!extractionData || Object.keys(extractionData).length === 0) {
+    return '<div class="alert alert-warning">No extraction data available</div>';
+  }
+
+  var classes = getClasses(schema);
+  var html = '';
+
+  try {
+    if (sel.selectionType === 'basemodel_class') {
+      var isList = isListItemClass(schema, sel.className);
+
+      if (isList) {
+        // Find list items using class_paths
+        var classPath = getClassPath(schema, sel.className);
+        var items = [];
+        if (classPath) {
+          var listData = extractFieldValue(extractionData, classPath.join('.'));
+          if (Array.isArray(listData)) items = listData;
+        }
+
+        if (!items.length) {
+          html += '<div class="alert alert-info">No ' + escapeHtml(sel.className) + ' items found in prediction</div>';
+        }
+
+        html += renderListValidation(items, prefix + '_' + sel.className, currentValue);
+      } else {
+        // Binary: find class data
+        var classPath = getClassPath(schema, sel.className);
+        var classData = null;
+        if (classPath) classData = extractFieldValue(extractionData, classPath.join('.'));
+
+        if (classData && typeof classData === 'object' && !Array.isArray(classData)) {
+          for (var fn in classData) {
+            html += renderFieldDisplay(fn, classData[fn]);
+          }
+        } else if (classData !== null && classData !== undefined) {
+          html += renderFieldDisplay(sel.className, classData);
+        } else {
+          html += '<div class="alert alert-info">No ' + escapeHtml(sel.className) + ' data found in prediction</div>';
+        }
+
+        html += renderBinaryValidation(classData, prefix + '_' + sel.className, currentValue);
+      }
+    } else if (sel.selectionType === 'basemodel_field') {
+      var classPath = getClassPath(schema, sel.className);
+      var fieldValue = null;
+      if (classPath) {
+        var fieldPath = classPath.concat([sel.fieldName]).join('.');
+        fieldValue = extractFieldValue(extractionData, fieldPath);
+      }
+
+      if (fieldValue !== null && fieldValue !== undefined) {
+        html += renderFieldDisplay(sel.fieldName, fieldValue);
+      } else {
+        html += '<div class="alert alert-info">No data found for ' + escapeHtml(sel.fieldName) + '</div>';
+      }
+
+      html += renderBinaryValidation(fieldValue, prefix + '_' + sel.className + '_' + sel.fieldName, currentValue);
+
+    } else if (sel.selectionType === 'enum_value') {
+      var containers = getEnumContainers(schema, sel.className);
+      var foundItems = [];
+
+      for (var ci = 0; ci < containers.length; ci++) {
+        var containerClassName = containers[ci][0];
+        var enumFieldName = containers[ci][1];
+        var containerPath = getClassPath(schema, containerClassName);
+        if (containerPath) {
+          var items = extractFieldValue(extractionData, containerPath.join('.'));
+          if (Array.isArray(items)) {
+            for (var ii = 0; ii < items.length; ii++) {
+              if (items[ii] && typeof items[ii] === 'object' && items[ii][enumFieldName] === sel.enumValue) {
+                foundItems.push(items[ii]);
+              }
+            }
+          }
+        }
+      }
+
+      if (!foundItems.length) {
+        html += '<div class="alert alert-info">No items found with ' + escapeHtml(sel.className) + ' = ' + escapeHtml(sel.enumValue) + '</div>';
+      }
+
+      html += renderListValidation(foundItems, prefix + '_' + sel.className + '_' + sel.enumValue, currentValue);
+    }
+  } catch (e) {
+    html += '<div class="alert alert-danger">Error generating validation UI: ' + escapeHtml(e.message) + '</div>';
+  }
+
+  return html;
+}
+
+function renderFieldDisplay(fieldName, value) {
+  var html = '<div class="field-value">';
+  if (value === null || value === undefined) {
+    html += '<span class="label">' + escapeHtml(fieldName) + ':</span> <span class="absent">Not present</span>';
+  } else if (Array.isArray(value)) {
+    if (!value.length) {
+      html += '<span class="label">' + escapeHtml(fieldName) + ':</span> <span class="absent">Empty list</span>';
+    } else {
+      html += '<span class="label">' + escapeHtml(fieldName) + ':</span>';
+      for (var i = 0; i < value.length; i++) {
+        if (typeof value[i] === 'object' && value[i] !== null) {
+          html += '<div class="json-preview" style="margin:4px 0;font-size:0.8rem;max-height:100px;">' + escapeHtml(JSON.stringify(value[i], null, 2)) + '</div>';
+        } else {
+          html += '<div style="margin-left:10px;">' + (i + 1) + '. ' + escapeHtml(String(value[i])) + '</div>';
+        }
+      }
+    }
+  } else if (typeof value === 'object') {
+    html += '<span class="label">' + escapeHtml(fieldName) + ':</span>';
+    html += '<div class="json-preview" style="margin:4px 0;font-size:0.8rem;max-height:100px;">' + escapeHtml(JSON.stringify(value, null, 2)) + '</div>';
+  } else {
+    html += '<span class="label">' + escapeHtml(fieldName) + ':</span> <span class="val">' + escapeHtml(String(value)) + '</span>';
+  }
+  html += '</div>';
+  return html;
+}
+
+function renderBinaryValidation(value, prefix, currentValue) {
+  var present = isValuePresent(value);
+  var uiValue = 'none';
+  if (currentValue === 'PRESENT_CORRECT' || currentValue === 'ABSENT_CORRECT') uiValue = 'correct';
+  else if (currentValue === 'PRESENT_INCORRECT' || currentValue === 'ABSENT_INCORRECT') uiValue = 'incorrect';
+
+  var html = '<div class="radio-group" data-prefix="' + prefix + '" data-type="binary" data-present="' + present + '">';
+  html += '<label><input type="radio" name="' + prefix + '" value="none" ' + (uiValue === 'none' ? 'checked' : '') + ' style="width:auto;"><span>None</span></label>';
+  html += '<label><input type="radio" name="' + prefix + '" value="correct" ' + (uiValue === 'correct' ? 'checked' : '') + ' style="width:auto;"><span>Correct</span></label>';
+  html += '<label><input type="radio" name="' + prefix + '" value="incorrect" ' + (uiValue === 'incorrect' ? 'checked' : '') + ' style="width:auto;"><span>Incorrect</span></label>';
+  html += '</div>';
+  return html;
+}
+
+function renderListValidation(items, prefix, currentValue) {
+  var currentItems = [];
+  var currentMissed = 0;
+  if (currentValue && typeof currentValue === 'object') {
+    currentItems = currentValue.items || [];
+    currentMissed = currentValue.missed || 0;
+  }
+
+  var html = '';
+
+  if (items.length > 0 && items[0] !== null && items[0] !== undefined) {
+    for (var i = 0; i < items.length; i++) {
+      var item = items[i];
+      html += '<div class="item-block">';
+      if (typeof item === 'object' && item !== null) {
+        html += '<div style="font-weight:600;margin-bottom:4px;">Item ' + (i + 1) + ':</div>';
+        html += '<div class="json-preview" style="margin-bottom:6px;max-height:120px;">' + escapeHtml(JSON.stringify(item, null, 2)) + '</div>';
+      } else {
+        html += '<div style="font-weight:600;">Item ' + (i + 1) + ': ' + escapeHtml(String(item)) + '</div>';
+      }
+
+      var savedVal = 'none';
+      if (i < currentItems.length) {
+        if (currentItems[i] === true) savedVal = 'correct';
+        else if (currentItems[i] === false) savedVal = 'incorrect';
+      }
+
+      html += '<div class="radio-group" data-prefix="' + prefix + '_item_' + i + '" data-type="list-item" data-list-prefix="' + prefix + '" data-item-index="' + i + '">';
+      html += '<label><input type="radio" name="' + prefix + '_item_' + i + '" value="none" ' + (savedVal === 'none' ? 'checked' : '') + ' style="width:auto;"><span>None</span></label>';
+      html += '<label><input type="radio" name="' + prefix + '_item_' + i + '" value="correct" ' + (savedVal === 'correct' ? 'checked' : '') + ' style="width:auto;"><span>Correct</span></label>';
+      html += '<label><input type="radio" name="' + prefix + '_item_' + i + '" value="incorrect" ' + (savedVal === 'incorrect' ? 'checked' : '') + ' style="width:auto;"><span>Incorrect</span></label>';
+      html += '</div></div>';
+    }
+  }
+
+  html += '<div class="form-group mt-8">';
+  html += '<label>Number of items missed</label>';
+  html += '<input type="number" class="missed-input" data-prefix="' + prefix + '" min="0" value="' + currentMissed + '" style="max-width:150px;">';
+  html += '</div>';
+
+  return html;
+}
+
+function wireUpValidationEvents(session, progress, schema, file, fileIdx) {
+  // Radio button changes
+  var radios = document.querySelectorAll('#val-pane input[type="radio"]');
+  for (var i = 0; i < radios.length; i++) {
+    radios[i].addEventListener('change', function() {
+      saveCurrentValidationState(session, progress, file);
+    });
+  }
+
+  // Missed count changes
+  var missedInputs = document.querySelectorAll('#val-pane .missed-input');
+  for (var i = 0; i < missedInputs.length; i++) {
+    missedInputs[i].addEventListener('change', function() {
+      saveCurrentValidationState(session, progress, file);
+    });
+  }
+
+  // Completed checkbox
+  var completedCb = document.getElementById('completed-checkbox');
+  if (completedCb) {
+    completedCb.addEventListener('change', function() {
+      if (!progress.completedFiles) progress.completedFiles = [];
+      var idx = progress.completedFiles.indexOf(file.name);
+      if (this.checked && idx === -1) {
+        progress.completedFiles.push(file.name);
+      } else if (!this.checked && idx !== -1) {
+        progress.completedFiles.splice(idx, 1);
+      }
+      M.activeProgress = progress;
+      dbPut('progress', progress);
+    });
+  }
+}
+
+function saveCurrentValidationState(session, progress, file) {
+  var selections = session.selections || [];
+  var fileIdx = progress.currentFileIndex || 0;
+  var results = {};
+
+  for (var i = 0; i < selections.length; i++) {
+    var sel = selections[i];
+    var selKey = buildSelectionKey(sel);
+    var prefix = 'val_' + fileIdx + '_' + i;
+
+    if (sel.selectionType === 'basemodel_class') {
+      var isList = isListItemClass(M.currentSchema || DEFAULT_SCHEMA, sel.className);
+      if (isList) {
+        results[selKey] = readListResult(prefix + '_' + sel.className);
+      } else {
+        results[selKey] = readBinaryResult(prefix + '_' + sel.className);
+      }
+    } else if (sel.selectionType === 'basemodel_field') {
+      results[selKey] = readBinaryResult(prefix + '_' + sel.className + '_' + sel.fieldName);
+    } else if (sel.selectionType === 'enum_value') {
+      results[selKey] = readListResult(prefix + '_' + sel.className + '_' + sel.enumValue);
+    }
+  }
+
+  // Filter out null results
+  var nonNullResults = {};
+  for (var k in results) {
+    if (results[k] !== null && results[k] !== undefined) {
+      nonNullResults[k] = results[k];
+    }
+  }
+
+  if (!progress.results) progress.results = {};
+  progress.results[file.name] = nonNullResults;
+  M.activeProgress = progress;
+  dbPut('progress', progress);
+}
+
+function readBinaryResult(prefix) {
+  var radioGroup = document.querySelector('.radio-group[data-prefix="' + prefix + '"][data-type="binary"]');
+  if (!radioGroup) return null;
+
+  var checked = radioGroup.querySelector('input[type="radio"]:checked');
+  if (!checked || checked.value === 'none') return null;
+
+  var present = radioGroup.dataset.present === 'true';
+  if (checked.value === 'correct') return present ? 'PRESENT_CORRECT' : 'ABSENT_CORRECT';
+  if (checked.value === 'incorrect') return present ? 'PRESENT_INCORRECT' : 'ABSENT_INCORRECT';
+  return null;
+}
+
+function readListResult(prefix) {
+  var itemRadios = document.querySelectorAll('.radio-group[data-list-prefix="' + prefix + '"]');
+  var items = [];
+  for (var i = 0; i < itemRadios.length; i++) {
+    var checked = itemRadios[i].querySelector('input[type="radio"]:checked');
+    if (!checked || checked.value === 'none') items.push(null);
+    else if (checked.value === 'correct') items.push(true);
+    else items.push(false);
+  }
+
+  var missedInput = document.querySelector('.missed-input[data-prefix="' + prefix + '"]');
+  var missed = missedInput ? parseInt(missedInput.value) || 0 : 0;
+
+  return { items: items, missed: missed };
+}
+
+M.navigateFile = function(delta) {
+  if (!M.activeProgress) return;
+  var files = M.activeProgress.files || [];
+  var newIdx = (M.activeProgress.currentFileIndex || 0) + delta;
+  if (newIdx < 0 || newIdx >= files.length) return;
+  M.activeProgress.currentFileIndex = newIdx;
+  dbPut('progress', M.activeProgress).then(function() {
+    M.renderValidate();
+  });
+};
+
+// ===== ANALYSIS TAB =====
+M.renderAnalysisSelector = function() {
+  dbGetAll('sessions').then(function(sessions) {
+    var sel = document.getElementById('analysis-session-select');
+    var html = '<option value="">-- Select a session --</option>';
+    for (var i = 0; i < sessions.length; i++) {
+      html += '<option value="' + sessions[i].id + '">' + escapeHtml(sessions[i].name) + '</option>';
+    }
+    sel.innerHTML = html;
+    document.getElementById('analysis-body').innerHTML = '';
+  });
+};
+
+M.loadAnalysis = function() {
+  var sessionId = document.getElementById('analysis-session-select').value;
+  if (!sessionId) { document.getElementById('analysis-body').innerHTML = ''; return; }
+
+  Promise.all([dbGet('sessions', sessionId), dbGet('progress', sessionId)]).then(function(results) {
+    var session = results[0];
+    var progress = results[1];
+    if (!session || !progress) { document.getElementById('analysis-body').innerHTML = '<div class="alert alert-warning">Session data not found.</div>'; return; }
+
+    var html = '';
+    var totalFiles = (progress.files || []).length;
+    var completedFiles = (progress.completedFiles || []).length;
+    var completionPct = totalFiles > 0 ? (completedFiles / totalFiles * 100).toFixed(1) : '0.0';
+
+    // Overview metrics
+    html += '<div class="metric-grid">';
+    html += '<div class="metric-card"><div class="value">' + totalFiles + '</div><div class="label">Total Files</div></div>';
+    html += '<div class="metric-card"><div class="value">' + completedFiles + '</div><div class="label">Completed</div></div>';
+    html += '<div class="metric-card"><div class="value">' + completionPct + '%</div><div class="label">Completion</div></div>';
+    html += '<div class="metric-card"><div class="value">' + (session.selections || []).length + '</div><div class="label">Selections</div></div>';
+    html += '</div>';
+
+    if (!completedFiles) {
+      html += '<div class="alert alert-info">No completed documents yet. Mark documents as complete in the Validate tab to see analysis.</div>';
+      document.getElementById('analysis-body').innerHTML = html;
+      return;
+    }
+
+    // Calculate metrics
+    var schema = session.schemaData || DEFAULT_SCHEMA;
+    var metrics = aggregateMetrics(progress, session.selections, schema);
+
+    if (!Object.keys(metrics).length) {
+      html += '<div class="alert alert-info">No metrics to display yet.</div>';
+      document.getElementById('analysis-body').innerHTML = html;
+      return;
+    }
+
+    // Split into binary and list
+    var binaryRows = [];
+    var listRows = [];
+    for (var key in metrics) {
+      var m = metrics[key];
+      if (m.type === 'binary') binaryRows.push(m);
+      else listRows.push(m);
+    }
+
+    if (binaryRows.length) {
+      html += '<h3 class="mt-16 mb-8">Binary Validations</h3>';
+      html += '<div style="overflow-x:auto;"><table>';
+      html += '<tr><th>Selection</th><th>Precision</th><th>Recall</th><th>F1</th><th>Accuracy</th><th>TP</th><th>TN</th><th>FP</th><th>FN</th><th>Total</th></tr>';
+      for (var i = 0; i < binaryRows.length; i++) {
+        var r = binaryRows[i];
+        html += '<tr><td>' + escapeHtml(r.selectionName) + '</td>';
+        html += '<td>' + (r.precision * 100).toFixed(1) + '%</td>';
+        html += '<td>' + (r.recall * 100).toFixed(1) + '%</td>';
+        html += '<td>' + r.f1.toFixed(3) + '</td>';
+        html += '<td>' + (r.accuracy * 100).toFixed(1) + '%</td>';
+        html += '<td>' + r.tp + '</td><td>' + r.tn + '</td><td>' + r.fp + '</td><td>' + r.fn + '</td>';
+        html += '<td>' + r.total + '</td></tr>';
+      }
+      html += '</table></div>';
+    }
+
+    if (listRows.length) {
+      html += '<h3 class="mt-16 mb-8">List Validations</h3>';
+      html += '<div style="overflow-x:auto;"><table>';
+      html += '<tr><th>Selection</th><th>Precision</th><th>Recall</th><th>F1</th><th>Correct</th><th>Total Items</th><th>Missed</th></tr>';
+      for (var i = 0; i < listRows.length; i++) {
+        var r = listRows[i];
+        html += '<tr><td>' + escapeHtml(r.selectionName) + '</td>';
+        html += '<td>' + (r.precision * 100).toFixed(1) + '%</td>';
+        html += '<td>' + (r.recall * 100).toFixed(1) + '%</td>';
+        html += '<td>' + r.f1.toFixed(3) + '</td>';
+        html += '<td>' + r.correct_items + '</td><td>' + r.total_items + '</td><td>' + r.total_missed + '</td></tr>';
+      }
+      html += '</table></div>';
+    }
+
+    // CSV export
+    html += '<hr>';
+    html += '<button class="btn btn-primary" onclick="MESA.exportCSV(\'' + sessionId + '\')">Download Results CSV</button>';
+
+    // Detailed results
+    html += '<hr><details><summary>Detailed Results</summary><div class="details-content">';
+    html += renderDetailedResults(progress, session.selections);
+    html += '</div></details>';
+
+    document.getElementById('analysis-body').innerHTML = html;
+  });
+};
+
+function aggregateMetrics(progress, selections, schema) {
+  var metrics = {};
+  var completedSet = {};
+  var completedFiles = progress.completedFiles || [];
+  for (var i = 0; i < completedFiles.length; i++) completedSet[completedFiles[i]] = true;
+
+  for (var si = 0; si < selections.length; si++) {
+    var sel = selections[si];
+    var selKey = buildSelectionKey(sel);
+    var resultsForSel = [];
+
+    for (var fileName in (progress.results || {})) {
+      if (!completedSet[fileName]) continue;
+      var fileResults = progress.results[fileName];
+      if (selKey in fileResults) {
+        resultsForSel.push(fileResults[selKey]);
+      }
+    }
+
+    if (!resultsForSel.length) continue;
+
+    var first = resultsForSel[0];
+    var selName = selectionLabel(sel);
+    if (sel.selectionType === 'basemodel_class') selName += ' (class)';
+
+    if (typeof first === 'string') {
+      // Binary
+      var tp = 0, tn = 0, fp = 0, fn = 0;
+      for (var ri = 0; ri < resultsForSel.length; ri++) {
+        var r = resultsForSel[ri];
+        if (r === 'PRESENT_CORRECT') tp++;
+        else if (r === 'ABSENT_CORRECT') tn++;
+        else if (r === 'PRESENT_INCORRECT') fp++;
+        else if (r === 'ABSENT_INCORRECT') fn++;
+      }
+      var precision = (tp + fp) > 0 ? tp / (tp + fp) : 0;
+      var recall = (tp + fn) > 0 ? tp / (tp + fn) : 0;
+      var f1 = (precision + recall) > 0 ? 2 * precision * recall / (precision + recall) : 0;
+      var applicable = tp + tn + fp + fn;
+      var accuracy = applicable > 0 ? (tp + tn) / applicable : 0;
+
+      metrics[selKey] = {
+        type: 'binary', selectionName: selName,
+        precision: precision, recall: recall, f1: f1, accuracy: accuracy,
+        tp: tp, tn: tn, fp: fp, fn: fn, total: resultsForSel.length
+      };
+    } else if (typeof first === 'object') {
+      // List
+      var totalItems = 0, correctItems = 0, totalMissed = 0;
+      for (var ri = 0; ri < resultsForSel.length; ri++) {
+        var r = resultsForSel[ri];
+        if (r && typeof r === 'object') {
+          var items = r.items || [];
+          var missed = r.missed || 0;
+          for (var ii = 0; ii < items.length; ii++) {
+            if (items[ii] !== null && items[ii] !== undefined) {
+              totalItems++;
+              if (items[ii] === true) correctItems++;
+            }
+          }
+          totalMissed += missed;
+        }
+      }
+      var precision = totalItems > 0 ? correctItems / totalItems : 0;
+      var totalExpected = correctItems + totalMissed;
+      var recall = totalExpected > 0 ? correctItems / totalExpected : 0;
+      var f1 = (precision + recall) > 0 ? 2 * precision * recall / (precision + recall) : 0;
+
+      metrics[selKey] = {
+        type: 'list', selectionName: selName,
+        precision: precision, recall: recall, f1: f1,
+        total_items: totalItems, correct_items: correctItems, total_missed: totalMissed
+      };
+    }
+  }
+  return metrics;
+}
+
+function renderDetailedResults(progress, selections) {
+  var completedSet = {};
+  var completedFiles = progress.completedFiles || [];
+  for (var i = 0; i < completedFiles.length; i++) completedSet[completedFiles[i]] = true;
+
+  var html = '<div style="overflow-x:auto;"><table><tr><th>File</th>';
+  for (var si = 0; si < selections.length; si++) {
+    html += '<th>' + escapeHtml(selectionLabel(selections[si])) + '</th>';
+  }
+  html += '</tr>';
+
+  for (var fileName in (progress.results || {})) {
+    if (!completedSet[fileName]) continue;
+    var fileResults = progress.results[fileName];
+    html += '<tr><td>' + escapeHtml(fileName) + '</td>';
+    for (var si = 0; si < selections.length; si++) {
+      var selKey = buildSelectionKey(selections[si]);
+      var val = fileResults[selKey];
+      if (val === null || val === undefined) {
+        html += '<td style="color:#94a3b8;">--</td>';
+      } else if (typeof val === 'string') {
+        html += '<td>' + escapeHtml(val) + '</td>';
+      } else if (typeof val === 'object') {
+        var items = val.items || [];
+        var evaluated = items.filter(function(x) { return x !== null && x !== undefined; });
+        var correct = evaluated.filter(function(x) { return x === true; }).length;
+        html += '<td>' + correct + '/' + evaluated.length + ' (missed: ' + (val.missed || 0) + ')</td>';
+      }
+    }
+    html += '</tr>';
+  }
+  html += '</table></div>';
+  return html;
+}
+
+M.exportCSV = function(sessionId) {
+  Promise.all([dbGet('sessions', sessionId), dbGet('progress', sessionId)]).then(function(results) {
+    var session = results[0];
+    var progress = results[1];
+    if (!session || !progress) return;
+
+    var schema = session.schemaData || DEFAULT_SCHEMA;
+    var metrics = aggregateMetrics(progress, session.selections, schema);
+
+    var rows = [];
+    for (var key in metrics) {
+      var m = metrics[key];
+      var row = { selection: m.selectionName, type: m.type, precision: m.precision, recall: m.recall, f1: m.f1 };
+      if (m.type === 'binary') {
+        row.accuracy = m.accuracy;
+        row.tp = m.tp; row.tn = m.tn; row.fp = m.fp; row.fn = m.fn;
+        row.total = m.total;
+      } else {
+        row.correct_items = m.correct_items;
+        row.total_items = m.total_items;
+        row.missed = m.total_missed;
+      }
+      rows.push(row);
+    }
+
+    if (!rows.length) { alert('No metrics to export.'); return; }
+
+    // Build CSV
+    var allKeys = {};
+    var orderedKeys = [];
+    for (var i = 0; i < rows.length; i++) {
+      for (var k in rows[i]) {
+        if (!allKeys[k]) { allKeys[k] = true; orderedKeys.push(k); }
+      }
+    }
+
+    var csv = orderedKeys.join(',') + '\n';
+    for (var i = 0; i < rows.length; i++) {
+      var vals = [];
+      for (var j = 0; j < orderedKeys.length; j++) {
+        var v = rows[i][orderedKeys[j]];
+        if (v === undefined || v === null) vals.push('');
+        else if (typeof v === 'string') vals.push('"' + v.replace(/"/g, '""') + '"');
+        else vals.push(String(v));
+      }
+      csv += vals.join(',') + '\n';
+    }
+
+    var blob = new Blob([csv], { type: 'text/csv' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = session.name + '_results.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+};
+
+// ===== INITIALIZATION =====
+openDB().then(function() {
+  // Check if there was an active session (we don't persist "active" state across reloads but we check)
+  M.renderSessions();
+});
+
+})();
+</script>
+
+</body>
+</html>

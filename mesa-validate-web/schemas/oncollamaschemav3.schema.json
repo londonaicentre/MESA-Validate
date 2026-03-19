@@ -1,0 +1,1990 @@
+{
+  "schema_name": "oncollamaschemav3",
+  "root_class": "OncoLlamaModel",
+  "json_schema": {
+    "$defs": {
+      "BiomarkerStatus": {
+        "enum": [
+          "altered",
+          "negative",
+          "equivocal",
+          "hypothetical"
+        ],
+        "title": "BiomarkerStatus",
+        "type": "string"
+      },
+      "CancerScoreName": {
+        "enum": [
+          "pathological_grade",
+          "gleason",
+          "figo",
+          "dukes",
+          "breslow",
+          "clark",
+          "binet",
+          "child_pugh",
+          "other"
+        ],
+        "title": "CancerScoreName",
+        "type": "string"
+      },
+      "ContextSummary": {
+        "properties": {
+          "doc_context": {
+            "description": "Short description of document context (e.g. MDM note, clinic letter, genomics report)",
+            "title": "Doc Context",
+            "type": "string"
+          },
+          "doc_summary": {
+            "description": "Short summary of current cancer treatment status with focus on phase of care",
+            "title": "Doc Summary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "doc_context",
+          "doc_summary"
+        ],
+        "title": "ContextSummary",
+        "type": "object"
+      },
+      "FuturePlan": {
+        "properties": {
+          "future_plan_type": {
+            "$ref": "#/$defs/FuturePlanType",
+            "description": "Type of plan"
+          },
+          "future_plan_summary": {
+            "description": "Short summary of future plan with essential facts only",
+            "title": "Future Plan Summary",
+            "type": "string"
+          },
+          "future_plan_desc": {
+            "description": "Direct extract of descriptive text for plan",
+            "title": "Future Plan Desc",
+            "type": "string"
+          }
+        },
+        "required": [
+          "future_plan_type",
+          "future_plan_summary",
+          "future_plan_desc"
+        ],
+        "title": "FuturePlan",
+        "type": "object"
+      },
+      "FuturePlanType": {
+        "enum": [
+          "planned_systemic_or_radiotherapy_treatment",
+          "planned_surgery_treatment",
+          "planned_investigation",
+          "planned_clinical_trial_involvement"
+        ],
+        "title": "FuturePlanType",
+        "type": "string"
+      },
+      "MSIStatus": {
+        "enum": [
+          "msi_high",
+          "mss",
+          "none"
+        ],
+        "title": "MSIStatus",
+        "type": "string"
+      },
+      "MolecularBiomarkerProfile": {
+        "properties": {
+          "biomarker": {
+            "$ref": "#/$defs/MolecularBiomarkerType",
+            "description": "Gene or protein biomarker. Use OTHER if specific biomarker not listed."
+          },
+          "biomarker_name_desc": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Name of biomarker as described in clinical text",
+            "title": "Biomarker Name Desc"
+          },
+          "biomarker_status": {
+            "$ref": "#/$defs/BiomarkerStatus",
+            "description": "Crude status of marker"
+          },
+          "biomarker_alteration": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Description of specific alteration (e.g. V600E, G12C)",
+            "title": "Biomarker Alteration"
+          },
+          "biomarker_expression_level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Description of expression level for protein markers if exists (e.g. 3+, 90% positive, 4/8)",
+            "title": "Biomarker Expression Level"
+          },
+          "biomarker_vaf_numeric_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Numeric value for variant allele frequency in %",
+            "title": "Biomarker Vaf Numeric Value"
+          },
+          "biomarker_vaf_desc": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Direct extract of descriptive text for biomarker VAF",
+            "title": "Biomarker Vaf Desc"
+          },
+          "biomarker_desc": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Direct extract of descriptive text that fully describes biomarker and status, including alterations and numeric values",
+            "title": "Biomarker Desc"
+          }
+        },
+        "required": [
+          "biomarker",
+          "biomarker_status"
+        ],
+        "title": "MolecularBiomarkerProfile",
+        "type": "object"
+      },
+      "MolecularBiomarkerType": {
+        "enum": [
+          "other",
+          "braf",
+          "ntrk1",
+          "ntrk2",
+          "ntrk3",
+          "ret",
+          "erbb2_her2",
+          "tp53",
+          "brca1",
+          "brca2",
+          "mlh1",
+          "msh2",
+          "msh6",
+          "pms2",
+          "palb2",
+          "rad51",
+          "egfr",
+          "alk",
+          "ros1",
+          "met",
+          "kras",
+          "nras",
+          "pik3ca",
+          "esr1_er",
+          "pgr_pr",
+          "ki_67",
+          "kit",
+          "pdgfra",
+          "fgfr1",
+          "fgfr2",
+          "fgfr3",
+          "idh1",
+          "idh2",
+          "pdl1",
+          "nf1",
+          "nf2",
+          "mgmt",
+          "npm1",
+          "flt3",
+          "bcr_abl1",
+          "jak2",
+          "bcl2",
+          "myc"
+        ],
+        "title": "MolecularBiomarkerType",
+        "type": "string"
+      },
+      "MorphologyType": {
+        "enum": [
+          "unknown_morphology",
+          "other",
+          "adenocarcinoma",
+          "squamous_cell_carcinoma",
+          "urothelial_carcinoma",
+          "renal_cell_carcinoma",
+          "hepatocellular_carcinoma",
+          "small_cell_carcinoma",
+          "non_small_cell_carcinoma",
+          "carcinoma_other",
+          "mesothelioma",
+          "melanoma",
+          "neuroendocrine",
+          "carcinoid",
+          "sarcoma_nos",
+          "gastrointestinal_stromal_tumour",
+          "osteosarcoma",
+          "chondrosarcoma",
+          "ewing_sarcoma",
+          "rhabdomyosarcoma",
+          "kaposi_sarcoma",
+          "soft_tissue_sarcoma",
+          "acute_lymphoblastic_leukaemia",
+          "acute_myeloid_leukaemia",
+          "chronic_lymphocytic_leukaemia",
+          "chronic_myeloid_leukaemia",
+          "hodgkin_lymphoma",
+          "non_hodgkin_lymphoma",
+          "multiple_myeloma",
+          "leukaemia_other",
+          "myelodysplastic",
+          "glioblastoma",
+          "astrocytoma",
+          "oligodendroglioma",
+          "meningioma",
+          "seminoma",
+          "teratoma",
+          "choriocarcinoma",
+          "wilms_tumour",
+          "retinoblastoma",
+          "hepatoblastoma"
+        ],
+        "title": "MorphologyType",
+        "type": "string"
+      },
+      "OtherCancerFacts": {
+        "properties": {
+          "other_topography": {
+            "$ref": "#/$defs/TopographyType",
+            "description": "Confirmed topography of historical or concurrent cancer"
+          },
+          "other_topography_name_desc": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Name of anatomical site as described in clinical text",
+            "title": "Other Topography Name Desc"
+          },
+          "other_morphology": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/MorphologyType"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Confirmed morphology of historical or concurrent cancer"
+          },
+          "other_morphology_name_desc": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Name of histological classification as described in clinical text",
+            "title": "Other Morphology Name Desc"
+          },
+          "other_diagnosis_year": {
+            "anyOf": [
+              {
+                "maximum": 2100,
+                "minimum": 1900,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Year of initial diagnosis",
+            "title": "Other Diagnosis Year"
+          },
+          "other_diagnosis_month": {
+            "anyOf": [
+              {
+                "maximum": 12,
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Month of initial diagnosis",
+            "title": "Other Diagnosis Month"
+          },
+          "other_latest_situation_summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Short summary of latest situation for this cancer",
+            "title": "Other Latest Situation Summary"
+          }
+        },
+        "required": [
+          "other_topography"
+        ],
+        "title": "OtherCancerFacts",
+        "type": "object"
+      },
+      "PatientFinding": {
+        "properties": {
+          "patient_finding_type": {
+            "$ref": "#/$defs/PatientFindingType",
+            "description": "Type of patient finding"
+          },
+          "patient_finding_name_desc": {
+            "description": "Name of specific finding as described in clinical text",
+            "title": "Patient Finding Name Desc",
+            "type": "string"
+          },
+          "patient_finding_desc": {
+            "description": "Direct extract of descriptive text for the finding",
+            "title": "Patient Finding Desc",
+            "type": "string"
+          },
+          "patient_finding_status": {
+            "$ref": "#/$defs/PatientFindingStatus",
+            "description": "Whether the specific finding is present, is not present, or is uncertain/hypothetical"
+          }
+        },
+        "required": [
+          "patient_finding_type",
+          "patient_finding_name_desc",
+          "patient_finding_desc",
+          "patient_finding_status"
+        ],
+        "title": "PatientFinding",
+        "type": "object"
+      },
+      "PatientFindingStatus": {
+        "enum": [
+          "is_present",
+          "is_not_present",
+          "uncertain"
+        ],
+        "title": "PatientFindingStatus",
+        "type": "string"
+      },
+      "PatientFindingType": {
+        "enum": [
+          "comorbidity_finding",
+          "social_or_family_finding",
+          "symptom_finding",
+          "physical_examination_finding",
+          "functional_finding",
+          "mental_state_finding"
+        ],
+        "title": "PatientFindingType",
+        "type": "string"
+      },
+      "PerformanceStatus": {
+        "properties": {
+          "ps_scale": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Scale used for performance status if given, e.g. ECOG, Karnofsky",
+            "title": "Ps Scale"
+          },
+          "ps_score_value": {
+            "description": "Score value (e.g. '0', '1', '70', '100')",
+            "title": "Ps Score Value",
+            "type": "string"
+          },
+          "ps_desc": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Direct extract of descriptive text for performance status",
+            "title": "Ps Desc"
+          }
+        },
+        "required": [
+          "ps_score_value"
+        ],
+        "title": "PerformanceStatus",
+        "type": "object"
+      },
+      "PrimaryCancer": {
+        "properties": {
+          "primary_cancer_facts": {
+            "$ref": "#/$defs/PrimaryCancerFacts",
+            "description": "Main facts about primary cancer"
+          },
+          "primary_cancer_tumour_facts": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/PrimaryCancerTumourFacts"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Molecular and genomic characteristics of the tumour"
+          },
+          "primary_cancer_scores": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/$defs/PrimaryCancerScore"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Specialist cancer staging or grading scores",
+            "title": "Primary Cancer Scores"
+          },
+          "primary_cancer_spread": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/$defs/PrimaryCancerSpread"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Locations of cancer spread - confirmed sites only",
+            "title": "Primary Cancer Spread"
+          },
+          "primary_cancer_timeline_events": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/$defs/PrimaryCancerTimelineEvent"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Timeline of historical events",
+            "title": "Primary Cancer Timeline Events"
+          }
+        },
+        "required": [
+          "primary_cancer_facts"
+        ],
+        "title": "PrimaryCancer",
+        "type": "object"
+      },
+      "PrimaryCancerFacts": {
+        "properties": {
+          "topography": {
+            "$ref": "#/$defs/TopographyType",
+            "description": "Most suitable anatomical site of primary cancer. Use OTHER where there is ambiguity, or no suitable found in enum."
+          },
+          "topography_name_desc": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Name of anatomical site as described in clinical text",
+            "title": "Topography Name Desc"
+          },
+          "morphology": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/MorphologyType"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Most suitable histological classification of primary cancer. Use OTHER where there is ambiguity, or no suitable found in enum."
+          },
+          "morphology_name_desc": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Name of histological classification as described in clinical text",
+            "title": "Morphology Name Desc"
+          },
+          "is_recurrence": {
+            "description": "TRUE if the primary cancer is explicitly described as a recurrence or relapse of a previous cancer",
+            "title": "Is Recurrence",
+            "type": "boolean"
+          },
+          "diagnosis_year": {
+            "anyOf": [
+              {
+                "maximum": 2100,
+                "minimum": 1900,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Year of initial diagnosis",
+            "title": "Diagnosis Year"
+          },
+          "diagnosis_month": {
+            "anyOf": [
+              {
+                "maximum": 12,
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Month of initial diagnosis",
+            "title": "Diagnosis Month"
+          },
+          "tnm_stage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Confirmed, latest, TNM staging for main cancer (e.g. T2N1bM0)",
+            "title": "Tnm Stage"
+          },
+          "numeric_group_stage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Confirmed group staging for main cancer using Roman numerals (e.g. I, IIa, IV etc)",
+            "title": "Numeric Group Stage"
+          }
+        },
+        "required": [
+          "topography",
+          "is_recurrence"
+        ],
+        "title": "PrimaryCancerFacts",
+        "type": "object"
+      },
+      "PrimaryCancerScore": {
+        "properties": {
+          "score": {
+            "$ref": "#/$defs/CancerScoreName",
+            "description": "Name of a single specialist staging or grading measurement. Use OTHER where ambiguity or score not in enum."
+          },
+          "score_name_desc": {
+            "description": "Name of a staging or grading measurement as described in clinical text",
+            "title": "Score Name Desc",
+            "type": "string"
+          },
+          "score_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Value if score is quantified",
+            "title": "Score Value"
+          },
+          "score_value_desc": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Direct extract of score value as described in clinical text",
+            "title": "Score Value Desc"
+          }
+        },
+        "required": [
+          "score",
+          "score_name_desc"
+        ],
+        "title": "PrimaryCancerScore",
+        "type": "object"
+      },
+      "PrimaryCancerSpread": {
+        "properties": {
+          "spread_type": {
+            "$ref": "#/$defs/SpreadType",
+            "description": "Most suitable type of spread. Use OTHER where ambiguity or no suitable found."
+          },
+          "spread_site_desc": {
+            "description": "Name of specific metastastic site or node as described in clinical text",
+            "title": "Spread Site Desc",
+            "type": "string"
+          }
+        },
+        "required": [
+          "spread_type",
+          "spread_site_desc"
+        ],
+        "title": "PrimaryCancerSpread",
+        "type": "object"
+      },
+      "PrimaryCancerTimelineEvent": {
+        "properties": {
+          "event_type": {
+            "$ref": "#/$defs/TimelineEventType",
+            "description": "Select type of event"
+          },
+          "event_year": {
+            "anyOf": [
+              {
+                "maximum": 2100,
+                "minimum": 1900,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Year of event",
+            "title": "Event Year"
+          },
+          "event_month": {
+            "anyOf": [
+              {
+                "maximum": 12,
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Month of event",
+            "title": "Event Month"
+          },
+          "event_summary": {
+            "description": "Short summary for specific event with essential facts",
+            "title": "Event Summary",
+            "type": "string"
+          },
+          "event_desc": {
+            "description": "Direct extract of descriptive text for event",
+            "title": "Event Desc",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_type",
+          "event_summary",
+          "event_desc"
+        ],
+        "title": "PrimaryCancerTimelineEvent",
+        "type": "object"
+      },
+      "PrimaryCancerTumourFacts": {
+        "properties": {
+          "msi_status": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/MSIStatus"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Microsatellite instability status"
+          },
+          "msi_desc": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Direct extract of descriptive text for MSI",
+            "title": "Msi Desc"
+          },
+          "tmb_status": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TMBStatus"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Tumour mutation burden status"
+          },
+          "tmb_numeric_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "TMB numeric value in mutations/Mb if provided",
+            "title": "Tmb Numeric Value"
+          },
+          "tmb_desc": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Direct extract of descriptive text for TMB",
+            "title": "Tmb Desc"
+          },
+          "molecular_biomarker_profiles": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/$defs/MolecularBiomarkerProfile"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Genomic alterations and protein expression findings",
+            "title": "Molecular Biomarker Profiles"
+          }
+        },
+        "title": "PrimaryCancerTumourFacts",
+        "type": "object"
+      },
+      "SpreadType": {
+        "enum": [
+          "other",
+          "lymph_node",
+          "liver",
+          "lung",
+          "spine",
+          "other_bone",
+          "brain",
+          "other_cns",
+          "adrenal",
+          "kidney",
+          "pleura",
+          "peritoneum",
+          "skin",
+          "pancreas",
+          "spleen",
+          "ovary",
+          "testis",
+          "thyroid",
+          "stomach",
+          "bowel",
+          "bladder",
+          "prostate",
+          "breast",
+          "head_and_neck"
+        ],
+        "title": "SpreadType",
+        "type": "string"
+      },
+      "TMBStatus": {
+        "enum": [
+          "tmb_high",
+          "tmb_low",
+          "tmb_intermediate",
+          "none"
+        ],
+        "title": "TMBStatus",
+        "type": "string"
+      },
+      "TimelineEventType": {
+        "enum": [
+          "had_systemic_or_radiotherapy_treatment",
+          "had_surgical_treatment_performed",
+          "experienced_toxicity_or_complication_related_to_treatment",
+          "experienced_treatment_reduction_or_stop",
+          "considered_for_clinical_trial",
+          "enrolled_to_clinical_trial",
+          "positive_treatment_response_on_assessment",
+          "evidence_of_metastatic_progression",
+          "radiology_evidence_of_disease_progression",
+          "experienced_disease_remission",
+          "experienced_disease_recurrence",
+          "patient_died"
+        ],
+        "title": "TimelineEventType",
+        "type": "string"
+      },
+      "TopographyType": {
+        "enum": [
+          "unknown_primary",
+          "other",
+          "haematological",
+          "lung",
+          "pleura",
+          "other_respiratory",
+          "oesophagus",
+          "stomach",
+          "small_intestine",
+          "colon",
+          "rectum",
+          "pancreas",
+          "liver",
+          "gallbladder",
+          "bile_duct",
+          "other_gi",
+          "kidney",
+          "bladder",
+          "prostate",
+          "testis",
+          "other_gu",
+          "breast",
+          "cervix",
+          "uterus",
+          "ovary",
+          "other_gynae",
+          "brain",
+          "spinal_cord",
+          "other_cns",
+          "oral",
+          "hypo_oro_naso_pharynx",
+          "larynx",
+          "salivary_gland",
+          "nasal_cavity",
+          "paranasal_sinus",
+          "thyroid",
+          "adrenal_gland",
+          "other_endocrine",
+          "skin",
+          "soft_tissue",
+          "bone"
+        ],
+        "title": "TopographyType",
+        "type": "string"
+      }
+    },
+    "properties": {
+      "document_has_primary_cancer_flag": {
+        "description": "TRUE if the document concerns a patient and a cancer diagnosis",
+        "title": "Document Has Primary Cancer Flag",
+        "type": "boolean"
+      },
+      "primary_cancer_confirmed_flag": {
+        "description": "TRUE = there is confirmed primary cancer diagnosis, FALSE = hypothetical/under investigation or not cancer",
+        "title": "Primary Cancer Confirmed Flag",
+        "type": "boolean"
+      },
+      "primary_cancer": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/PrimaryCancer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      },
+      "performance_status": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/PerformanceStatus"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "description": "Most recent performance status"
+      },
+      "other_cancers": {
+        "anyOf": [
+          {
+            "items": {
+              "$ref": "#/$defs/OtherCancerFacts"
+            },
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Other Cancers"
+      },
+      "patient_findings": {
+        "anyOf": [
+          {
+            "items": {
+              "$ref": "#/$defs/PatientFinding"
+            },
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Patient Findings"
+      },
+      "future_plans": {
+        "anyOf": [
+          {
+            "items": {
+              "$ref": "#/$defs/FuturePlan"
+            },
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Future Plans"
+      },
+      "context_summary": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/ContextSummary"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      }
+    },
+    "required": [
+      "document_has_primary_cancer_flag",
+      "primary_cancer_confirmed_flag"
+    ],
+    "title": "OncoLlamaModel",
+    "type": "object"
+  },
+  "_mesa_metadata": {
+    "classes": {
+      "BiomarkerStatus": {
+        "type": "Enum",
+        "values": [
+          "altered",
+          "negative",
+          "equivocal",
+          "hypothetical"
+        ]
+      },
+      "CancerScoreName": {
+        "type": "Enum",
+        "values": [
+          "pathological_grade",
+          "gleason",
+          "figo",
+          "dukes",
+          "breslow",
+          "clark",
+          "binet",
+          "child_pugh",
+          "other"
+        ]
+      },
+      "ContextSummary": {
+        "type": "BaseModel",
+        "fields": {
+          "doc_context": {
+            "type": "str",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": false
+          },
+          "doc_summary": {
+            "type": "str",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": false
+          }
+        }
+      },
+      "FuturePlan": {
+        "type": "BaseModel",
+        "fields": {
+          "future_plan_type": {
+            "type": "FuturePlanType",
+            "is_list": false,
+            "is_enum": true,
+            "is_basemodel": false
+          },
+          "future_plan_summary": {
+            "type": "str",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": false
+          },
+          "future_plan_desc": {
+            "type": "str",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": false
+          }
+        }
+      },
+      "FuturePlanType": {
+        "type": "Enum",
+        "values": [
+          "planned_systemic_or_radiotherapy_treatment",
+          "planned_surgery_treatment",
+          "planned_investigation",
+          "planned_clinical_trial_involvement"
+        ]
+      },
+      "MSIStatus": {
+        "type": "Enum",
+        "values": [
+          "msi_high",
+          "mss",
+          "none"
+        ]
+      },
+      "MolecularBiomarkerProfile": {
+        "type": "BaseModel",
+        "fields": {
+          "biomarker": {
+            "type": "MolecularBiomarkerType",
+            "is_list": false,
+            "is_enum": true,
+            "is_basemodel": false
+          },
+          "biomarker_name_desc": {
+            "type": "str",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": false
+          },
+          "biomarker_status": {
+            "type": "BiomarkerStatus",
+            "is_list": false,
+            "is_enum": true,
+            "is_basemodel": false
+          },
+          "biomarker_alteration": {
+            "type": "str",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": false
+          },
+          "biomarker_expression_level": {
+            "type": "str",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": false
+          },
+          "biomarker_vaf_numeric_value": {
+            "type": "float",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": false
+          },
+          "biomarker_vaf_desc": {
+            "type": "str",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": false
+          },
+          "biomarker_desc": {
+            "type": "str",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": false
+          }
+        }
+      },
+      "MolecularBiomarkerType": {
+        "type": "Enum",
+        "values": [
+          "other",
+          "braf",
+          "ntrk1",
+          "ntrk2",
+          "ntrk3",
+          "ret",
+          "erbb2_her2",
+          "tp53",
+          "brca1",
+          "brca2",
+          "mlh1",
+          "msh2",
+          "msh6",
+          "pms2",
+          "palb2",
+          "rad51",
+          "egfr",
+          "alk",
+          "ros1",
+          "met",
+          "kras",
+          "nras",
+          "pik3ca",
+          "esr1_er",
+          "pgr_pr",
+          "ki_67",
+          "kit",
+          "pdgfra",
+          "fgfr1",
+          "fgfr2",
+          "fgfr3",
+          "idh1",
+          "idh2",
+          "pdl1",
+          "nf1",
+          "nf2",
+          "mgmt",
+          "npm1",
+          "flt3",
+          "bcr_abl1",
+          "jak2",
+          "bcl2",
+          "myc"
+        ]
+      },
+      "MorphologyType": {
+        "type": "Enum",
+        "values": [
+          "unknown_morphology",
+          "other",
+          "adenocarcinoma",
+          "squamous_cell_carcinoma",
+          "urothelial_carcinoma",
+          "renal_cell_carcinoma",
+          "hepatocellular_carcinoma",
+          "small_cell_carcinoma",
+          "non_small_cell_carcinoma",
+          "carcinoma_other",
+          "mesothelioma",
+          "melanoma",
+          "neuroendocrine",
+          "carcinoid",
+          "sarcoma_nos",
+          "gastrointestinal_stromal_tumour",
+          "osteosarcoma",
+          "chondrosarcoma",
+          "ewing_sarcoma",
+          "rhabdomyosarcoma",
+          "kaposi_sarcoma",
+          "soft_tissue_sarcoma",
+          "acute_lymphoblastic_leukaemia",
+          "acute_myeloid_leukaemia",
+          "chronic_lymphocytic_leukaemia",
+          "chronic_myeloid_leukaemia",
+          "hodgkin_lymphoma",
+          "non_hodgkin_lymphoma",
+          "multiple_myeloma",
+          "leukaemia_other",
+          "myelodysplastic",
+          "glioblastoma",
+          "astrocytoma",
+          "oligodendroglioma",
+          "meningioma",
+          "seminoma",
+          "teratoma",
+          "choriocarcinoma",
+          "wilms_tumour",
+          "retinoblastoma",
+          "hepatoblastoma"
+        ]
+      },
+      "OncoLlamaModel": {
+        "type": "BaseModel",
+        "fields": {
+          "document_has_primary_cancer_flag": {
+            "type": "bool",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": false
+          },
+          "primary_cancer_confirmed_flag": {
+            "type": "bool",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": false
+          },
+          "primary_cancer": {
+            "type": "PrimaryCancer",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": true
+          },
+          "performance_status": {
+            "type": "PerformanceStatus",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": true
+          },
+          "other_cancers": {
+            "type": "List",
+            "is_list": true,
+            "is_enum": false,
+            "is_basemodel": false
+          },
+          "patient_findings": {
+            "type": "List",
+            "is_list": true,
+            "is_enum": false,
+            "is_basemodel": false
+          },
+          "future_plans": {
+            "type": "List",
+            "is_list": true,
+            "is_enum": false,
+            "is_basemodel": false
+          },
+          "context_summary": {
+            "type": "ContextSummary",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": true
+          }
+        }
+      },
+      "OtherCancerFacts": {
+        "type": "BaseModel",
+        "fields": {
+          "other_topography": {
+            "type": "TopographyType",
+            "is_list": false,
+            "is_enum": true,
+            "is_basemodel": false
+          },
+          "other_topography_name_desc": {
+            "type": "str",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": false
+          },
+          "other_morphology": {
+            "type": "MorphologyType",
+            "is_list": false,
+            "is_enum": true,
+            "is_basemodel": false
+          },
+          "other_morphology_name_desc": {
+            "type": "str",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": false
+          },
+          "other_diagnosis_year": {
+            "type": "Annotated",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": false
+          },
+          "other_diagnosis_month": {
+            "type": "Annotated",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": false
+          },
+          "other_latest_situation_summary": {
+            "type": "str",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": false
+          }
+        }
+      },
+      "PatientFinding": {
+        "type": "BaseModel",
+        "fields": {
+          "patient_finding_type": {
+            "type": "PatientFindingType",
+            "is_list": false,
+            "is_enum": true,
+            "is_basemodel": false
+          },
+          "patient_finding_name_desc": {
+            "type": "str",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": false
+          },
+          "patient_finding_desc": {
+            "type": "str",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": false
+          },
+          "patient_finding_status": {
+            "type": "PatientFindingStatus",
+            "is_list": false,
+            "is_enum": true,
+            "is_basemodel": false
+          }
+        }
+      },
+      "PatientFindingStatus": {
+        "type": "Enum",
+        "values": [
+          "is_present",
+          "is_not_present",
+          "uncertain"
+        ]
+      },
+      "PatientFindingType": {
+        "type": "Enum",
+        "values": [
+          "comorbidity_finding",
+          "social_or_family_finding",
+          "symptom_finding",
+          "physical_examination_finding",
+          "functional_finding",
+          "mental_state_finding"
+        ]
+      },
+      "PerformanceStatus": {
+        "type": "BaseModel",
+        "fields": {
+          "ps_scale": {
+            "type": "str",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": false
+          },
+          "ps_score_value": {
+            "type": "str",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": false
+          },
+          "ps_desc": {
+            "type": "str",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": false
+          }
+        }
+      },
+      "PrimaryCancer": {
+        "type": "BaseModel",
+        "fields": {
+          "primary_cancer_facts": {
+            "type": "PrimaryCancerFacts",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": true
+          },
+          "primary_cancer_tumour_facts": {
+            "type": "PrimaryCancerTumourFacts",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": true
+          },
+          "primary_cancer_scores": {
+            "type": "List",
+            "is_list": true,
+            "is_enum": false,
+            "is_basemodel": false
+          },
+          "primary_cancer_spread": {
+            "type": "List",
+            "is_list": true,
+            "is_enum": false,
+            "is_basemodel": false
+          },
+          "primary_cancer_timeline_events": {
+            "type": "List",
+            "is_list": true,
+            "is_enum": false,
+            "is_basemodel": false
+          }
+        }
+      },
+      "PrimaryCancerFacts": {
+        "type": "BaseModel",
+        "fields": {
+          "topography": {
+            "type": "TopographyType",
+            "is_list": false,
+            "is_enum": true,
+            "is_basemodel": false
+          },
+          "topography_name_desc": {
+            "type": "str",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": false
+          },
+          "morphology": {
+            "type": "MorphologyType",
+            "is_list": false,
+            "is_enum": true,
+            "is_basemodel": false
+          },
+          "morphology_name_desc": {
+            "type": "str",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": false
+          },
+          "is_recurrence": {
+            "type": "bool",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": false
+          },
+          "diagnosis_year": {
+            "type": "Annotated",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": false
+          },
+          "diagnosis_month": {
+            "type": "Annotated",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": false
+          },
+          "tnm_stage": {
+            "type": "str",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": false
+          },
+          "numeric_group_stage": {
+            "type": "str",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": false
+          }
+        }
+      },
+      "PrimaryCancerScore": {
+        "type": "BaseModel",
+        "fields": {
+          "score": {
+            "type": "CancerScoreName",
+            "is_list": false,
+            "is_enum": true,
+            "is_basemodel": false
+          },
+          "score_name_desc": {
+            "type": "str",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": false
+          },
+          "score_value": {
+            "type": "str",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": false
+          },
+          "score_value_desc": {
+            "type": "str",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": false
+          }
+        }
+      },
+      "PrimaryCancerSpread": {
+        "type": "BaseModel",
+        "fields": {
+          "spread_type": {
+            "type": "SpreadType",
+            "is_list": false,
+            "is_enum": true,
+            "is_basemodel": false
+          },
+          "spread_site_desc": {
+            "type": "str",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": false
+          }
+        }
+      },
+      "PrimaryCancerTimelineEvent": {
+        "type": "BaseModel",
+        "fields": {
+          "event_type": {
+            "type": "TimelineEventType",
+            "is_list": false,
+            "is_enum": true,
+            "is_basemodel": false
+          },
+          "event_year": {
+            "type": "Annotated",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": false
+          },
+          "event_month": {
+            "type": "Annotated",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": false
+          },
+          "event_summary": {
+            "type": "str",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": false
+          },
+          "event_desc": {
+            "type": "str",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": false
+          }
+        }
+      },
+      "PrimaryCancerTumourFacts": {
+        "type": "BaseModel",
+        "fields": {
+          "msi_status": {
+            "type": "MSIStatus",
+            "is_list": false,
+            "is_enum": true,
+            "is_basemodel": false
+          },
+          "msi_desc": {
+            "type": "str",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": false
+          },
+          "tmb_status": {
+            "type": "TMBStatus",
+            "is_list": false,
+            "is_enum": true,
+            "is_basemodel": false
+          },
+          "tmb_numeric_value": {
+            "type": "float",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": false
+          },
+          "tmb_desc": {
+            "type": "str",
+            "is_list": false,
+            "is_enum": false,
+            "is_basemodel": false
+          },
+          "molecular_biomarker_profiles": {
+            "type": "List",
+            "is_list": true,
+            "is_enum": false,
+            "is_basemodel": false
+          }
+        }
+      },
+      "SpreadType": {
+        "type": "Enum",
+        "values": [
+          "other",
+          "lymph_node",
+          "liver",
+          "lung",
+          "spine",
+          "other_bone",
+          "brain",
+          "other_cns",
+          "adrenal",
+          "kidney",
+          "pleura",
+          "peritoneum",
+          "skin",
+          "pancreas",
+          "spleen",
+          "ovary",
+          "testis",
+          "thyroid",
+          "stomach",
+          "bowel",
+          "bladder",
+          "prostate",
+          "breast",
+          "head_and_neck"
+        ]
+      },
+      "TMBStatus": {
+        "type": "Enum",
+        "values": [
+          "tmb_high",
+          "tmb_low",
+          "tmb_intermediate",
+          "none"
+        ]
+      },
+      "TimelineEventType": {
+        "type": "Enum",
+        "values": [
+          "had_systemic_or_radiotherapy_treatment",
+          "had_surgical_treatment_performed",
+          "experienced_toxicity_or_complication_related_to_treatment",
+          "experienced_treatment_reduction_or_stop",
+          "considered_for_clinical_trial",
+          "enrolled_to_clinical_trial",
+          "positive_treatment_response_on_assessment",
+          "evidence_of_metastatic_progression",
+          "radiology_evidence_of_disease_progression",
+          "experienced_disease_remission",
+          "experienced_disease_recurrence",
+          "patient_died"
+        ]
+      },
+      "TopographyType": {
+        "type": "Enum",
+        "values": [
+          "unknown_primary",
+          "other",
+          "haematological",
+          "lung",
+          "pleura",
+          "other_respiratory",
+          "oesophagus",
+          "stomach",
+          "small_intestine",
+          "colon",
+          "rectum",
+          "pancreas",
+          "liver",
+          "gallbladder",
+          "bile_duct",
+          "other_gi",
+          "kidney",
+          "bladder",
+          "prostate",
+          "testis",
+          "other_gu",
+          "breast",
+          "cervix",
+          "uterus",
+          "ovary",
+          "other_gynae",
+          "brain",
+          "spinal_cord",
+          "other_cns",
+          "oral",
+          "hypo_oro_naso_pharynx",
+          "larynx",
+          "salivary_gland",
+          "nasal_cavity",
+          "paranasal_sinus",
+          "thyroid",
+          "adrenal_gland",
+          "other_endocrine",
+          "skin",
+          "soft_tissue",
+          "bone"
+        ]
+      }
+    },
+    "list_item_classes": [
+      "FuturePlan",
+      "MolecularBiomarkerProfile",
+      "OtherCancerFacts",
+      "PatientFinding",
+      "PrimaryCancerScore",
+      "PrimaryCancerSpread",
+      "PrimaryCancerTimelineEvent"
+    ],
+    "class_paths": {
+      "BiomarkerStatus": [
+        "primary_cancer",
+        "primary_cancer_tumour_facts",
+        "molecular_biomarker_profiles",
+        "biomarker_status"
+      ],
+      "CancerScoreName": [
+        "primary_cancer",
+        "primary_cancer_scores",
+        "score"
+      ],
+      "ContextSummary": [
+        "context_summary"
+      ],
+      "FuturePlan": [
+        "future_plans"
+      ],
+      "FuturePlanType": [
+        "future_plans",
+        "future_plan_type"
+      ],
+      "MSIStatus": [
+        "primary_cancer",
+        "primary_cancer_tumour_facts",
+        "msi_status"
+      ],
+      "MolecularBiomarkerProfile": [
+        "primary_cancer",
+        "primary_cancer_tumour_facts",
+        "molecular_biomarker_profiles"
+      ],
+      "MolecularBiomarkerType": [
+        "primary_cancer",
+        "primary_cancer_tumour_facts",
+        "molecular_biomarker_profiles",
+        "biomarker"
+      ],
+      "MorphologyType": [
+        "primary_cancer",
+        "primary_cancer_facts",
+        "morphology"
+      ],
+      "OtherCancerFacts": [
+        "other_cancers"
+      ],
+      "PatientFinding": [
+        "patient_findings"
+      ],
+      "PatientFindingStatus": [
+        "patient_findings",
+        "patient_finding_status"
+      ],
+      "PatientFindingType": [
+        "patient_findings",
+        "patient_finding_type"
+      ],
+      "PerformanceStatus": [
+        "performance_status"
+      ],
+      "PrimaryCancer": [
+        "primary_cancer"
+      ],
+      "PrimaryCancerFacts": [
+        "primary_cancer",
+        "primary_cancer_facts"
+      ],
+      "PrimaryCancerScore": [
+        "primary_cancer",
+        "primary_cancer_scores"
+      ],
+      "PrimaryCancerSpread": [
+        "primary_cancer",
+        "primary_cancer_spread"
+      ],
+      "PrimaryCancerTimelineEvent": [
+        "primary_cancer",
+        "primary_cancer_timeline_events"
+      ],
+      "PrimaryCancerTumourFacts": [
+        "primary_cancer",
+        "primary_cancer_tumour_facts"
+      ],
+      "SpreadType": [
+        "primary_cancer",
+        "primary_cancer_spread",
+        "spread_type"
+      ],
+      "TMBStatus": [
+        "primary_cancer",
+        "primary_cancer_tumour_facts",
+        "tmb_status"
+      ],
+      "TimelineEventType": [
+        "primary_cancer",
+        "primary_cancer_timeline_events",
+        "event_type"
+      ],
+      "TopographyType": [
+        "primary_cancer",
+        "primary_cancer_facts",
+        "topography"
+      ]
+    },
+    "enum_containers": {
+      "BiomarkerStatus": [
+        [
+          "MolecularBiomarkerProfile",
+          "biomarker_status"
+        ]
+      ],
+      "CancerScoreName": [
+        [
+          "PrimaryCancerScore",
+          "score"
+        ]
+      ],
+      "FuturePlanType": [
+        [
+          "FuturePlan",
+          "future_plan_type"
+        ]
+      ],
+      "MSIStatus": [
+        [
+          "PrimaryCancerTumourFacts",
+          "msi_status"
+        ]
+      ],
+      "MolecularBiomarkerType": [
+        [
+          "MolecularBiomarkerProfile",
+          "biomarker"
+        ]
+      ],
+      "MorphologyType": [
+        [
+          "OtherCancerFacts",
+          "other_morphology"
+        ],
+        [
+          "PrimaryCancerFacts",
+          "morphology"
+        ]
+      ],
+      "PatientFindingStatus": [
+        [
+          "PatientFinding",
+          "patient_finding_status"
+        ]
+      ],
+      "PatientFindingType": [
+        [
+          "PatientFinding",
+          "patient_finding_type"
+        ]
+      ],
+      "SpreadType": [
+        [
+          "PrimaryCancerSpread",
+          "spread_type"
+        ]
+      ],
+      "TMBStatus": [
+        [
+          "PrimaryCancerTumourFacts",
+          "tmb_status"
+        ]
+      ],
+      "TimelineEventType": [
+        [
+          "PrimaryCancerTimelineEvent",
+          "event_type"
+        ]
+      ],
+      "TopographyType": [
+        [
+          "OtherCancerFacts",
+          "other_topography"
+        ],
+        [
+          "PrimaryCancerFacts",
+          "topography"
+        ]
+      ]
+    },
+    "enums_in_list_context": [
+      "BiomarkerStatus",
+      "CancerScoreName",
+      "FuturePlanType",
+      "MolecularBiomarkerType",
+      "PatientFindingStatus",
+      "PatientFindingType",
+      "SpreadType",
+      "TimelineEventType"
+    ]
+  }
+}
