@@ -8,3 +8,5 @@
 schemas:
   - module: oncollamaschemav3
     root_class: OncoLlamaModel
+  - module: oncoschema.schema
+    root_class: OncologyModel
