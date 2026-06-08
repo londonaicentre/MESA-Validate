@@ -24,9 +24,7 @@ Please use the following schema elements for validation:
 
 ### Individual Fields
 - `PrimaryCancerFacts.topography`
-- `PrimaryCancerFacts.topography_name_desc`
 - `PrimaryCancerFacts.morphology`
-- `PrimaryCancerFacts.morphology_name_desc`
 - `PrimaryCancerFacts.diagnosis_year`
 - `PrimaryCancerFacts.diagnosis_month`
 - `PrimaryCancerFacts.tnm_stage`
