@@ -35,6 +35,8 @@ This is a basic validation tool for LLM outputs generated via the MESA (Medical-
   schemas:
     - module: oncollamaschemav3
       root_class: OncoLlamaModel
+    - module: oncoschema.schema
+      root_class: OncologyModel
   ```
 
 **2. Prepare Prediction Files**
