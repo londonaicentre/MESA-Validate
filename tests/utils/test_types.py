@@ -12,8 +12,7 @@ from utils.types import (
 
 class TestFilesystemInferenceRecord:
     def test_filesystem_inference_record_omitted_fields_use_defaults(self) -> None:
-        record = FilesystemInferenceRecord(document_id="doc1")
-
+        record = FilesystemInferenceRecord(document_id="foo")
         assert record.document_source == {}
         assert record.document_inference == {}
         assert record.metadata == {}
@@ -26,9 +25,8 @@ class TestFilesystemInferenceRecord:
         self, field: str
     ) -> None:
         record = FilesystemInferenceRecord.model_validate(
-            {"document_id": "doc1", field: '{"foo": "bar"}'}
+            {"document_id": "foo", field: '{"foo": "bar"}'}
         )
-
         assert getattr(record, field) == {"foo": "bar"}
 
     @pytest.mark.parametrize(
@@ -38,25 +36,22 @@ class TestFilesystemInferenceRecord:
         self, field: str
     ) -> None:
         record = FilesystemInferenceRecord.model_validate(
-            {"document_id": "doc1", field: {"foo": "bar"}}
+            {"document_id": "foo", field: {"foo": "bar"}}
         )
-
         assert getattr(record, field) == {"foo": "bar"}
 
 
 class TestFromDocumentInput:
     def test_from_document_input_with_source_keeps_fields(self) -> None:
         document = DocumentInput(
-            document_id="doc1",
-            document_content="hello",
+            document_id="foo",
+            document_content="bar",
             document_update_dt=None,
             document_source={"foo": "bar"},
         )
-
         prediction = PredictionDocument.from_document_input(document)
-
-        assert prediction.document_id == "doc1"
-        assert prediction.document_content == "hello"
+        assert prediction.document_id == "foo"
+        assert prediction.document_content == "bar"
         assert prediction.document_update_dt is None
         assert prediction.document_source == {"foo": "bar"}
         assert prediction.document_inference == {}
@@ -65,46 +60,42 @@ class TestFromDocumentInput:
 
     def test_from_document_input_without_source_defaults_to_empty_dict(self) -> None:
         document = DocumentInput(
-            document_id="doc1",
-            document_content="hello",
+            document_id="foo",
+            document_content="bar",
             document_update_dt=None,
             document_source=None,
         )
-
         prediction = PredictionDocument.from_document_input(document)
-
         assert prediction.document_source == {}
 
 
 class TestFromInference:
     def test_from_inference_maps_all_fields(self) -> None:
         inference = FilesystemInferenceRecord(
-            document_id="doc1",
+            document_id="foo",
             document_source={"foo": "bar"},
             document_inference={"baz": "qux"},
-            metadata={"model": "x"},
+            metadata={"model": "xyzzy"},
             is_valid=False,
         )
-
         prediction = PredictionDocument.from_inference(inference)
-
-        assert prediction.document_id == "doc1"
+        assert prediction.document_id == "foo"
         assert prediction.document_content == ""
         assert prediction.document_update_dt is None
         assert prediction.document_source == {"foo": "bar"}
         assert prediction.document_inference == {"baz": "qux"}
-        assert prediction.metadata == {"model": "x"}
+        assert prediction.metadata == {"model": "xyzzy"}
         assert prediction.is_valid is False
 
 
 class TestFromLegacy:
     def test_from_legacy_maps_content_and_inference(self) -> None:
-        record = LegacyPredictionRecord(content="hello", output={"foo": "bar"})
+        record = LegacyPredictionRecord(content="bar", output={"foo": "bar"})
 
-        prediction = PredictionDocument.from_legacy("doc1", record)
+        prediction = PredictionDocument.from_legacy("foo", record)
 
-        assert prediction.document_id == "doc1"
-        assert prediction.document_content == "hello"
+        assert prediction.document_id == "foo"
+        assert prediction.document_content == "bar"
         assert prediction.document_update_dt is None
         assert prediction.document_inference == {"foo": "bar"}
         assert prediction.document_source == {}
@@ -116,8 +107,8 @@ class TestUpdateFrom:
     @staticmethod
     def _base() -> PredictionDocument:
         return PredictionDocument(
-            document_id="doc1",
-            document_content="base content",
+            document_id="foo",
+            document_content="foobar",
             document_update_dt=None,
             document_source={"base": "source"},
             document_inference={"base": "inference"},
@@ -128,44 +119,36 @@ class TestUpdateFrom:
     def test_update_from_document_content_truthy_overwrites(self) -> None:
         prediction = self._base()
         record = PredictionDocument(
-            document_id="doc1", document_content="new content", document_update_dt=None
+            document_id="foo", document_content="foobar", document_update_dt=None
         )
-
         prediction.update_from(record)
-
-        assert prediction.document_content == "new content"
+        assert prediction.document_content == "foobar"
 
     def test_update_from_document_content_falsy_is_kept(self) -> None:
         prediction = self._base()
         record = PredictionDocument(
-            document_id="doc1", document_content="", document_update_dt=None
+            document_id="foo", document_content="", document_update_dt=None
         )
-
         prediction.update_from(record)
-
-        assert prediction.document_content == "base content"
+        assert prediction.document_content == "foobar"
 
     def test_update_from_document_update_dt_present_overwrites(self) -> None:
         prediction = self._base()
-        new_update_dt = datetime(2024, 1, 1)
+        new_update_dt = datetime(2026, 1, 1)
         record = PredictionDocument(
-            document_id="doc1", document_content="", document_update_dt=new_update_dt
+            document_id="foo", document_content="", document_update_dt=new_update_dt
         )
-
         prediction.update_from(record)
-
         assert prediction.document_update_dt == new_update_dt
 
     def test_update_from_document_update_dt_none_is_kept(self) -> None:
         prediction = self._base()
-        prediction.document_update_dt = datetime(2023, 1, 1)
+        prediction.document_update_dt = datetime(2025, 1, 1)
         record = PredictionDocument(
-            document_id="doc1", document_content="", document_update_dt=None
+            document_id="foo", document_content="", document_update_dt=None
         )
-
         prediction.update_from(record)
-
-        assert prediction.document_update_dt == datetime(2023, 1, 1)
+        assert prediction.document_update_dt == datetime(2025, 1, 1)
 
     @pytest.mark.parametrize(
         "field", ["document_source", "document_inference", "metadata"]
@@ -174,16 +157,14 @@ class TestUpdateFrom:
         prediction = self._base()
         record = PredictionDocument.model_validate(
             {
-                "document_id": "doc1",
+                "document_id": "foo",
                 "document_content": "",
                 "document_update_dt": None,
-                field: {"new": "value"},
+                field: {"foo": "bar"},
             }
         )
-
         prediction.update_from(record)
-
-        assert getattr(prediction, field) == {"new": "value"}
+        assert getattr(prediction, field) == {"foo": "bar"}
 
     @pytest.mark.parametrize(
         "field", ["document_source", "document_inference", "metadata"]
@@ -192,15 +173,13 @@ class TestUpdateFrom:
         prediction = self._base()
         record = PredictionDocument.model_validate(
             {
-                "document_id": "doc1",
+                "document_id": "foo",
                 "document_content": "",
                 "document_update_dt": None,
                 field: {},
             }
         )
-
         prediction.update_from(record)
-
         assert getattr(prediction, field) == {"base": field.split("_")[-1]}
 
     @pytest.mark.parametrize(
@@ -210,33 +189,27 @@ class TestUpdateFrom:
         prediction = self._base()
         expected = getattr(prediction, field)
         record = PredictionDocument(
-            document_id="doc1", document_content="", document_update_dt=None
+            document_id="foo", document_content="", document_update_dt=None
         )
-
         prediction.update_from(record)
-
         assert getattr(prediction, field) == expected
 
     def test_update_from_is_valid_explicitly_set_false_overwrites_true(self) -> None:
         prediction = self._base()
         record = PredictionDocument(
-            document_id="doc1",
+            document_id="foo",
             document_content="",
             document_update_dt=None,
             is_valid=False,
         )
-
         prediction.update_from(record)
-
         assert prediction.is_valid is False
 
     def test_update_from_is_valid_left_unset_is_kept(self) -> None:
         prediction = self._base()
         prediction.is_valid = False
         record = PredictionDocument(
-            document_id="doc1", document_content="", document_update_dt=None
+            document_id="foo", document_content="", document_update_dt=None
         )
-
         prediction.update_from(record)
-
         assert prediction.is_valid is False
