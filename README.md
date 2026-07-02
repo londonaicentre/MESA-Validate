@@ -51,18 +51,24 @@ Default URL: http://localhost:8501
 
 ## Prediction File Format
 
-Each JSON prediction file must contain two required fields:
+The preferred format uses document-level fields.
+Source content and inference output should be provided in separate aggregate JSON or JSONL files, with records sharing a `document_id`.
 
 ```json
-{
-  "content": "The original document text...",
-  "output": {
-    "field1": "value1",
-    "field2": { ... },
-    "list_field": [ ... ]
+[
+  {
+    "document_id": "doc-1",
+    "document_content": "The original document text..."
   }
-}
+]
 ```
 
-- **`content`**: Original document text (string)
-- **`output`**: LLM extraction result (object matching your Pydantic schema)
+```json
+{"document_id": "doc-1", "document_inference": {"field1": "value1", "field2": {}}}
+```
+
+- **`document_content`**: Original document text (string)
+- **`document_inference`**: LLM extraction result (object matching your Pydantic schema; JSON-encoded strings are also accepted)
+- **`document_id`**: Used to join split content and inference records
+
+Legacy per-document files with `content` and `output` are still supported and are normalised internally.

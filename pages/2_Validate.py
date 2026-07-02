@@ -83,12 +83,10 @@ else:
     st.markdown("---")
 
     try:
-        prediction_data = load_prediction_file(current_file)
-
-        if "output" in prediction_data:
-            extraction_data = prediction_data["output"]
-        else:
-            extraction_data = prediction_data
+        prediction_data = load_prediction_file(
+            current_file, session.predictions_folder
+        )
+        extraction_data = prediction_data["document_inference"]
 
         inspector = SchemaInspector(session.schema_module, session.root_class)
 
@@ -97,7 +95,9 @@ else:
         with doc_col:
             st.markdown("### Document")
             with st.container(height=800):
-                content = prediction_data.get("content", "No content available")
+                content = prediction_data.get(
+                    "document_content", "No content available"
+                )
                 st.markdown(
                     f'<div style="white-space: pre-wrap; word-wrap: break-word; '
                     f"padding: 10px; background-color: #f5f5f5; border-radius: 5px; "
