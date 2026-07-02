@@ -228,19 +228,23 @@ class TestNormaliseRecord:
 
 
 class TestLoadPredictionFolder:
-    def test_load_prediction_folder_path_missing_returns_empty_list(
+    @pytest.fixture(autouse=True)
+    def clear_cache(self) -> None:
+        _load_prediction_folder.cache_clear()
+
+    def test_load_prediction_folder_path_missing_returns_empty_dict(
         self, load_prediction_folder_mocks: LoadPredictionFolderMocks
     ) -> None:
         load_prediction_folder_mocks.exists.return_value = False
-        assert list(_load_prediction_folder("foo")) == []
+        assert _load_prediction_folder("foo") == {}
         load_prediction_folder_mocks.is_dir.assert_not_called()
 
-    def test_load_prediction_folder_path_not_a_directory_returns_empty_list(
+    def test_load_prediction_folder_path_not_a_directory_returns_empty_dict(
         self, load_prediction_folder_mocks: LoadPredictionFolderMocks
     ) -> None:
         load_prediction_folder_mocks.exists.return_value = True
         load_prediction_folder_mocks.is_dir.return_value = False
-        assert list(_load_prediction_folder("foo")) == []
+        assert _load_prediction_folder("foo") == {}
 
     def test_load_prediction_folder_single_record_returns_prediction(
         self,
@@ -257,7 +261,7 @@ class TestLoadPredictionFolder:
         ]
         prediction = mocker.Mock(document_id="baz")
         load_prediction_folder_mocks.normalise_record.return_value = (Ok(), prediction)
-        assert list(_load_prediction_folder("foo")) == [prediction]
+        assert _load_prediction_folder("foo") == {"baz": prediction}
         prediction.update_from.assert_not_called()
 
     def test_load_prediction_folder_duplicate_document_id_merges_records(
@@ -280,7 +284,7 @@ class TestLoadPredictionFolder:
             (Ok(), first_prediction),
             (Ok(), second_prediction),
         ]
-        assert list(_load_prediction_folder("foo")) == [first_prediction]
+        assert _load_prediction_folder("foo") == {"baz": first_prediction}
         first_prediction.update_from.assert_called_once_with(second_prediction)
 
     def test_load_prediction_folder_normalise_error_raises_value_error(
@@ -299,7 +303,7 @@ class TestLoadPredictionFolder:
             None,
         )
         with pytest.raises(ValueError, match="bad shape"):
-            list(_load_prediction_folder("foo"))
+            _load_prediction_folder("foo")
 
 
 class TestListPredictionFolders:
@@ -359,13 +363,15 @@ class TestLoadPredictionFile:
     ) -> None:
         prediction = mocker.Mock(document_id="baz")
         prediction.model_dump.return_value = {"document_id": "baz"}
-        load_prediction_file_mocks.load_prediction_folder.return_value = [prediction]
+        load_prediction_file_mocks.load_prediction_folder.return_value = {
+            "baz": prediction
+        }
         assert load_prediction_file("baz", "foo") == {"document_id": "baz"}
 
     def test_load_prediction_file_not_found_via_folder_raises_file_not_found(
         self, load_prediction_file_mocks: LoadPredictionFileMocks
     ) -> None:
-        load_prediction_file_mocks.load_prediction_folder.return_value = []
+        load_prediction_file_mocks.load_prediction_folder.return_value = {}
         with pytest.raises(FileNotFoundError):
             load_prediction_file("baz", "foo")
 
@@ -374,7 +380,9 @@ class TestLoadPredictionFile:
     ) -> None:
         prediction = mocker.Mock(document_id="baz", document_inference={"foo": "bar"})
         prediction.model_dump.return_value = {"document_id": "baz"}
-        load_prediction_file_mocks.load_prediction_folder.return_value = [prediction]
+        load_prediction_file_mocks.load_prediction_folder.return_value = {
+            "baz": prediction
+        }
         assert load_prediction_file("baz", "foo", SampleSchema) == {
             "document_id": "baz"
         }
@@ -383,7 +391,9 @@ class TestLoadPredictionFile:
         self, load_prediction_file_mocks: LoadPredictionFileMocks, mocker: MockerFixture
     ) -> None:
         prediction = mocker.Mock(document_id="baz", document_inference={})
-        load_prediction_file_mocks.load_prediction_folder.return_value = [prediction]
+        load_prediction_file_mocks.load_prediction_folder.return_value = {
+            "baz": prediction
+        }
         with pytest.raises(ValueError, match="Schema validation failed"):
             load_prediction_file("baz", "foo", SampleSchema)
 
@@ -424,21 +434,21 @@ class TestValidateOutputSchema:
 
 class TestGetPredictionFiles:
     def test_get_prediction_files_no_limit_returns_all_document_ids(
-        self, get_prediction_files_mocks: GetPredictionFilesMocks, mocker: MockerFixture
+        self, get_prediction_files_mocks: GetPredictionFilesMocks
     ) -> None:
-        get_prediction_files_mocks.load_prediction_folder.return_value = [
-            mocker.Mock(document_id="baz"),
-            mocker.Mock(document_id="quux"),
-        ]
+        get_prediction_files_mocks.load_prediction_folder.return_value = {
+            "baz": None,
+            "quux": None,
+        }
         assert get_prediction_files("foo") == ["baz", "quux"]
 
     def test_get_prediction_files_with_limit_returns_sliced_document_ids(
-        self, get_prediction_files_mocks: GetPredictionFilesMocks, mocker: MockerFixture
+        self, get_prediction_files_mocks: GetPredictionFilesMocks
     ) -> None:
-        get_prediction_files_mocks.load_prediction_folder.return_value = [
-            mocker.Mock(document_id="baz"),
-            mocker.Mock(document_id="quux"),
-        ]
+        get_prediction_files_mocks.load_prediction_folder.return_value = {
+            "baz": None,
+            "quux": None,
+        }
         assert get_prediction_files("foo", 1) == ["baz"]
 
 

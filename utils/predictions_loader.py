@@ -3,6 +3,7 @@ predictions_loader.py - Prediction file loading and validation
 """
 
 import json
+from functools import cache
 from pathlib import Path
 
 from mesa_runner.adapters.io_schemas import DocumentInput
@@ -66,10 +67,11 @@ def _normalise_record(record, document_id):
     return Err("unsupported prediction shape"), None
 
 
+@cache
 def _load_prediction_folder(folder_path):
     path = Path(folder_path)
     if not path.exists() or not path.is_dir():
-        return []
+        return {}
 
     predictions = {}
     for file_path in sorted([*path.glob("*.json"), *path.glob("*.jsonl")]):
@@ -85,7 +87,7 @@ def _load_prediction_folder(folder_path):
             prediction = predictions.setdefault(record.document_id, record)
             if prediction is not record:
                 prediction.update_from(record)
-    return predictions.values()
+    return predictions
 
 
 def list_prediction_folders(base_dir="predictions"):
@@ -129,14 +131,7 @@ def load_prediction_file(document_id, folder_path, schema_class=None):
     """
     Load a prediction JSON file and optionally validate against a schema.
     """
-    data = next(
-        (
-            record
-            for record in _load_prediction_folder(folder_path)
-            if record.document_id == document_id
-        ),
-        None,
-    )
+    data = _load_prediction_folder(folder_path).get(document_id)
     if data is None:
         raise FileNotFoundError(f"Prediction file not found for {document_id}")
 
@@ -176,7 +171,7 @@ def get_prediction_files(folder_path, limit=None):
     """
     Get list of prediction files in a folder
     """
-    files = [record.document_id for record in _load_prediction_folder(folder_path)]
+    files = list(_load_prediction_folder(folder_path))
 
     if limit is not None:
         files = files[:limit]
