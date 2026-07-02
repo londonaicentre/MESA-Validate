@@ -172,8 +172,8 @@ class TestUpdateFrom:
     )
     def test_update_from_dict_field_nonempty_overwrites(self, field: str) -> None:
         prediction = self._base()
-        record = PredictionDocument(
-            **{
+        record = PredictionDocument.model_validate(
+            {
                 "document_id": "doc1",
                 "document_content": "",
                 "document_update_dt": None,
@@ -190,8 +190,8 @@ class TestUpdateFrom:
     )
     def test_update_from_dict_field_empty_is_kept(self, field: str) -> None:
         prediction = self._base()
-        record = PredictionDocument(
-            **{
+        record = PredictionDocument.model_validate(
+            {
                 "document_id": "doc1",
                 "document_content": "",
                 "document_update_dt": None,

@@ -5,9 +5,10 @@ predictions_loader.py - Prediction file loading and validation
 import json
 from functools import cache
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 from mesa_runner.adapters.io_schemas import DocumentInput
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from utils.types import (
     Err,
@@ -17,8 +18,12 @@ from utils.types import (
     PredictionDocument,
 )
 
+if TYPE_CHECKING:
+    from utils.models import Session
+    from utils.schema_inspector import SchemaInspector
 
-def _load_json_records(path):
+
+def _load_json_records(path: str | Path) -> list[dict[str, Any]]:
     path = Path(path)
     text = path.read_text(encoding="utf-8")
     if path.suffix == ".jsonl":
@@ -27,7 +32,9 @@ def _load_json_records(path):
     return data if isinstance(data, list) else [data]
 
 
-def _normalise_record(record, document_id):
+def _normalise_record(
+    record: dict[str, Any], document_id: str
+) -> tuple[Ok, PredictionDocument] | tuple[Err[str], None]:
     document_id = str(record.get("document_id") or document_id)
     try:
         if "content" in record or "output" in record:
@@ -68,7 +75,7 @@ def _normalise_record(record, document_id):
 
 
 @cache
-def _load_prediction_folder(folder_path):
+def _load_prediction_folder(folder_path: str) -> dict[str, PredictionDocument]:
     path = Path(folder_path)
     if not path.exists() or not path.is_dir():
         return {}
@@ -78,19 +85,21 @@ def _load_prediction_folder(folder_path):
         records = _load_json_records(file_path)
         for record in records:
             # pass file path as id for legacy documents
-            result, record = _normalise_record(record, str(file_path))
-            if isinstance(result, Err) or record is None:
+            result, prediction = _normalise_record(record, str(file_path))
+            if isinstance(result, Err) or prediction is None:
                 raise ValueError(
                     f"{file_path}: {result.error if isinstance(result, Err) else 'unknown error'}"
                 )
             # if id matches one stored but incoming record differs, merge
-            prediction = predictions.setdefault(record.document_id, record)
-            if prediction is not record:
-                prediction.update_from(record)
+            stored = predictions.setdefault(prediction.document_id, prediction)
+            if stored is not prediction:
+                stored.update_from(prediction)
     return predictions
 
 
-def list_prediction_folders(base_dir="predictions"):
+def list_prediction_folders(
+    base_dir: str = "predictions",
+) -> list[dict[str, str | int]]:
     """
     List all subdirectories in the predictions folder.
 
@@ -127,7 +136,11 @@ def list_prediction_folders(base_dir="predictions"):
     return sorted(folders, key=lambda f: f["name"])
 
 
-def load_prediction_file(document_id, folder_path, schema_class=None):
+def load_prediction_file(
+    document_id: str,
+    folder_path: str,
+    schema_class: type[BaseModel] | None = None,
+) -> dict[str, Any]:
     """
     Load a prediction JSON file and optionally validate against a schema.
     """
@@ -144,7 +157,9 @@ def load_prediction_file(document_id, folder_path, schema_class=None):
     return data.model_dump()
 
 
-def _validate_output_schema(output_data, inspector):
+def _validate_output_schema(
+    output_data: dict[str, Any], inspector: "SchemaInspector"
+) -> tuple[bool, str | None]:
     """
     Validate output data against the root schema class
     """
@@ -167,7 +182,7 @@ def _validate_output_schema(output_data, inspector):
         return False, f"Validation error: {e}"
 
 
-def get_prediction_files(folder_path, limit=None):
+def get_prediction_files(folder_path: str, limit: int | None = None) -> list[str]:
     """
     Get list of prediction files in a folder
     """
@@ -179,23 +194,22 @@ def get_prediction_files(folder_path, limit=None):
     return files
 
 
-def extract_field_value(data, field_path):
+def extract_field_value(data: dict[str, Any], field_path: str) -> Any:
     """
     Extract a field value from nested dictionary using dot notation
     """
-    parts = field_path.split(".")
     current = data
-
-    for part in parts:
+    for part in field_path.split("."):
         if isinstance(current, dict) and part in current:
             current = current[part]
         else:
             return None
-
     return current
 
 
-def validate_and_filter_files(files, session):
+def validate_and_filter_files(
+    files: list[str], session: "Session"
+) -> tuple[list[str], dict[str, str]]:
     """
     Validate files against schema and filter out invalid ones
     """
@@ -216,7 +230,7 @@ def validate_and_filter_files(files, session):
                 data["document_inference"], inspector
             )
             if not is_valid:
-                excluded[file_path] = error_msg
+                excluded[file_path] = error_msg or ""
             else:
                 valid_files.append(file_path)
         except Exception as e:
