@@ -39,7 +39,7 @@ presto-validate/
        root_class: YourRootClassName
    ```
 
-3. **Add prediction files** to subdirectory in `predictions/`
+3. **Add prediction files** to subdirectory in `predictions/`. For additional sample predictions run `git submodule update --init`.
 
 ## Launch
 
