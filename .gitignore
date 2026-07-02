@@ -23,5 +23,10 @@ SCHEMA_MISMATCH_REPORT.md
 *.swo
 *~
 
+# Testing
+.pytest_cache/
+.ruff_cache/
+.coverage
+
 # Streamlit
 .streamlit/

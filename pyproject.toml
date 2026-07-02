@@ -1,0 +1,25 @@
+[project]
+name = "mesa-validate"
+version = "0.1.0"
+description = "Streamlit validation app for LLM outputs generated via the MESA (Medical-concept Extraction with Schema Alignment) framework for fine-tuned models."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "londonaicentre-mesa-runner>=1.4.2",
+    "londonaicentre-oncoschema>=2.1.0",
+    "oncollamaschemav3",
+    "pydantic>=2.13.4",
+    "pyyaml>=6.0.3",
+    "streamlit>=1.58.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+    "pytest-mock>=3.15.1",
+    "ty>=0.0.55",
+]
+
+[tool.uv.sources]
+oncollamaschemav3 = { git = "https://github.com/londonaicentre/oncollamaschemav3.git" }
