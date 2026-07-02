@@ -2,8 +2,6 @@
 2_Validate.py - Two-pane HITL validation interface
 """
 
-from pathlib import Path
-
 import streamlit as st
 
 from utils.predictions_loader import load_prediction_file
@@ -38,7 +36,7 @@ if not st.session_state.active_session:
 session = st.session_state.active_session
 
 if st.session_state.progress is None:
-    with st.spinner("Loading and validating files..."):
+    with st.spinner("Loading and validating documents..."):
         progress, excluded = SessionManager(session.id).initialize_files(session)
         st.session_state.progress = progress
         st.session_state.excluded_files = excluded
@@ -50,45 +48,43 @@ st.title("Validation Interface")
 ## UI: SIDEBAR STATS
 st.sidebar.markdown(f"### {session.name}")
 st.sidebar.markdown(f"**Schema:** {session.schema_module}")
-st.sidebar.markdown(f"**Valid Files:** {len(progress['files'])}")
-st.sidebar.markdown(f"**Invalid Files:** {len(st.session_state.excluded_files)}")
+st.sidebar.markdown(f"**Valid documents:** {len(progress['files'])}")
+st.sidebar.markdown(f"**Excluded documents:** {len(st.session_state.excluded_files)}")
 st.sidebar.markdown(
     f"**Completed:** {len(progress.get('completed_files', []))}/{len(progress['files'])}"
 )
 
 if st.session_state.excluded_files:
-    with st.sidebar.expander("View Invalid (Excluded) Files"):
-        for file_path, error in st.session_state.excluded_files.items():
-            st.caption(f"**{Path(file_path).name}**")
+    with st.sidebar.expander("View excluded documents"):
+        for document_id, error in st.session_state.excluded_files.items():
+            st.caption(f"**{document_id}**")
             st.caption(f"_{error}_")
             st.markdown("---")
 
 ## UI: VALIDATION INTERFACE
 if not progress["files"]:
     st.error(
-        "No valid files to validate. All files were excluded due to schema validation errors."
+        "No valid documents to validate. All documents were excluded due to schema validation errors."
     )
-    st.info("Check the invalid files in the sidebar for details.")
+    st.info("Check the excluded documents in the sidebar for details.")
 else:
     current_index = progress["current_file_index"]
-    current_file = progress["files"][current_index]
+    document_id = progress["files"][current_index]
 
     st.progress((current_index + 1) / len(progress["files"]))
     col1, col2 = st.columns([3, 1])
     with col1:
-        st.markdown(f"**File {current_index + 1} of {len(progress['files'])}**")
+        st.markdown(f"**Document {current_index + 1} of {len(progress['files'])}**")
     with col2:
-        st.caption(Path(current_file).name)
+        st.caption(document_id)
 
     st.markdown("---")
 
     try:
-        prediction_data = load_prediction_file(current_file)
-
-        if "output" in prediction_data:
-            extraction_data = prediction_data["output"]
-        else:
-            extraction_data = prediction_data
+        prediction_data = load_prediction_file(
+            document_id, session.predictions_folder
+        )
+        extraction_data = prediction_data["document_inference"]
 
         inspector = SchemaInspector(session.schema_module, session.root_class)
 
@@ -97,7 +93,9 @@ else:
         with doc_col:
             st.markdown("### Document")
             with st.container(height=800):
-                content = prediction_data.get("content", "No content available")
+                content = prediction_data.get(
+                    "document_content", "No content available"
+                )
                 st.markdown(
                     f'<div style="white-space: pre-wrap; word-wrap: break-word; '
                     f"padding: 10px; background-color: #f5f5f5; border-radius: 5px; "
@@ -110,7 +108,7 @@ else:
             st.markdown("### Validation")
 
             with st.container(height=800):
-                existing_results = progress["results"].get(current_file, {})
+                existing_results = progress["results"].get(document_id, {})
 
                 results = {}
 
@@ -130,7 +128,7 @@ else:
                             selection,
                             extraction_data,
                             inspector,
-                            key_prefix=f"file_{current_index}_selection_{i}",
+                            key_prefix=f"document_{current_index}_selection_{i}",
                             current_value=current_value,
                         )
 
@@ -142,11 +140,11 @@ else:
                 }
                 if non_none_results:
                     st.session_state.progress = SessionManager(session.id).save_results(
-                        current_file, non_none_results
+                        document_id, non_none_results
                     )
 
                 st.markdown("---")
-                is_completed = current_file in progress.get("completed_files", [])
+                is_completed = document_id in progress.get("completed_files", [])
 
                 # sync session state with actual completion status from progress.json
                 st.session_state.doc_complete_checkbox = is_completed
@@ -159,11 +157,11 @@ else:
                         progress["completed_files"] = []
 
                     if st.session_state.get("doc_complete_checkbox", False):
-                        if current_file not in progress["completed_files"]:
-                            progress["completed_files"].append(current_file)
+                        if document_id not in progress["completed_files"]:
+                            progress["completed_files"].append(document_id)
                     else:
-                        if current_file in progress["completed_files"]:
-                            progress["completed_files"].remove(current_file)
+                        if document_id in progress["completed_files"]:
+                            progress["completed_files"].remove(document_id)
 
                     manager.save_progress(progress)
                     st.session_state.progress = progress
@@ -187,7 +185,7 @@ else:
                     st.rerun()
 
         with col2:
-            st.write(f"File {current_index + 1} of {len(progress['files'])}")
+            st.write(f"Document {current_index + 1} of {len(progress['files'])}")
 
         with col3:
             if current_index < len(progress["files"]) - 1:
@@ -198,5 +196,5 @@ else:
                     st.rerun()
 
     except Exception as e:
-        st.error(f"Error loading file: {e}")
+        st.error(f"Error loading document: {e}")
         st.exception(e)

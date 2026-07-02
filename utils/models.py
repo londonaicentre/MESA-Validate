@@ -5,7 +5,8 @@ models.py - Core data models
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
+from pydantic.functional_serializers import field_serializer
 
 
 class FieldSelection(BaseModel):
@@ -38,6 +39,8 @@ class Session(BaseModel):
     Session configuration
     """
 
+    model_config = ConfigDict()
+
     id: str
     name: str
     schema_module: str
@@ -47,5 +50,6 @@ class Session(BaseModel):
     selections: List[FieldSelection]
     created_at: datetime = Field(default_factory=datetime.now)
 
-    class Config:
-        json_encoders = {datetime: lambda v: v.isoformat()}
+    @field_serializer("created_at")
+    def serialise_created_at(self, value: datetime) -> str:
+        return value.isoformat()

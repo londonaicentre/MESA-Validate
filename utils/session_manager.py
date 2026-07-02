@@ -115,24 +115,24 @@ class SessionManager:
         with open(self.progress_path, "w") as f:
             json.dump(progress_data, f, indent=2)
 
-    def save_results(self, file_path, results):
+    def save_results(self, document_id, results):
         """
-        Save validation results for a single doc, returns updated progress
+        Save validation results for a single document, returns updated progress
         """
         if not results:
             return self.load_progress()
 
         progress = self.load_progress()
 
-        if file_path not in progress["results"]:
-            progress["results"][file_path] = {}
+        if document_id not in progress["results"]:
+            progress["results"][document_id] = {}
 
-        progress["results"][file_path].update(results)
+        progress["results"][document_id].update(results)
         self.save_progress(progress)
 
         return progress
 
-    # Exclusion operations for invalid files
+    # Exclusion operations for invalid documents
 
     def load_excluded_files(self):
         """
@@ -159,16 +159,16 @@ class SessionManager:
         progress = self.load_progress()
 
         if not progress["files"]:
-            all_files = get_prediction_files(session.predictions_folder)
+            all_document_ids = get_prediction_files(session.predictions_folder)
 
-            if len(all_files) > session.sample_size:
-                sampled_files = random.sample(all_files, session.sample_size)
+            if len(all_document_ids) > session.sample_size:
+                sampled_document_ids = random.sample(all_document_ids, session.sample_size)
             else:
-                sampled_files = all_files
+                sampled_document_ids = all_document_ids
 
-            valid_files, excluded = validate_and_filter_files(sampled_files, session)
+            valid_document_ids, excluded = validate_and_filter_files(sampled_document_ids, session)
 
-            progress["files"] = valid_files
+            progress["files"] = valid_document_ids
             progress["current_file_index"] = 0
             self.save_progress(progress)
 

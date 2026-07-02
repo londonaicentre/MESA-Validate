@@ -117,7 +117,7 @@ def show_item_validation(
                 default_index = 2
 
         user_choice = st.radio(
-            "",
+            "Validation choice",
             options=ui_options,
             index=default_index,
             key=f"{key_prefix}_item_0",
@@ -159,7 +159,7 @@ def show_item_validation(
                         default_index = 2
 
                 user_choice = st.radio(
-                    "",
+                    "Validation choice",
                     options=ui_options,
                     index=default_index,
                     key=f"{key_prefix}_item_{i}",

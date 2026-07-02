@@ -336,21 +336,22 @@ with st.expander("Create New Session", expanded=False):
             )
 
             folder_info = folder_options[selected_folder]
+            num_files = int(folder_info["num_files"])
 
             sample_size = st.number_input(
                 "Sample size",
                 min_value=1,
-                max_value=folder_info["num_files"],
-                value=min(10, folder_info["num_files"]),
+                max_value=num_files,
+                value=min(10, num_files),
             )
 
             percentage = (
-                (sample_size / folder_info["num_files"] * 100)
-                if folder_info["num_files"] > 0
+                (sample_size / num_files * 100)
+                if num_files > 0
                 else 0
             )
             st.info(
-                f"Selected {sample_size} of {folder_info['num_files']} files ({percentage:.1f}%)"
+                f"Selected {sample_size} of {num_files} files ({percentage:.1f}%)"
             )
 
             st.markdown("---")
