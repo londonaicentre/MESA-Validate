@@ -7,6 +7,7 @@ import uuid
 import streamlit as st
 
 from utils.models import FieldSelection, Session
+from utils.packet_builder import write_packet
 from utils.predictions_loader import list_prediction_folders
 from utils.profile_manager import list_profiles, load_profile, save_profile
 from utils.schema_inspector import SchemaInspector
@@ -43,6 +44,59 @@ if st.session_state.active_session:
             st.session_state.active_session = None
             st.session_state.progress = None
             st.rerun()
+
+    ## UI: EXPORT VALIDATION PACKET
+    with st.expander("Export validation packet"):
+        st.caption(
+            "Generate a self-contained HTML file a clinician can open directly "
+            "from a network drive (no installation). Results are saved back as "
+            "a JSON file for import on the Analysis page."
+        )
+        try:
+            manager = SessionManager(session.id)
+            packet_progress, _ = manager.initialize_files(session)
+            available_ids = packet_progress["files"]
+        except Exception as e:
+            available_ids = []
+            st.error(f"Could not load session documents: {e}")
+
+        if available_ids:
+            packet_name = st.text_input(
+                "Packet name (e.g. clinician name)", key="packet_name"
+            )
+            pasted = st.text_area(
+                "Document IDs (optional — paste newline/comma-separated to preselect)",
+                key="packet_paste",
+                height=68,
+            )
+            preselected = [
+                t.strip()
+                for t in pasted.replace(",", "\n").splitlines()
+                if t.strip()
+            ]
+            unknown = [t for t in preselected if t not in available_ids]
+            if unknown:
+                st.warning(f"Not in this session (ignored): {', '.join(unknown)}")
+            chosen_ids = st.multiselect(
+                "Documents to include",
+                options=available_ids,
+                default=[t for t in preselected if t in available_ids]
+                or available_ids,
+                key="packet_docs",
+            )
+            st.caption(
+                f"{len(chosen_ids)} of {len(available_ids)} documents selected"
+            )
+            if st.button(
+                "Generate packet", disabled=not packet_name or not chosen_ids
+            ):
+                try:
+                    path = write_packet(session, chosen_ids, packet_name)
+                    st.success(
+                        f"Packet written to `{path}` — copy it to the network drive."
+                    )
+                except Exception as e:
+                    st.error(f"Error generating packet: {e}")
 
     st.markdown("---")
 
