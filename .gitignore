@@ -34,3 +34,6 @@ SCHEMA_MISMATCH_REPORT.md
 # generated validation packets and clinician results (contain clinical data)
 packets/
 results/
+
+# local preview launcher (machine-specific paths)
+.claude/launch.json
