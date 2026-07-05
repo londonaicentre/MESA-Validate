@@ -30,7 +30,7 @@
 - Consumes: `SchemaInspector` (existing), `FieldSelection` (existing), `extract_field_value` (existing).
 - Produces: `resolve_selection(selection, extraction_data, inspector) -> dict` returning `{"kind": "list", "items": list}` or `{"kind": "single", "value": Any}`; `selection_title(selection) -> str`; `selection_kind(selection, inspector) -> "list" | "single"`.
 
-- [ ] **Step 1: Write failing tests** (`tests/utils/test_selection_resolver.py`) using the real `oncollamaschemav3` module and hand-built extraction dicts:
+- [x] **Step 1: Write failing tests** (`tests/utils/test_selection_resolver.py`) using the real `oncollamaschemav3` module and hand-built extraction dicts:
 
 ```python
 import pytest
@@ -117,9 +117,9 @@ def test_selection_title():
                                           class_name="E", enum_value="v")) == "E.v"
 ```
 
-- [ ] **Step 2: Run to verify failure** — `.venv/bin/python -m pytest tests/utils/test_selection_resolver.py -q` → ImportError (module missing).
+- [x] **Step 2: Run to verify failure** — `.venv/bin/python -m pytest tests/utils/test_selection_resolver.py -q` → ImportError (module missing).
 
-- [ ] **Step 3: Implement `utils/selection_resolver.py`** by moving the resolution logic out of `generate_validation_block` (lines 229–359 of validation_ui.py):
+- [x] **Step 3: Implement `utils/selection_resolver.py`** by moving the resolution logic out of `generate_validation_block` (lines 229–359 of validation_ui.py):
 
 ```python
 """
@@ -241,11 +241,11 @@ def resolve_selection(selection, extraction_data, inspector):
     raise ValueError(f"Unknown selection_type: {selection.selection_type}")
 ```
 
-- [ ] **Step 4: Refactor `utils/validation_ui.py`** — `generate_validation_block` becomes a thin wrapper: call `resolve_selection`, keep all `st.*` display behaviour identical (existing display of items/values, `show_item_validation` calls with `show_missed_count=(kind == "list")`). Delete the moved logic and the local `filter_by_enum_value`. Keep public signature unchanged.
+- [x] **Step 4: Refactor `utils/validation_ui.py`** — `generate_validation_block` becomes a thin wrapper: call `resolve_selection`, keep all `st.*` display behaviour identical (existing display of items/values, `show_item_validation` calls with `show_missed_count=(kind == "list")`). Delete the moved logic and the local `filter_by_enum_value`. Keep public signature unchanged.
 
-- [ ] **Step 5: Run full suite** — `.venv/bin/python -m pytest -q` → all pass (60 existing + 7 new).
+- [x] **Step 5: Run full suite** — `.venv/bin/python -m pytest -q` → all pass (60 existing + 7 new).
 
-- [ ] **Step 6: Commit** — `git add -A && git commit -m "refactor: extract UI-free selection resolver from validation_ui"`
+- [x] **Step 6: Commit** — `git add -A && git commit -m "refactor: extract UI-free selection resolver from validation_ui"`
 
 ---
 
@@ -258,7 +258,7 @@ def resolve_selection(selection, extraction_data, inspector):
 **Interfaces:**
 - Produces: `list_profiles(schema_module=None, profiles_dir=Path("profiles")) -> list[dict]` (each `{"name", "schema_module", "path", "num_selections"}`); `save_profile(name, schema_module, selections, profiles_dir=...) -> Path` (raises `FileExistsError` on duplicate slug); `load_profile(path, inspector) -> tuple[list[FieldSelection], list[str]]` (valid selections, human-readable skipped descriptions).
 
-- [ ] **Step 1: Failing tests**
+- [x] **Step 1: Failing tests**
 
 ```python
 import json
@@ -325,9 +325,9 @@ def test_default_profile_loads_cleanly(inspector):
     assert skipped == [] and len(valid) == 11
 ```
 
-- [ ] **Step 2: Verify failure** — `.venv/bin/python -m pytest tests/utils/test_profile_manager.py -q` → ImportError.
+- [x] **Step 2: Verify failure** — `.venv/bin/python -m pytest tests/utils/test_profile_manager.py -q` → ImportError.
 
-- [ ] **Step 3: Implement `utils/profile_manager.py`**
+- [x] **Step 3: Implement `utils/profile_manager.py`**
 
 ```python
 """
@@ -423,7 +423,7 @@ def load_profile(path, inspector):
     return valid, skipped
 ```
 
-- [ ] **Step 4: Create `profiles/mesa_protocol_v1.json`** (verified against the installed schema — all names exist):
+- [x] **Step 4: Create `profiles/mesa_protocol_v1.json`** (verified against the installed schema — all names exist):
 
 ```json
 {
@@ -445,9 +445,9 @@ def load_profile(path, inspector):
 }
 ```
 
-- [ ] **Step 5: Run** — `.venv/bin/python -m pytest tests/utils/test_profile_manager.py -q` → 6 pass; full suite passes.
+- [x] **Step 5: Run** — `.venv/bin/python -m pytest tests/utils/test_profile_manager.py -q` → 6 pass; full suite passes.
 
-- [ ] **Step 6: Commit** — `git add -A && git commit -m "feat: field-selection profiles with MESA protocol default"`
+- [x] **Step 6: Commit** — `git add -A && git commit -m "feat: field-selection profiles with MESA protocol default"`
 
 ---
 
@@ -460,7 +460,7 @@ def load_profile(path, inspector):
 - Consumes: `list_profiles`, `load_profile`, `save_profile` from Task 2.
 - Produces: nothing programmatic (UI only). Checkbox keys stay `class_{C}`, `field_{C}_{F}`, `enum_{C}_{V}`.
 
-- [ ] **Step 1: Add profile load UI** at the top of Step 2 (right after `st.subheader("Step 2: Field Selection")`); applying a profile pre-sets the existing checkbox `st.session_state` keys then reruns:
+- [x] **Step 1: Add profile load UI** at the top of Step 2 (right after `st.subheader("Step 2: Field Selection")`); applying a profile pre-sets the existing checkbox `st.session_state` keys then reruns:
 
 ```python
 from utils.profile_manager import list_profiles, load_profile, save_profile
@@ -509,7 +509,7 @@ if skipped:
     )
 ```
 
-- [ ] **Step 2: Add save UI** just above the Back/Next buttons (after selections are collected):
+- [x] **Step 2: Add save UI** just above the Back/Next buttons (after selections are collected):
 
 ```python
 with st.container():
@@ -533,9 +533,9 @@ with st.container():
                 st.error(str(e))
 ```
 
-- [ ] **Step 3: Manual check** — `.venv/bin/streamlit run Home.py` via preview: create session → Step 2 → apply "MESA Protocol v1" → 11 boxes ticked; tweak one, save under new name → file appears in `profiles/`.
+- [x] **Step 3: Manual check** — `.venv/bin/streamlit run Home.py` via preview: create session → Step 2 → apply "MESA Protocol v1" → 11 boxes ticked; tweak one, save under new name → file appears in `profiles/`.
 
-- [ ] **Step 4: Full test suite still green; commit** — `git commit -m "feat: load/save field-selection profiles in session wizard"`
+- [x] **Step 4: Full test suite still green; commit** — `git commit -m "feat: load/save field-selection profiles in session wizard"`
 
 ---
 
@@ -550,7 +550,7 @@ with st.container():
   - `findMatches(docText, query) -> {strategy: "exact"|"normalized"|"fuzzy"|null, ranges: [{start, end}]}` (char offsets into `docText`; empty ranges + null strategy when no match)
   - `isExcerptField(fieldName, value) -> bool` (locate-chip heuristic)
 
-- [ ] **Step 1: Write `utils/textmatch.js`** — pure functions, no DOM access, so both the packet and the Streamlit iframe can use them and node can test them:
+- [x] **Step 1: Write `utils/textmatch.js`** — pure functions, no DOM access, so both the packet and the Streamlit iframe can use them and node can test them:
 
 ```javascript
 /* textmatch.js - shared text matching for jump-to-source (packet + Streamlit pane) */
@@ -647,7 +647,7 @@ with st.container():
 })(typeof window !== "undefined" ? window : globalThis);
 ```
 
-- [ ] **Step 2: Node-backed pytest** (`tests/utils/test_textmatch.py`):
+- [x] **Step 2: Node-backed pytest** (`tests/utils/test_textmatch.py`):
 
 ```python
 import json
@@ -701,9 +701,9 @@ class TestFindMatches:
 
 (Note: `require()` of a bare script executes it; the IIFE attaches to `globalThis`.)
 
-- [ ] **Step 3: Run** — `.venv/bin/python -m pytest tests/utils/test_textmatch.py -v` → pass (or all-skip if node missing; node exists on this machine).
+- [x] **Step 3: Run** — `.venv/bin/python -m pytest tests/utils/test_textmatch.py -v` → pass (or all-skip if node missing; node exists on this machine).
 
-- [ ] **Step 4: Commit** — `git commit -m "feat: shared text-matching JS for jump-to-source"`
+- [x] **Step 4: Commit** — `git commit -m "feat: shared text-matching JS for jump-to-source"`
 
 ---
 
@@ -718,7 +718,7 @@ class TestFindMatches:
 - Consumes: `TextMatch.findMatches` (Task 4), `resolve_selection` (Task 1).
 - Produces: `render_entity_card(item, key_prefix)` in validation_ui (renders dict as label/value rows + locate buttons); `render_document_pane(content, highlight_query, height=800)` in document_pane.
 
-- [ ] **Step 1: Card renderer in `utils/validation_ui.py`** — replace every `st.json(item, expanded=False)` (three call sites: `display_field_value` list branch, `display_field_value` dict branch, `show_item_validation` item loop):
+- [x] **Step 1: Card renderer in `utils/validation_ui.py`** — replace every `st.json(item, expanded=False)` (three call sites: `display_field_value` list branch, `display_field_value` dict branch, `show_item_validation` item loop):
 
 ```python
 import html as html_lib
@@ -772,7 +772,7 @@ def render_entity_card(item, key_prefix):
 
 Call sites change to `render_entity_card(item, key_prefix=...)`; `show_item_validation` gains a `key_prefix`-derived card key (`f"{key_prefix}_card_{i}"`); `display_field_value` gets an optional `key_prefix=""` parameter for its dict/list branches.
 
-- [ ] **Step 2: `utils/document_pane.py`** — iframe component with shared JS:
+- [x] **Step 2: `utils/document_pane.py`** — iframe component with shared JS:
 
 ```python
 """
@@ -837,7 +837,7 @@ def render_document_pane(content, highlight_query=None, height=800):
     components.html(page, height=height, scrolling=True)
 ```
 
-- [ ] **Step 3: Wire into `pages/2_Validate.py`** — replace the `doc_col` body (`st.container(height=800)` + markdown div) with:
+- [x] **Step 3: Wire into `pages/2_Validate.py`** — replace the `doc_col` body (`st.container(height=800)` + markdown div) with:
 
 ```python
 with doc_col:
@@ -860,9 +860,9 @@ with doc_col:
 
 Also clear `highlight_query` in the Previous/Next button handlers (stale highlights across documents).
 
-- [ ] **Step 4: Manual verification via preview** — load `test_val`-style session, confirm: cards fully expanded (no JSON triangles), locate button highlights + scrolls doc pane, no-match banner shows for fabricated text, results still save to progress.json.
+- [x] **Step 4: Manual verification via preview** — load `test_val`-style session, confirm: cards fully expanded (no JSON triangles), locate button highlights + scrolls doc pane, no-match banner shows for fabricated text, results still save to progress.json.
 
-- [ ] **Step 5: Full pytest; commit** — `git commit -m "feat: expanded entity cards and jump-to-source in Validate page"`
+- [x] **Step 5: Full pytest; commit** — `git commit -m "feat: expanded entity cards and jump-to-source in Validate page"`
 
 ---
 
@@ -882,7 +882,7 @@ Also clear `highlight_query` in the Previous/Next button handlers (stale highlig
   - `write_packet(session, document_ids, packet_name, output_dir=Path("packets")) -> Path`
   - `PACKET_DATA_PLACEHOLDER = "__PACKET_DATA__"`, `TEXTMATCH_PLACEHOLDER = "__TEXTMATCH_JS__"`
 
-- [ ] **Step 1: Failing tests**
+- [x] **Step 1: Failing tests**
 
 ```python
 import json
@@ -959,7 +959,7 @@ def test_unknown_document_id_raises(session):
         build_packet_data(session, ["nope"], "x")
 ```
 
-- [ ] **Step 2: Verify failure**, then **Step 3: Implement `utils/packet_builder.py`**
+- [x] **Step 2: Verify failure**, then **Step 3: Implement `utils/packet_builder.py`**
 
 ```python
 """
@@ -1054,8 +1054,8 @@ Minimal placeholder template (replaced in Task 7) so tests pass:
 </body></html>
 ```
 
-- [ ] **Step 4: Add to `.gitignore`**: `packets/` and `results/` lines.
-- [ ] **Step 5: Run tests; full suite; commit** — `git commit -m "feat: packet builder generating self-contained HTML data payloads"`
+- [x] **Step 4: Add to `.gitignore`**: `packets/` and `results/` lines.
+- [x] **Step 5: Run tests; full suite; commit** — `git commit -m "feat: packet builder generating self-contained HTML data payloads"`
 
 ---
 
@@ -1070,7 +1070,7 @@ Minimal placeholder template (replaced in Task 7) so tests pass:
 
 Single HTML file; all CSS/JS inline; no external requests. Structure and behaviour:
 
-- [ ] **Step 1: Layout + state.** Sticky header: packet name, `Document x of y`, completed count, save-state chip, buttons `Save results` / `Load results file` / `Download results`. Body: doc nav row (`◀ Previous`, jump `<select>` listing `document_id`s with ✓ markers, `Next ▶`), then two panes (CSS grid `1fr 1fr`, each `overflow-y: auto`, height `calc(100vh - header - nav)`): `#doc-pane` and `#val-pane`. Core state module:
+- [x] **Step 1: Layout + state.** Sticky header: packet name, `Document x of y`, completed count, save-state chip, buttons `Save results` / `Load results file` / `Download results`. Body: doc nav row (`◀ Previous`, jump `<select>` listing `document_id`s with ✓ markers, `Next ▶`), then two panes (CSS grid `1fr 1fr`, each `overflow-y: auto`, height `calc(100vh - header - nav)`): `#doc-pane` and `#val-pane`. Core state module:
 
 ```javascript
 const DATA = JSON.parse(document.getElementById("packet-data").textContent);
@@ -1118,14 +1118,14 @@ function setValue(documentId, selectionKey, value) {
 }
 ```
 
-- [ ] **Step 2: Rendering.** `renderDocument(index)` fills both panes for `DATA.documents[index]`:
+- [x] **Step 2: Rendering.** `renderDocument(index)` fills both panes for `DATA.documents[index]`:
   - Doc pane: `#doc-text` div (`white-space: pre-wrap`), populated via `textContent`.
   - Val pane: one section per `DATA.selections`; `block.kind === "single"` → one entity card (dict → label/value rows built with `createElement` + `textContent`; null → dimmed `—`; missing value entirely → "Not present" note) + 3-way radio (None/Correct/Incorrect). Radio maps exactly like Streamlit: presence test = value not null/empty-string/empty-array/empty-object; Correct → `PRESENT_CORRECT`/`ABSENT_CORRECT`, Incorrect → `PRESENT_INCORRECT`/`ABSENT_INCORRECT`, None → delete the key.
   - `block.kind === "list"` → card per item each with its own radio (None→`null`, Correct→`true`, Incorrect→`false`, stored at its index in `items`) + one `missed` number input per section; value stored as `{items: [...], missed: n}`. A list value where every item radio is None and missed is 0 is treated as "no answer" and the key is deleted (mirrors Streamlit's non-none filter).
   - Every excerpt-like string value (`TextMatch.isExcerptField(fieldName, value)`) renders with a `🔎` locate chip.
   - "Mark document as fully validated" checkbox at the bottom of the val pane toggles membership in `state.completed`.
-- [ ] **Step 3: Jump-to-source.** Locate chip click → `TextMatch.findMatches(docText, value)` → wrap ranges in `<mark>` (rebuild `#doc-text` from text nodes + marks, never innerHTML), scroll first into view (`scrollIntoView({block:"center"})`), repeated clicks on the same chip cycle the `active` mark through occurrences. No match → transient "not found verbatim" tooltip on the chip. Fuzzy match → mark gets a dashed underline style + `title="approximate match"`.
-- [ ] **Step 4: Save/load.**
+- [x] **Step 3: Jump-to-source.** Locate chip click → `TextMatch.findMatches(docText, value)` → wrap ranges in `<mark>` (rebuild `#doc-text` from text nodes + marks, never innerHTML), scroll first into view (`scrollIntoView({block:"center"})`), repeated clicks on the same chip cycle the `active` mark through occurrences. No match → transient "not found verbatim" tooltip on the chip. Fuzzy match → mark gets a dashed underline style + `title="approximate match"`.
+- [x] **Step 4: Save/load.**
 
 ```javascript
 async function saveResults() {
@@ -1162,8 +1162,8 @@ function downloadResults(payload) {
 ```
 
   `Load results file` → hidden `<input type="file">`; parse JSON; sanity-check `packet_name` matches (warn + confirm on mismatch); if localStorage state exists, keep whichever `saved_at` is newer and tell the user which won. `beforeunload` warns when `state.dirty`.
-- [ ] **Step 5: Verify in browser** (covered again in Task 10): open a generated packet via `file://`, radios persist across reload, save produces valid JSON, locate works for exact/normalized/fuzzy/no-match.
-- [ ] **Step 6: Commit** — `git commit -m "feat: clinician validator UI in packet template"`
+- [x] **Step 5: Verify in browser** (covered again in Task 10): open a generated packet via `file://`, radios persist across reload, save produces valid JSON, locate works for exact/normalized/fuzzy/no-match.
+- [x] **Step 6: Commit** — `git commit -m "feat: clinician validator UI in packet template"`
 
 ---
 
@@ -1175,7 +1175,7 @@ function downloadResults(payload) {
 **Interfaces:**
 - Consumes: `write_packet` (Task 6), `SessionManager(session.id).load_progress()` / `initialize_files` (existing) for the valid document list.
 
-- [ ] **Step 1: Add expander under the active-session banner:**
+- [x] **Step 1: Add expander under the active-session banner:**
 
 ```python
 from utils.packet_builder import write_packet
@@ -1217,8 +1217,8 @@ if st.session_state.active_session:
 
 (Default = all documents selected; overwrite is acceptable because the name is the clinician slug and regenerating is the common case — the success message names the exact path.)
 
-- [ ] **Step 2: Manual verify via preview** (packet generates from the test session; file opens).
-- [ ] **Step 3: Full pytest; commit** — `git commit -m "feat: export validation packets from Sessions page"`
+- [x] **Step 2: Manual verify via preview** (packet generates from the test session; file opens).
+- [x] **Step 3: Full pytest; commit** — `git commit -m "feat: export validation packets from Sessions page"`
 
 ---
 
@@ -1235,7 +1235,7 @@ if st.session_state.active_session:
   - `parse_results_payload(data: dict) -> tuple[dict, dict]` → `(meta, progress)` where `meta = {"packet_name", "session_name", "schema_module", "saved_at"}` and `progress = {"results": ..., "completed_files": ...}`; raises `ValueError` on missing keys.
   - `combine_progress(parsed: list[tuple[dict, dict]]) -> dict` → single progress dict with keys namespaced `f"{packet_name}::{document_id}"` so the same document validated in two packets contributes twice.
 
-- [ ] **Step 1: Failing tests**
+- [x] **Step 1: Failing tests**
 
 ```python
 import pytest
@@ -1287,7 +1287,7 @@ def test_combine_progress_namespaces_documents():
     assert metrics[KEY]["total"] == 2  # both clinicians' doc-1 counted
 ```
 
-- [ ] **Step 2: Verify failure; Step 3: Implement `utils/results_import.py`**
+- [x] **Step 2: Verify failure; Step 3: Implement `utils/results_import.py`**
 
 ```python
 """
@@ -1331,7 +1331,7 @@ def combine_progress(parsed):
     return combined
 ```
 
-- [ ] **Step 4: Analysis page section** — in `pages/3_Analysis.py`, after the session selectbox and before the existing overview, add:
+- [x] **Step 4: Analysis page section** — in `pages/3_Analysis.py`, after the session selectbox and before the existing overview, add:
 
 ```python
 import json
@@ -1377,7 +1377,7 @@ if parsed_packets:
 
 (The existing session-progress analysis below stays untouched.)
 
-- [ ] **Step 5: Run tests + full suite; commit** — `git commit -m "feat: import clinician packet results into Analysis"`
+- [x] **Step 5: Run tests + full suite; commit** — `git commit -m "feat: import clinician packet results into Analysis"`
 
 ---
 
@@ -1386,10 +1386,10 @@ if parsed_packets:
 **Files:**
 - Modify: `README.md` (profiles, packet workflow, results import sections)
 
-- [ ] **Step 1: Full pytest** — `.venv/bin/python -m pytest -q` → all green.
-- [ ] **Step 2: End-to-end via preview:** run the app; create a session with the MESA Protocol v1 profile against `predictions/test`; export a packet for two documents; open `packets/<x>.html` in a real browser (file://); validate one document fully (exact + fuzzy locate, list missed count); save results JSON; upload it on the Analysis page; confirm metrics match the entered values.
-- [ ] **Step 3: README** — add "Field profiles", "Deploying to clinicians (validation packets)" (generate → copy to network drive → clinician opens in Edge → save results to `results/`), and "Importing results" sections.
-- [ ] **Step 4: Commit** — `git commit -m "docs: profile + packet workflow documentation"`
+- [x] **Step 1: Full pytest** — `.venv/bin/python -m pytest -q` → all green.
+- [x] **Step 2: End-to-end via preview:** run the app; create a session with the MESA Protocol v1 profile against `predictions/test`; export a packet for two documents; open `packets/<x>.html` in a real browser (file://); validate one document fully (exact + fuzzy locate, list missed count); save results JSON; upload it on the Analysis page; confirm metrics match the entered values.
+- [x] **Step 3: README** — add "Field profiles", "Deploying to clinicians (validation packets)" (generate → copy to network drive → clinician opens in Edge → save results to `results/`), and "Importing results" sections.
+- [x] **Step 4: Commit** — `git commit -m "docs: profile + packet workflow documentation"`
 
 ## Self-review notes
 
