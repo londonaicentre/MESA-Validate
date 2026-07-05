@@ -30,9 +30,10 @@ a rollout to ~10 clinicians validating ~600 documents:
   fallback.
 - **Document assignment:** manual — the coordinator picks which documents go
   into each packet.
-- **Scope:** the polished validation UX (expanded cards, jump-to-source) is
-  built only in the HTML validator. The Streamlit Validate page is unchanged.
-  No automatic split/overlap logic.
+- **Scope (revised):** the polished validation UX (expanded cards,
+  jump-to-source) is built in the HTML validator **and** in the Streamlit
+  Validate page, sharing the same text-matching JS. No automatic
+  split/overlap logic.
 
 ## Architecture
 
@@ -186,7 +187,32 @@ Plain HTML/CSS/JS, no framework, no build step. Target browser: Edge
   }
   ```
 
-## Component 4: Analysis import
+## Component 4: Streamlit Validate page UX
+
+The Validate page (pages/2_Validate.py + utils/validation_ui.py) adopts the
+same two fixes, reusing shared pieces rather than duplicating them:
+
+- **Expanded entity cards.** All `st.json(item, expanded=False)` calls in
+  `validation_ui.py` are replaced by a card renderer that shows every field
+  as a label/value row (HTML via `st.markdown`, values HTML-escaped), with
+  null/absent values dimmed (`—`). Nothing requires a click to reveal.
+  The card renderer receives the same block data produced by
+  `selection_resolver.py`, so Streamlit and packet display stay in sync.
+- **Jump-to-source.** Each excerpt-like string value (same heuristic as the
+  packet: field name ends `_desc`/`_name_desc`/`_summary`, or string ≥ 12
+  chars) gets a small "locate" button. Clicking stores
+  `st.session_state["highlight_query"]` and reruns.
+- **Document pane as an HTML component.** The document pane is rendered with
+  `st.components.v1.html(...)` (an iframe) instead of raw markdown. The
+  iframe embeds the document text plus the shared matching/highlight script
+  (`utils/textmatch.js` — the same file inlined into the packet template).
+  On render it applies `highlight_query` (exact → whitespace-normalized →
+  fuzzy), wraps matches in `<mark>`, and scrolls the first match into view.
+  No match → a small "not found verbatim" banner inside the pane.
+- The validation radio semantics, storage format, and save flow on the page
+  are unchanged.
+
+## Component 5: Analysis import
 
 - Analysis page gains an "Import packet results" section above the existing
   session analysis: `st.file_uploader(accept_multiple_files=True)` for
@@ -235,9 +261,11 @@ Plain HTML/CSS/JS, no framework, no build step. Target browser: Edge
 - **Browser verification** (manual, via preview): open a generated packet from
   `file://`, validate a document end-to-end, save + reload restores state,
   jump-to-source hits exact/normalized/fuzzy/no-match cases.
+- **Streamlit verification** (manual, via preview): Validate page shows
+  expanded cards (no collapsed JSON), locate buttons highlight and scroll the
+  document pane, and saving results still round-trips through progress.json.
 
 ## Out of scope
 
-- Streamlit Validate page UX changes.
 - Automatic document splitting or inter-rater overlap assignment.
 - Any server/hosted deployment; authentication; editing of extractions.
