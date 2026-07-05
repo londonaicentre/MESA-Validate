@@ -30,3 +30,7 @@ SCHEMA_MISMATCH_REPORT.md
 
 # Streamlit
 .streamlit/
+
+# generated validation packets and clinician results (contain clinical data)
+packets/
+results/
