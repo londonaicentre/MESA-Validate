@@ -5,6 +5,7 @@ Builds validation interface for each item depending on type of item
 """
 
 import html as html_lib
+import json
 
 import streamlit as st
 
@@ -27,45 +28,60 @@ def _set_highlight(value):
     st.session_state["highlight_query"] = value
 
 
-def _locate_button(field_name, value, key):
-    label = value[:60] + ("…" if len(value) > 60 else "")
-    st.button(
-        f"🔎 locate: {label}",
-        key=key,
-        on_click=_set_highlight,
-        args=(value,),
-        help="Highlight this text in the document pane",
+def _format_value(value):
+    if value is None:
+        return "<span class='mesa-null'>—</span>"
+    if isinstance(value, (dict, list)):
+        return html_lib.escape(json.dumps(value))
+    return html_lib.escape(str(value))
+
+
+def _field_row_html(field_name, value):
+    return (
+        f"<div class='mesa-row'>"
+        f"<span class='mesa-label'>{html_lib.escape(str(field_name))}</span>"
+        f"<span class='mesa-value'>{_format_value(value)}</span></div>"
     )
+
+
+def _render_field_row(field_name, value, key_prefix):
+    """
+    One label/value row. Excerpt-like values get a compact locate button on
+    the same row (Streamlit widgets are block-level, so a per-row column
+    layout is the only way to keep the button beside its field). Label and
+    value share the wide left column so neither wraps awkwardly in the narrow
+    validation pane; the button sits in a slim right column.
+    """
+    if not _is_excerpt_field(field_name, value):
+        st.markdown(_field_row_html(field_name, value), unsafe_allow_html=True)
+        return
+
+    c_text, c_btn = st.columns([5, 1], vertical_alignment="center")
+    with c_text:
+        st.markdown(_field_row_html(field_name, value), unsafe_allow_html=True)
+    with c_btn:
+        st.button(
+            "🔎",
+            key=f"{key_prefix}_locate_{field_name}",
+            on_click=_set_highlight,
+            args=(value,),
+            help=f"Locate in document: {value[:80]}",
+        )
 
 
 def render_entity_card(item, key_prefix):
     """
     Render a dict as a fully-expanded card (label/value rows, nulls dimmed);
-    excerpt-like values get locate buttons for jump-to-source.
+    excerpt-like values get an inline locate button for jump-to-source.
     """
     if not isinstance(item, dict):
-        st.markdown(html_lib.escape(str(item)))
+        with st.container(border=True):
+            st.markdown(html_lib.escape(str(item)))
         return
 
-    rows = []
-    excerpts = []
-    for field_name, value in item.items():
-        if value is None:
-            rendered = "<span class='mesa-null'>—</span>"
-        else:
-            rendered = html_lib.escape(str(value))
-        rows.append(
-            f"<div class='mesa-row'>"
-            f"<span class='mesa-label'>{html_lib.escape(field_name)}</span>"
-            f"<span class='mesa-value'>{rendered}</span></div>"
-        )
-        if _is_excerpt_field(field_name, value):
-            excerpts.append((field_name, value))
-
-    st.markdown(f"<div class='mesa-card'>{''.join(rows)}</div>", unsafe_allow_html=True)
-
-    for field_name, value in excerpts:
-        _locate_button(field_name, value, key=f"{key_prefix}_locate_{field_name}")
+    with st.container(border=True):
+        for field_name, value in item.items():
+            _render_field_row(field_name, value, key_prefix)
 
 
 def display_field_value(value, field_name="", key_prefix=""):
@@ -104,17 +120,8 @@ def display_field_value(value, field_name="", key_prefix=""):
         )
         render_entity_card(value, key_prefix=f"{key_prefix}_{field_name}")
     else:
-        st.markdown(
-            f"<div class='mesa-card'><div class='mesa-row'>"
-            f"<span class='mesa-label'>{html_lib.escape(str(field_name))}</span>"
-            f"<span class='mesa-value'>{html_lib.escape(str(value))}</span>"
-            f"</div></div>",
-            unsafe_allow_html=True,
-        )
-        if _is_excerpt_field(field_name, value):
-            _locate_button(
-                field_name, value, key=f"{key_prefix}_locate_{field_name}"
-            )
+        with st.container(border=True):
+            _render_field_row(field_name, value, key_prefix)
 
 
 def is_value_present(value):

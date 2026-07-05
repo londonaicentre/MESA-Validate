@@ -46,6 +46,16 @@ class TestFindMatches:
         assert r["strategy"] == "normalized"
         assert len(r["ranges"]) == 1
 
+    def test_collapsed_spacing_and_punctuation(self):
+        # document with stripped spaces still matches a spaced extraction
+        r = run_match(
+            "Tumourtestingshowed:PD-L1(SP263assay)CPS75,TP53Exon8mutation.",
+            "PD-L1 (SP263 assay) CPS 75",
+        )
+        assert r["strategy"] == "collapsed"
+        assert len(r["ranges"]) == 1
+        assert r["ranges"][0]["start"] == len("Tumourtestingshowed:")
+
     def test_fuzzy(self):
         r = run_match(
             "The patient was discharged on post-operative day 8 after an ileus.",

@@ -45,25 +45,15 @@ VALIDATE_PAGE_STYLES = """
         margin-top: 0.5rem;
         margin-bottom: 0.3rem;
     }
-    .mesa-card {
-        border: 1px solid #dfe3e8;
-        border-radius: 6px;
-        padding: 8px 12px;
-        margin-bottom: 6px;
-        background-color: #fbfcfd;
-    }
     .mesa-row {
         display: flex;
         gap: 8px;
-        padding: 2px 0;
-        border-bottom: 1px solid #f0f2f4;
-        font-size: 0.88rem;
-    }
-    .mesa-row:last-child {
-        border-bottom: none;
+        padding: 1px 0;
+        font-size: 0.86rem;
+        align-items: baseline;
     }
     .mesa-label {
-        flex: 0 0 40%;
+        flex: 0 0 38%;
         font-weight: 600;
         color: #57606a;
         word-break: break-word;
@@ -75,6 +65,15 @@ VALIDATE_PAGE_STYLES = """
     .mesa-null {
         color: #999;
         font-style: italic;
+    }
+    /* tighten and compact only the field rows that carry a locate button */
+    div[data-testid="stHorizontalBlock"]:has(.mesa-row) {
+        gap: 0.3rem;
+    }
+    div[data-testid="stHorizontalBlock"]:has(.mesa-row) .stButton > button {
+        padding: 0 0.35rem;
+        min-height: 1.7rem;
+        line-height: 1.5rem;
     }
 </style>
 """

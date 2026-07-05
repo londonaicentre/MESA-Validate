@@ -46,6 +46,25 @@
     return ranges;
   }
 
+  /* Match ignoring ALL non-alphanumeric chars (spacing + punctuation), so
+     "PD-L1 (SP263 assay) CPS 75" still matches "PD-L1(SP263assay)CPS75". */
+  function collapsedRanges(docText, query) {
+    var chars = [], map = [];
+    for (var i = 0; i < docText.length; i++) {
+      var ch = docText[i];
+      if (/[a-z0-9]/i.test(ch)) { chars.push(ch.toLowerCase()); map.push(i); }
+    }
+    var collapsedDoc = chars.join("");
+    var collapsedQuery = query.replace(/[^a-z0-9]/gi, "").toLowerCase();
+    if (!collapsedQuery) return [];
+    var ranges = [], from = 0, idx;
+    while ((idx = collapsedDoc.indexOf(collapsedQuery, from)) !== -1) {
+      ranges.push({ start: map[idx], end: map[idx + collapsedQuery.length - 1] + 1 });
+      from = idx + collapsedQuery.length;
+    }
+    return ranges;
+  }
+
   function tokenize(text) {
     var tokens = [], re = /[a-z0-9]+/gi, m;
     while ((m = re.exec(text)) !== null) {
@@ -81,6 +100,8 @@
     if (ranges.length) return { strategy: "exact", ranges: ranges };
     ranges = normalizedRanges(docText, query);
     if (ranges.length) return { strategy: "normalized", ranges: ranges };
+    ranges = collapsedRanges(docText, query);
+    if (ranges.length) return { strategy: "collapsed", ranges: ranges };
     var fuzzy = fuzzyRange(docText, query);
     if (fuzzy) return { strategy: "fuzzy", ranges: [fuzzy] };
     return { strategy: null, ranges: [] };
