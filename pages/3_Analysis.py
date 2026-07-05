@@ -2,6 +2,8 @@
 3_Analysis.py - Results analysis and metrics visualization
 """
 
+import json
+
 import pandas as pd
 import streamlit as st
 
@@ -10,6 +12,7 @@ from utils.metrics import (
     export_to_csv_string,
     format_metrics_summary,
 )
+from utils.results_import import combine_progress, parse_results_payload
 from utils.session_manager import SessionManager
 
 st.set_page_config(page_title="Analysis", layout="wide")
@@ -31,6 +34,63 @@ else:
         session = session_options[selected_session_name]
 
         progress = SessionManager(session.id).load_progress()
+
+        st.markdown("---")
+
+        ## UI: IMPORT PACKET RESULTS
+        st.subheader("Import packet results")
+        st.caption(
+            "Upload one or more `*_results.json` files saved by clinicians "
+            "from their validation packets."
+        )
+        uploads = st.file_uploader(
+            "Packet results files",
+            type="json",
+            accept_multiple_files=True,
+            label_visibility="collapsed",
+        )
+        parsed_packets = []
+        for upload in uploads or []:
+            try:
+                meta, packet_progress = parse_results_payload(json.load(upload))
+                if meta["session_name"] and meta["session_name"] != session.name:
+                    st.warning(
+                        f"{upload.name}: saved from session "
+                        f"'{meta['session_name']}', analyzing against "
+                        f"'{session.name}'"
+                    )
+                parsed_packets.append((meta, packet_progress))
+            except (ValueError, json.JSONDecodeError) as e:
+                st.error(f"{upload.name}: {e}")
+
+        if parsed_packets:
+            for meta, packet_progress in parsed_packets:
+                st.markdown(
+                    f"#### Packet: {meta['packet_name']} "
+                    f"({len(packet_progress['completed_files'])} completed docs)"
+                )
+                packet_metrics = aggregate_metrics(
+                    packet_progress, session.selections
+                )
+                if packet_metrics:
+                    st.dataframe(
+                        pd.DataFrame(format_metrics_summary(packet_metrics)),
+                        use_container_width=True,
+                        hide_index=True,
+                    )
+                else:
+                    st.info("No completed results in this packet")
+
+            if len(parsed_packets) > 1:
+                st.markdown("#### All packets combined")
+                combined = combine_progress(parsed_packets)
+                combined_metrics = aggregate_metrics(combined, session.selections)
+                if combined_metrics:
+                    st.dataframe(
+                        pd.DataFrame(format_metrics_summary(combined_metrics)),
+                        use_container_width=True,
+                        hide_index=True,
+                    )
 
         st.markdown("---")
 
