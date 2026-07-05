@@ -1,11 +1,764 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MESA Validate Packet</title>
+<style>
+  :root {
+    --border: #d9dee3;
+    --muted: #57606a;
+    --accent: #005eb8; /* NHS blue */
+    --bg: #f4f6f8;
+    --card-bg: #fbfcfd;
+    --mark: #ffd54d;
+    --mark-active: #ff9800;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", -apple-system, Roboto, Arial, sans-serif;
+    font-size: 15px;
+    color: #1f2328;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    background: #fff;
+    border-bottom: 2px solid var(--accent);
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  header .title { font-weight: 700; font-size: 1.05rem; }
+  header .title small { color: var(--muted); font-weight: 400; margin-left: 8px; }
+  header .spacer { flex: 1; }
+  #save-status {
+    font-size: 0.82rem;
+    padding: 3px 10px;
+    border-radius: 12px;
+    background: #eef1f4;
+    color: var(--muted);
+  }
+  #save-status.dirty { background: #fff3cd; color: #7a5b00; }
+  button {
+    font: inherit;
+    font-size: 0.85rem;
+    padding: 5px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+  }
+  button:hover { background: #f0f4f8; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.primary:hover { background: #004b93; }
+  nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 16px;
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+  }
+  nav select { font: inherit; font-size: 0.85rem; padding: 4px; max-width: 480px; }
+  nav .doc-progress { color: var(--muted); font-size: 0.85rem; }
+  main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding: 12px 16px;
+    min-height: 0;
+  }
+  section.pane {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow-y: auto;
+    padding: 12px 16px;
+    min-height: 0;
+  }
+  h2 { font-size: 1rem; margin: 4px 0 10px; }
+  #doc-text {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    line-height: 1.55;
+    font-size: 0.93rem;
+  }
+  mark { background: var(--mark); padding: 0 1px; }
+  mark.active { background: var(--mark-active); }
+  mark.fuzzy { text-decoration: underline dashed #b26a00; }
+  #doc-banner .note {
+    background: #fff3cd;
+    border: 1px solid #ffe08a;
+    padding: 6px 10px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    font-size: 0.85rem;
+  }
+  .selection-block {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 14px;
+    overflow: hidden;
+  }
+  .selection-block > .block-title {
+    background: #eef3f8;
+    padding: 7px 12px;
+    font-weight: 600;
+    font-size: 0.92rem;
+    word-break: break-word;
+  }
+  .block-body { padding: 10px 12px; }
+  .entity-card {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--card-bg);
+    padding: 8px 12px;
+    margin-bottom: 8px;
+  }
+  .field-row {
+    display: flex;
+    gap: 8px;
+    padding: 2px 0;
+    border-bottom: 1px solid #f0f2f4;
+    font-size: 0.88rem;
+  }
+  .field-row:last-child { border-bottom: none; }
+  .field-label { flex: 0 0 42%; font-weight: 600; color: var(--muted); word-break: break-word; }
+  .field-value { flex: 1; word-break: break-word; }
+  .null-value { color: #999; font-style: italic; }
+  .locate-chip {
+    display: inline-block;
+    border: 1px solid #c3d4e4;
+    background: #eef5fc;
+    color: var(--accent);
+    border-radius: 10px;
+    font-size: 0.75rem;
+    padding: 1px 8px;
+    margin-left: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .locate-chip:hover { background: #dcebfa; }
+  .locate-chip .miss { color: #a15c00; margin-left: 4px; }
+  .radio-row { display: flex; gap: 16px; margin: 6px 0 2px; align-items: center; }
+  .radio-row label { display: flex; gap: 4px; align-items: center; font-size: 0.88rem; cursor: pointer; }
+  .missed-row { margin-top: 8px; font-size: 0.88rem; display: flex; align-items: center; gap: 8px; }
+  .missed-row input { width: 70px; font: inherit; padding: 3px 6px; }
+  .not-present { color: #777; font-style: italic; font-size: 0.88rem; margin-bottom: 6px; }
+  #complete-row {
+    margin-top: 8px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #f0f7f0;
+    font-weight: 600;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .footer-nav { display: flex; justify-content: space-between; margin-top: 12px; }
+</style>
 </head>
 <body>
+<header>
+  <div class="title" id="hdr-title"></div>
+  <div class="spacer"></div>
+  <span id="save-status">No changes yet</span>
+  <button id="btn-save" class="primary" title="Save results JSON to the network drive">Save results</button>
+  <button id="btn-download" title="Download results JSON instead">Download</button>
+  <button id="btn-load" title="Resume from a previously saved results file">Load results file</button>
+  <input type="file" id="load-file" accept=".json,application/json" hidden>
+</header>
+<nav>
+  <button id="btn-prev">&#9664; Previous</button>
+  <select id="doc-select"></select>
+  <button id="btn-next">Next &#9654;</button>
+  <span class="doc-progress" id="doc-progress"></span>
+</nav>
+<main>
+  <section class="pane" id="doc-pane">
+    <h2>Document <span id="doc-id" style="font-weight:400;color:var(--muted);font-size:0.8rem"></span></h2>
+    <div id="doc-banner"></div>
+    <div id="doc-text"></div>
+  </section>
+  <section class="pane" id="val-pane">
+    <h2>Validation</h2>
+    <div id="val-blocks"></div>
+    <div id="complete-row">
+      <input type="checkbox" id="complete-check">
+      <label for="complete-check">Mark document as fully validated</label>
+    </div>
+    <div class="footer-nav">
+      <button id="btn-prev2">&#9664; Previous document</button>
+      <button id="btn-next2">Next document &#9654;</button>
+    </div>
+  </section>
+</main>
+
 <script>__TEXTMATCH_JS__</script>
 <script type="application/json" id="packet-data">__PACKET_DATA__</script>
+<script>
+"use strict";
+
+const DATA = JSON.parse(document.getElementById("packet-data").textContent);
+const STORE_KEY = "mesa-packet:" + DATA.packet_name + ":" + DATA.created_at;
+
+let state = {
+  currentIndex: 0,
+  results: {},        // document_id -> selection_key -> value (progress.json formats)
+  completed: [],      // document_ids
+  savedAt: null,
+  dirty: false,
+};
+let fileHandle = null;
+let localStorageOk = true;
+let activeLocate = { chip: null, occurrence: 0 };
+
+/* ---------- persistence ---------- */
+
+function resultsPayload() {
+  return {
+    packet_name: DATA.packet_name,
+    session_name: DATA.session_name,
+    schema_module: DATA.schema_module,
+    saved_at: new Date().toISOString(),
+    completed_files: state.completed,
+    results: state.results,
+  };
+}
+
+function loadLocal() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (raw) {
+      const saved = JSON.parse(raw);
+      state.results = saved.results || {};
+      state.completed = saved.completed_files || [];
+      state.savedAt = saved.saved_at || null;
+    }
+  } catch (e) {
+    localStorageOk = false;
+  }
+}
+
+function persistLocal() {
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify(resultsPayload()));
+  } catch (e) {
+    if (localStorageOk) {
+      localStorageOk = false;
+      showDocBanner("Browser storage unavailable — use “Save results” frequently; progress is NOT auto-saved.");
+    }
+  }
+}
+
+function setValue(documentId, selectionKey, value) {
+  if (!state.results[documentId]) state.results[documentId] = {};
+  if (value === null || value === undefined) {
+    delete state.results[documentId][selectionKey];
+    if (Object.keys(state.results[documentId]).length === 0) {
+      delete state.results[documentId];
+    }
+  } else {
+    state.results[documentId][selectionKey] = value;
+  }
+  state.dirty = true;
+  persistLocal();
+  updateHeader();
+}
+
+function getValue(documentId, selectionKey) {
+  return (state.results[documentId] || {})[selectionKey];
+}
+
+/* ---------- value semantics (mirrors Streamlit app exactly) ---------- */
+
+function isPresent(value) {
+  if (value === null || value === undefined) return false;
+  if (typeof value === "string" && value.trim() === "") return false;
+  if (Array.isArray(value) && value.length === 0) return false;
+  if (typeof value === "object" && !Array.isArray(value) && Object.keys(value).length === 0) return false;
+  return true;
+}
+
+function binaryValue(choice, value) {
+  // choice: "correct" | "incorrect" | null
+  if (choice === null) return null;
+  const present = isPresent(value);
+  if (choice === "correct") return present ? "PRESENT_CORRECT" : "ABSENT_CORRECT";
+  return present ? "PRESENT_INCORRECT" : "ABSENT_INCORRECT";
+}
+
+/* ---------- header / nav ---------- */
+
+function updateHeader() {
+  document.getElementById("hdr-title").innerHTML = "";
+  const t = document.getElementById("hdr-title");
+  t.appendChild(document.createTextNode("MESA Validate — " + DATA.packet_name));
+  const small = document.createElement("small");
+  small.textContent = "session: " + DATA.session_name;
+  t.appendChild(small);
+
+  const total = DATA.documents.length;
+  document.getElementById("doc-progress").textContent =
+    "Document " + (state.currentIndex + 1) + " of " + total +
+    " · " + state.completed.length + " completed";
+
+  const chip = document.getElementById("save-status");
+  if (state.dirty) {
+    chip.textContent = "Unsaved changes";
+    chip.className = "dirty";
+  } else if (state.savedAt) {
+    chip.textContent = "Saved " + new Date(state.savedAt).toLocaleTimeString();
+    chip.className = "";
+  } else {
+    chip.textContent = "No changes yet";
+    chip.className = "";
+  }
+
+  const select = document.getElementById("doc-select");
+  select.innerHTML = "";
+  DATA.documents.forEach((doc, i) => {
+    const opt = document.createElement("option");
+    opt.value = i;
+    opt.textContent =
+      (state.completed.includes(doc.document_id) ? "✓ " : "• ") +
+      (i + 1) + ". " + doc.document_id;
+    if (i === state.currentIndex) opt.selected = true;
+    select.appendChild(opt);
+  });
+
+  document.getElementById("btn-prev").disabled = state.currentIndex === 0;
+  document.getElementById("btn-prev2").disabled = state.currentIndex === 0;
+  document.getElementById("btn-next").disabled = state.currentIndex >= total - 1;
+  document.getElementById("btn-next2").disabled = state.currentIndex >= total - 1;
+}
+
+function goTo(index) {
+  if (index < 0 || index >= DATA.documents.length) return;
+  state.currentIndex = index;
+  activeLocate = { chip: null, occurrence: 0 };
+  renderDocument();
+}
+
+/* ---------- document pane ---------- */
+
+function showDocBanner(message) {
+  const banner = document.getElementById("doc-banner");
+  banner.innerHTML = "";
+  if (message) {
+    const div = document.createElement("div");
+    div.className = "note";
+    div.textContent = message;
+    banner.appendChild(div);
+  }
+}
+
+function renderDocText(highlightResult, activeOccurrence) {
+  const docText = DATA.documents[state.currentIndex].content;
+  const el = document.getElementById("doc-text");
+  el.innerHTML = "";
+  if (!highlightResult || !highlightResult.ranges.length) {
+    el.textContent = docText;
+    return;
+  }
+  let cursor = 0;
+  highlightResult.ranges.forEach((r, i) => {
+    el.appendChild(document.createTextNode(docText.slice(cursor, r.start)));
+    const mark = document.createElement("mark");
+    if (i === (activeOccurrence || 0)) mark.className = "active";
+    if (highlightResult.strategy === "fuzzy") {
+      mark.classList.add("fuzzy");
+      mark.title = "approximate match";
+    }
+    mark.textContent = docText.slice(r.start, r.end);
+    el.appendChild(mark);
+    cursor = r.end;
+  });
+  el.appendChild(document.createTextNode(docText.slice(cursor)));
+  const active = el.querySelector("mark.active") || el.querySelector("mark");
+  if (active) active.scrollIntoView({ block: "center" });
+}
+
+function onLocate(chip, query) {
+  const docText = DATA.documents[state.currentIndex].content;
+  const result = TextMatch.findMatches(docText, query);
+  if (!result.ranges.length) {
+    showDocBanner("“" + query.slice(0, 60) + (query.length > 60 ? "…" : "") + "” not found verbatim in document");
+    renderDocText(null, 0);
+    flagChipMiss(chip);
+    activeLocate = { chip: null, occurrence: 0 };
+    return;
+  }
+  showDocBanner(
+    result.strategy === "fuzzy"
+      ? "Approximate match shown (text differs slightly from the document)"
+      : ""
+  );
+  if (activeLocate.chip === chip) {
+    activeLocate.occurrence = (activeLocate.occurrence + 1) % result.ranges.length;
+  } else {
+    activeLocate = { chip: chip, occurrence: 0 };
+  }
+  renderDocText(result, activeLocate.occurrence);
+}
+
+function flagChipMiss(chip) {
+  let miss = chip.querySelector(".miss");
+  if (!miss) {
+    miss = document.createElement("span");
+    miss.className = "miss";
+    chip.appendChild(miss);
+  }
+  miss.textContent = "not found";
+  setTimeout(() => { if (miss.parentNode) miss.remove(); }, 2500);
+}
+
+/* ---------- validation pane ---------- */
+
+function makeLocateChip(query) {
+  const chip = document.createElement("span");
+  chip.className = "locate-chip";
+  chip.textContent = "🔎 locate";
+  chip.title = "Highlight this text in the document";
+  chip.addEventListener("click", () => onLocate(chip, query));
+  return chip;
+}
+
+function entityCard(item) {
+  const card = document.createElement("div");
+  card.className = "entity-card";
+  if (item === null || item === undefined || typeof item !== "object" || Array.isArray(item)) {
+    const row = document.createElement("div");
+    row.className = "field-row";
+    const value = document.createElement("span");
+    value.className = "field-value";
+    if (item === null || item === undefined) {
+      value.classList.add("null-value");
+      value.textContent = "—";
+    } else {
+      value.textContent = Array.isArray(item) ? JSON.stringify(item) : String(item);
+    }
+    row.appendChild(value);
+    card.appendChild(row);
+    return card;
+  }
+  Object.entries(item).forEach(([fieldName, value]) => {
+    const row = document.createElement("div");
+    row.className = "field-row";
+    const label = document.createElement("span");
+    label.className = "field-label";
+    label.textContent = fieldName;
+    const valueEl = document.createElement("span");
+    valueEl.className = "field-value";
+    if (value === null || value === undefined) {
+      valueEl.classList.add("null-value");
+      valueEl.textContent = "—";
+    } else if (typeof value === "object") {
+      valueEl.textContent = JSON.stringify(value);
+    } else {
+      valueEl.textContent = String(value);
+    }
+    if (TextMatch.isExcerptField(fieldName, value)) {
+      valueEl.appendChild(makeLocateChip(value));
+    }
+    row.appendChild(label);
+    row.appendChild(valueEl);
+    card.appendChild(row);
+  });
+  return card;
+}
+
+function radioRow(name, current, onChange) {
+  // current: "none" | "correct" | "incorrect"
+  const row = document.createElement("div");
+  row.className = "radio-row";
+  [["none", "None"], ["correct", "Correct"], ["incorrect", "Incorrect"]].forEach(([value, text]) => {
+    const label = document.createElement("label");
+    const input = document.createElement("input");
+    input.type = "radio";
+    input.name = name;
+    input.value = value;
+    input.checked = current === value;
+    input.addEventListener("change", () => onChange(value));
+    label.appendChild(input);
+    label.appendChild(document.createTextNode(text));
+    row.appendChild(label);
+  });
+  return row;
+}
+
+function renderSingleBlock(container, doc, selectionMeta) {
+  const block = doc.blocks[selectionMeta.key];
+  const value = block.value;
+  const body = document.createElement("div");
+  body.className = "block-body";
+
+  if (!isPresent(value)) {
+    const note = document.createElement("div");
+    note.className = "not-present";
+    note.textContent = "Not present in extraction";
+    body.appendChild(note);
+    if (value !== null && value !== undefined) body.appendChild(entityCard(value));
+  } else if (typeof value === "object" && !Array.isArray(value)) {
+    body.appendChild(entityCard(value));
+  } else {
+    const card = document.createElement("div");
+    card.className = "entity-card";
+    const row = document.createElement("div");
+    row.className = "field-row";
+    const label = document.createElement("span");
+    label.className = "field-label";
+    label.textContent = selectionMeta.title.split(".").pop();
+    const valueEl = document.createElement("span");
+    valueEl.className = "field-value";
+    valueEl.textContent = String(value);
+    if (TextMatch.isExcerptField(selectionMeta.title.split(".").pop(), value)) {
+      valueEl.appendChild(makeLocateChip(String(value)));
+    }
+    row.appendChild(label);
+    row.appendChild(valueEl);
+    card.appendChild(row);
+    body.appendChild(card);
+  }
+
+  const stored = getValue(doc.document_id, selectionMeta.key);
+  let current = "none";
+  if (typeof stored === "string") {
+    if (stored.endsWith("_CORRECT")) current = "correct";
+    else if (stored.endsWith("_INCORRECT")) current = "incorrect";
+  }
+  body.appendChild(
+    radioRow("r_" + doc.document_id + "_" + selectionMeta.key, current, (choice) => {
+      setValue(
+        doc.document_id,
+        selectionMeta.key,
+        binaryValue(choice === "none" ? null : choice, value)
+      );
+      updateHeader();
+    })
+  );
+  container.appendChild(body);
+}
+
+function renderListBlock(container, doc, selectionMeta) {
+  const block = doc.blocks[selectionMeta.key];
+  const items = block.items || [];
+  const body = document.createElement("div");
+  body.className = "block-body";
+
+  const stored = getValue(doc.document_id, selectionMeta.key);
+  const storedItems = (stored && stored.items) || [];
+  const storedMissed = (stored && stored.missed) || 0;
+  const itemChoices = items.map((_, i) =>
+    storedItems[i] === true ? "correct" : storedItems[i] === false ? "incorrect" : "none"
+  );
+  let missed = storedMissed;
+
+  function commit() {
+    const itemResults = itemChoices.map((c) =>
+      c === "correct" ? true : c === "incorrect" ? false : null
+    );
+    const noAnswer = itemResults.every((r) => r === null) && (!missed || missed === 0);
+    setValue(
+      doc.document_id,
+      selectionMeta.key,
+      noAnswer ? null : { items: itemResults, missed: missed || 0 }
+    );
+    updateHeader();
+  }
+
+  if (!items.length) {
+    const note = document.createElement("div");
+    note.className = "not-present";
+    note.textContent = "No items extracted";
+    body.appendChild(note);
+  }
+
+  items.forEach((item, i) => {
+    body.appendChild(entityCard(item));
+    body.appendChild(
+      radioRow(
+        "r_" + doc.document_id + "_" + selectionMeta.key + "_" + i,
+        itemChoices[i],
+        (choice) => { itemChoices[i] = choice; commit(); }
+      )
+    );
+  });
+
+  const missedRow = document.createElement("div");
+  missedRow.className = "missed-row";
+  const missedLabel = document.createElement("span");
+  missedLabel.textContent = "Number of items missed by the model:";
+  const missedInput = document.createElement("input");
+  missedInput.type = "number";
+  missedInput.min = "0";
+  missedInput.value = String(storedMissed);
+  missedInput.addEventListener("change", () => {
+    missed = Math.max(0, parseInt(missedInput.value || "0", 10) || 0);
+    missedInput.value = String(missed);
+    commit();
+  });
+  missedRow.appendChild(missedLabel);
+  missedRow.appendChild(missedInput);
+  body.appendChild(missedRow);
+
+  container.appendChild(body);
+}
+
+function renderDocument() {
+  const doc = DATA.documents[state.currentIndex];
+  document.getElementById("doc-id").textContent = doc.document_id;
+  showDocBanner("");
+  renderDocText(null, 0);
+
+  const blocks = document.getElementById("val-blocks");
+  blocks.innerHTML = "";
+  DATA.selections.forEach((selectionMeta) => {
+    const section = document.createElement("div");
+    section.className = "selection-block";
+    const title = document.createElement("div");
+    title.className = "block-title";
+    title.textContent = selectionMeta.title;
+    section.appendChild(title);
+    if (selectionMeta.kind === "list") {
+      renderListBlock(section, doc, selectionMeta);
+    } else {
+      renderSingleBlock(section, doc, selectionMeta);
+    }
+    blocks.appendChild(section);
+  });
+
+  const check = document.getElementById("complete-check");
+  check.checked = state.completed.includes(doc.document_id);
+
+  document.getElementById("doc-pane").scrollTop = 0;
+  document.getElementById("val-pane").scrollTop = 0;
+  updateHeader();
+}
+
+/* ---------- save / load ---------- */
+
+function markSaved(message) {
+  state.dirty = false;
+  state.savedAt = new Date().toISOString();
+  persistLocal();
+  updateHeader();
+  if (message) {
+    const chip = document.getElementById("save-status");
+    chip.textContent = message;
+  }
+}
+
+function downloadResults(payload) {
+  payload = payload || JSON.stringify(resultsPayload(), null, 2);
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([payload], { type: "application/json" }));
+  a.download = DATA.packet_name + "_results.json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+  markSaved("Downloaded " + a.download);
+}
+
+async function saveResults() {
+  const payload = JSON.stringify(resultsPayload(), null, 2);
+  if ("showSaveFilePicker" in window) {
+    try {
+      if (!fileHandle) {
+        fileHandle = await window.showSaveFilePicker({
+          suggestedName: DATA.packet_name + "_results.json",
+          types: [{ description: "JSON", accept: { "application/json": [".json"] } }],
+        });
+      }
+      const writable = await fileHandle.createWritable();
+      await writable.write(payload);
+      await writable.close();
+      markSaved("Saved to " + fileHandle.name);
+      return;
+    } catch (e) {
+      if (e && e.name === "AbortError") return; // user cancelled; keep dirty
+      fileHandle = null; // permission problem etc. — fall back
+    }
+  }
+  downloadResults(payload);
+}
+
+function loadResultsFile(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    let loaded;
+    try {
+      loaded = JSON.parse(reader.result);
+    } catch (e) {
+      alert("That file is not valid JSON.");
+      return;
+    }
+    if (!loaded || typeof loaded.results !== "object") {
+      alert("That file does not look like a MESA packet results file.");
+      return;
+    }
+    if (loaded.packet_name && loaded.packet_name !== DATA.packet_name) {
+      if (!confirm(
+        "This results file is from packet “" + loaded.packet_name +
+        "” but this packet is “" + DATA.packet_name + "”. Load anyway?"
+      )) return;
+    }
+    if (state.savedAt && loaded.saved_at && loaded.saved_at < state.savedAt) {
+      if (!confirm(
+        "Your progress in this browser is newer than the file. Replace it with the older file?"
+      )) return;
+    }
+    state.results = loaded.results || {};
+    state.completed = loaded.completed_files || [];
+    state.savedAt = loaded.saved_at || null;
+    state.dirty = false;
+    persistLocal();
+    renderDocument();
+  };
+  reader.readAsText(file);
+}
+
+/* ---------- wiring ---------- */
+
+document.getElementById("btn-prev").addEventListener("click", () => goTo(state.currentIndex - 1));
+document.getElementById("btn-prev2").addEventListener("click", () => goTo(state.currentIndex - 1));
+document.getElementById("btn-next").addEventListener("click", () => goTo(state.currentIndex + 1));
+document.getElementById("btn-next2").addEventListener("click", () => goTo(state.currentIndex + 1));
+document.getElementById("doc-select").addEventListener("change", (e) => goTo(parseInt(e.target.value, 10)));
+document.getElementById("btn-save").addEventListener("click", saveResults);
+document.getElementById("btn-download").addEventListener("click", () => downloadResults());
+document.getElementById("btn-load").addEventListener("click", () => document.getElementById("load-file").click());
+document.getElementById("load-file").addEventListener("change", (e) => {
+  if (e.target.files.length) loadResultsFile(e.target.files[0]);
+  e.target.value = "";
+});
+document.getElementById("complete-check").addEventListener("change", (e) => {
+  const documentId = DATA.documents[state.currentIndex].document_id;
+  if (e.target.checked) {
+    if (!state.completed.includes(documentId)) state.completed.push(documentId);
+  } else {
+    state.completed = state.completed.filter((d) => d !== documentId);
+  }
+  state.dirty = true;
+  persistLocal();
+  updateHeader();
+});
+window.addEventListener("beforeunload", (e) => {
+  if (state.dirty) {
+    e.preventDefault();
+    e.returnValue = "";
+  }
+});
+
+loadLocal();
+renderDocument();
+</script>
 </body>
 </html>
