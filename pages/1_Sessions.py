@@ -8,6 +8,7 @@ import streamlit as st
 
 from utils.models import FieldSelection, Session
 from utils.predictions_loader import list_prediction_folders
+from utils.profile_manager import list_profiles, load_profile, save_profile
 from utils.schema_inspector import SchemaInspector
 from utils.schema_loader import get_schema_list
 from utils.session_manager import SessionManager
@@ -222,6 +223,53 @@ with st.expander("Create New Session", expanded=False):
         if not classes:
             st.error("No classes loaded")
         else:
+            ## UI: PROFILE LOAD
+            skipped = st.session_state.pop("profile_skipped", [])
+            if skipped:
+                st.warning(
+                    "Skipped selections not in this schema: " + ", ".join(skipped)
+                )
+
+            profiles = list_profiles(st.session_state.setup_data["schema_module"])
+            if profiles:
+                pcol1, pcol2 = st.columns([3, 1])
+                with pcol1:
+                    profile_by_name = {p["name"]: p for p in profiles}
+                    chosen_profile = st.selectbox(
+                        "Load a profile",
+                        options=list(profile_by_name.keys()),
+                        index=None,
+                        placeholder="Choose a saved field profile...",
+                        label_visibility="collapsed",
+                    )
+                with pcol2:
+                    if st.button(
+                        "Apply profile",
+                        disabled=chosen_profile is None,
+                        use_container_width=True,
+                    ):
+                        valid, skipped = load_profile(
+                            profile_by_name[chosen_profile]["path"], inspector
+                        )
+                        # clear existing ticks, then set the profile's
+                        for k in list(st.session_state.keys()):
+                            if k.startswith(("class_", "field_", "enum_")):
+                                st.session_state[k] = False
+                        for sel in valid:
+                            if sel.selection_type == "basemodel_class":
+                                st.session_state[f"class_{sel.class_name}"] = True
+                            elif sel.selection_type == "basemodel_field":
+                                st.session_state[
+                                    f"field_{sel.class_name}_{sel.field_name}"
+                                ] = True
+                            else:
+                                st.session_state[
+                                    f"enum_{sel.class_name}_{sel.enum_value}"
+                                ] = True
+                        if skipped:
+                            st.session_state["profile_skipped"] = skipped
+                        st.rerun()
+
             st.write("Select classes, fields, or enum values to validate:")
 
             selections = []
@@ -298,6 +346,30 @@ with st.expander("Create New Session", expanded=False):
                                     )
 
             st.markdown("---")
+
+            ## UI: PROFILE SAVE
+            scol1, scol2 = st.columns([3, 1])
+            with scol1:
+                new_profile_name = st.text_input(
+                    "Save current selection as profile",
+                    placeholder="Save current selection as profile, e.g. MESA Protocol v2",
+                    label_visibility="collapsed",
+                )
+            with scol2:
+                if st.button(
+                    "Save profile",
+                    disabled=not new_profile_name or not selections,
+                    use_container_width=True,
+                ):
+                    try:
+                        save_profile(
+                            new_profile_name,
+                            st.session_state.setup_data["schema_module"],
+                            selections,
+                        )
+                        st.success(f"Profile '{new_profile_name}' saved")
+                    except (FileExistsError, ValueError) as e:
+                        st.error(str(e))
 
             col1, col2 = st.columns([1, 1])
 
