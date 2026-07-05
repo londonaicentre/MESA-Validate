@@ -4,13 +4,71 @@ validation_ui.py - Dynamic validation UI generation for selections
 Builds validation interface for each item depending on type of item
 """
 
+import html as html_lib
+
 import streamlit as st
 
 from utils.schema_inspector import SchemaInspector
 from utils.selection_resolver import resolve_selection, selection_kind
 
+EXCERPT_SUFFIXES = ("_desc", "_name_desc", "_summary")
 
-def display_field_value(value, field_name=""):
+
+def _is_excerpt_field(field_name, value):
+    """Heuristic: does this value plausibly quote the source document?"""
+    if not isinstance(value, str) or not value.strip():
+        return False
+    if field_name.endswith(EXCERPT_SUFFIXES):
+        return True
+    return len(value.strip()) >= 12
+
+
+def _set_highlight(value):
+    st.session_state["highlight_query"] = value
+
+
+def _locate_button(field_name, value, key):
+    label = value[:60] + ("…" if len(value) > 60 else "")
+    st.button(
+        f"🔎 locate: {label}",
+        key=key,
+        on_click=_set_highlight,
+        args=(value,),
+        help="Highlight this text in the document pane",
+    )
+
+
+def render_entity_card(item, key_prefix):
+    """
+    Render a dict as a fully-expanded card (label/value rows, nulls dimmed);
+    excerpt-like values get locate buttons for jump-to-source.
+    """
+    if not isinstance(item, dict):
+        st.markdown(html_lib.escape(str(item)))
+        return
+
+    rows = []
+    excerpts = []
+    for field_name, value in item.items():
+        if value is None:
+            rendered = "<span class='mesa-null'>—</span>"
+        else:
+            rendered = html_lib.escape(str(value))
+        rows.append(
+            f"<div class='mesa-row'>"
+            f"<span class='mesa-label'>{html_lib.escape(field_name)}</span>"
+            f"<span class='mesa-value'>{rendered}</span></div>"
+        )
+        if _is_excerpt_field(field_name, value):
+            excerpts.append((field_name, value))
+
+    st.markdown(f"<div class='mesa-card'>{''.join(rows)}</div>", unsafe_allow_html=True)
+
+    for field_name, value in excerpts:
+        _locate_button(field_name, value, key=f"{key_prefix}_locate_{field_name}")
+
+
+def display_field_value(value, field_name="", key_prefix=""):
     """
     Display a field value with compact formatting
     """
@@ -32,7 +90,9 @@ def display_field_value(value, field_name=""):
             )
             for i, item in enumerate(value, 1):
                 if isinstance(item, dict):
-                    st.json(item, expanded=False)
+                    render_entity_card(
+                        item, key_prefix=f"{key_prefix}_{field_name}_{i}"
+                    )
                 else:
                     st.markdown(
                         f"<div style='margin-left:10px;'>{i}. {item}</div>",
@@ -42,24 +102,19 @@ def display_field_value(value, field_name=""):
         st.markdown(
             f"<div style='font-weight:600;'>{field_name}:</div>", unsafe_allow_html=True
         )
-        st.json(value, expanded=False)
-    elif isinstance(value, str) and len(value) > 100:
-        st.markdown(
-            f"<div style='font-weight:600;'>{field_name}:</div>", unsafe_allow_html=True
-        )
-        st.text_area(
-            field_name,
-            value,
-            height=80,
-            disabled=True,
-            label_visibility="collapsed",
-            key=f"ta_{field_name}_{hash(value)}",
-        )
+        render_entity_card(value, key_prefix=f"{key_prefix}_{field_name}")
     else:
         st.markdown(
-            f"<div><span style='font-weight:600;'>{field_name}:</span> {value}</div>",
+            f"<div class='mesa-card'><div class='mesa-row'>"
+            f"<span class='mesa-label'>{html_lib.escape(str(field_name))}</span>"
+            f"<span class='mesa-value'>{html_lib.escape(str(value))}</span>"
+            f"</div></div>",
             unsafe_allow_html=True,
         )
+        if _is_excerpt_field(field_name, value):
+            _locate_button(
+                field_name, value, key=f"{key_prefix}_locate_{field_name}"
+            )
 
 
 def is_value_present(value):
@@ -145,7 +200,7 @@ def show_item_validation(
         if items and items[0] is not None:
             for i, item in enumerate(items):
                 if isinstance(item, dict):
-                    st.json(item, expanded=False)
+                    render_entity_card(item, key_prefix=f"{key_prefix}_card_{i}")
                 else:
                     st.markdown(f"**Item {i + 1}:** {item}")
 
@@ -251,15 +306,18 @@ def generate_validation_block(
             if selection.selection_type == "basemodel_class":
                 if value:
                     if isinstance(value, dict):
-                        for field_name, field_value in value.items():
-                            display_field_value(field_value, field_name)
+                        render_entity_card(value, key_prefix=item_key_prefix)
                     else:
-                        display_field_value(value, selection.class_name)
+                        display_field_value(
+                            value, selection.class_name, key_prefix=item_key_prefix
+                        )
                 else:
                     st.info(f"No {selection.class_name} data found in prediction")
             else:
                 if value is not None:
-                    display_field_value(value, selection.field_name)
+                    display_field_value(
+                        value, selection.field_name, key_prefix=item_key_prefix
+                    )
                 else:
                     st.info(f"No data found for {selection.field_name}")
 

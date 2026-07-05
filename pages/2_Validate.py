@@ -4,6 +4,7 @@
 
 import streamlit as st
 
+from utils.document_pane import render_document_pane
 from utils.predictions_loader import load_prediction_file
 from utils.schema_inspector import SchemaInspector
 from utils.session_manager import SessionManager
@@ -92,17 +93,20 @@ else:
 
         with doc_col:
             st.markdown("### Document")
-            with st.container(height=800):
-                content = prediction_data.get(
-                    "document_content", "No content available"
-                )
-                st.markdown(
-                    f'<div style="white-space: pre-wrap; word-wrap: break-word; '
-                    f"padding: 10px; background-color: #f5f5f5; border-radius: 5px; "
-                    f'border: 1px solid #ddd;">'
-                    f"{content}</div>",
-                    unsafe_allow_html=True,
-                )
+            highlight = st.session_state.get("highlight_query")
+            if highlight:
+                hcol1, hcol2 = st.columns([5, 1])
+                with hcol1:
+                    st.caption(f"Highlighting: “{highlight[:80]}”")
+                with hcol2:
+                    if st.button("Clear", key="clear_highlight"):
+                        st.session_state["highlight_query"] = None
+                        st.rerun()
+            render_document_pane(
+                prediction_data.get("document_content", "No content available"),
+                highlight_query=highlight,
+                height=800,
+            )
 
         with val_col:
             st.markdown("### Validation")
@@ -182,6 +186,7 @@ else:
                     progress["current_file_index"] -= 1
                     SessionManager(session.id).save_progress(progress)
                     st.session_state.progress = progress
+                    st.session_state["highlight_query"] = None
                     st.rerun()
 
         with col2:
@@ -193,6 +198,7 @@ else:
                     progress["current_file_index"] += 1
                     SessionManager(session.id).save_progress(progress)
                     st.session_state.progress = progress
+                    st.session_state["highlight_query"] = None
                     st.rerun()
 
     except Exception as e:
