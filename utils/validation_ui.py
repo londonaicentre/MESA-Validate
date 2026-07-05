@@ -5,10 +5,9 @@ Builds validation interface for each item depending on type of item
 """
 
 import streamlit as st
-from typing import get_args, get_origin
 
-from utils.predictions_loader import extract_field_value
 from utils.schema_inspector import SchemaInspector
+from utils.selection_resolver import resolve_selection, selection_kind
 
 
 def display_field_value(value, field_name=""):
@@ -186,21 +185,6 @@ def show_item_validation(
         return {"items": item_results, "missed": missed}
 
 
-def filter_by_enum_value(items, enum_field_name, enum_value):
-    """
-    Filter list items by enum value
-    """
-    if not isinstance(items, list):
-        return []
-
-    filtered = []
-    for item in items:
-        if isinstance(item, dict) and item.get(enum_field_name) == enum_value:
-            filtered.append(item)
-
-    return filtered
-
-
 def generate_validation_block(
     selection, extraction_data, inspector: SchemaInspector, key_prefix, current_value=None
 ):
@@ -222,140 +206,68 @@ def generate_validation_block(
         return None
 
     result = None
-    root_class = inspector.root_class
-    classes = inspector.classes
 
     try:
-        if selection.selection_type == "basemodel_class":
-            is_list_item = inspector.is_class_used_as_list_item(selection.class_name)
-
-            class_info = classes.get(selection.class_name)
+        if selection.selection_type in ("basemodel_class", "enum_value"):
+            class_info = inspector.classes.get(selection.class_name)
             if not class_info:
                 st.error(f"Class {selection.class_name} not found in schema")
                 return None
 
-            if is_list_item:
-                found_items = []
+        block = resolve_selection(selection, extraction_data, inspector)
+        kind = selection_kind(selection, inspector)
 
-                for parent_class_name, parent_class_info in classes.items():
-                    if parent_class_info["type"] != "BaseModel":
-                        continue
-
-                    parent_class = parent_class_info["class"]
-                    for field_name, field_info in parent_class.model_fields.items():
-                        annotation = field_info.annotation
-
-                        origin = get_origin(annotation)
-                        if str(origin) == "typing.Union":
-                            args = get_args(annotation)
-                            for arg in args:
-                                if arg is not type(None):
-                                    annotation = arg
-                                    break
-
-                        origin = get_origin(annotation)
-                        if origin is list:
-                            args = get_args(annotation)
-                            if (
-                                args
-                                and hasattr(args[0], "__name__")
-                                and args[0].__name__ == selection.class_name
-                            ):
-                                parent_path = inspector.find_class_path(parent_class_name)
-                                if parent_path:
-                                    list_path = ".".join(parent_path + [field_name])
-                                    items = extract_field_value(
-                                        extraction_data, list_path
-                                    )
-                                    if isinstance(items, list):
-                                        found_items.extend(items)
-
-                if not found_items:
-                    st.info(f"No {selection.class_name} items found in prediction")
-
-                result = show_item_validation(
-                    found_items,
-                    key_prefix=f"{key_prefix}_{selection.class_name}",
-                    current_value=current_value,
-                    show_missed_count=True,
-                )
-
-            else:
-                path = inspector.find_class_path(selection.class_name)
-                if path:
-                    class_data = extract_field_value(extraction_data, ".".join(path))
-                else:
-                    st.warning(f"Could not find path for {selection.class_name}")
-                    class_data = None
-
-                if class_data:
-                    if isinstance(class_data, dict):
-                        for field_name, field_value in class_data.items():
-                            display_field_value(field_value, field_name)
-                    else:
-                        display_field_value(class_data, selection.class_name)
-                else:
-                    st.info(f"No {selection.class_name} data found in prediction")
-
-                result = show_item_validation(
-                    [class_data],
-                    key_prefix=f"{key_prefix}_{selection.class_name}",
-                    current_value=current_value,
-                    show_missed_count=False,
-                )
-
-        elif selection.selection_type == "basemodel_field":
-            path = inspector.find_class_path(selection.class_name)
-            if path:
-                field_path = ".".join(path + [selection.field_name])
-                field_value = extract_field_value(extraction_data, field_path)
-            else:
-                st.warning(f"Could not find path for {selection.class_name}")
-                field_value = None
-
-            if field_value is not None:
-                display_field_value(field_value, selection.field_name)
-            else:
-                st.info(f"No data found for {selection.field_name}")
-
-            result = show_item_validation(
-                [field_value],
-                key_prefix=f"{key_prefix}_{selection.class_name}_{selection.field_name}",
-                current_value=current_value,
-                show_missed_count=False,
+        if selection.selection_type == "basemodel_field":
+            item_key_prefix = (
+                f"{key_prefix}_{selection.class_name}_{selection.field_name}"
             )
-
         elif selection.selection_type == "enum_value":
-            enum_class = classes.get(selection.class_name, {}).get("class")
-            if not enum_class:
-                st.error(f"Enum {selection.class_name} not found")
-                return None
+            item_key_prefix = (
+                f"{key_prefix}_{selection.class_name}_{selection.enum_value}"
+            )
+        else:
+            item_key_prefix = f"{key_prefix}_{selection.class_name}"
 
-            containers = inspector.find_enum_containers(selection.class_name)
-            found_items = []
-
-            for container_class_name, enum_field_name in containers:
-                container_path = inspector.find_class_path(container_class_name)
-                if container_path:
-                    items = extract_field_value(
-                        extraction_data, ".".join(container_path)
-                    )
-                    if isinstance(items, list):
-                        filtered = filter_by_enum_value(
-                            items, enum_field_name, selection.enum_value
-                        )
-                        found_items.extend(filtered)
-
+        if kind == "list":
+            found_items = block["items"]
             if not found_items:
-                st.info(
-                    f"No items found with {selection.class_name} = {selection.enum_value}"
-                )
+                if selection.selection_type == "enum_value":
+                    st.info(
+                        f"No items found with {selection.class_name} = {selection.enum_value}"
+                    )
+                else:
+                    st.info(f"No {selection.class_name} items found in prediction")
 
             result = show_item_validation(
                 found_items,
-                key_prefix=f"{key_prefix}_{selection.class_name}_{selection.enum_value}",
+                key_prefix=item_key_prefix,
                 current_value=current_value,
                 show_missed_count=True,
+            )
+
+        else:
+            value = block["value"]
+
+            if selection.selection_type == "basemodel_class":
+                if value:
+                    if isinstance(value, dict):
+                        for field_name, field_value in value.items():
+                            display_field_value(field_value, field_name)
+                    else:
+                        display_field_value(value, selection.class_name)
+                else:
+                    st.info(f"No {selection.class_name} data found in prediction")
+            else:
+                if value is not None:
+                    display_field_value(value, selection.field_name)
+                else:
+                    st.info(f"No data found for {selection.field_name}")
+
+            result = show_item_validation(
+                [value],
+                key_prefix=item_key_prefix,
+                current_value=current_value,
+                show_missed_count=False,
             )
 
     except Exception as e:
