@@ -49,21 +49,21 @@ def _render_scalar_field(field_name, value, key_prefix):
     value share the wide left column so neither wraps awkwardly in the narrow
     validation pane; the button sits in a slim right column.
     """
-    if not _is_excerpt_field(field_name, value):
-        st.markdown(_field_row_html(field_name, value), unsafe_allow_html=True)
-        return
-
-    c_text, c_btn = st.columns([5, 1], vertical_alignment="center")
+    # Every row uses the same [text, button] geometry so values line up whether
+    # or not the row carries a locate button; the button cell stays empty when
+    # the value is not an excerpt.
+    c_text, c_btn = st.columns([6, 1], vertical_alignment="center")
     with c_text:
         st.markdown(_field_row_html(field_name, value), unsafe_allow_html=True)
-    with c_btn:
-        st.button(
-            "🔎",
-            key=f"{key_prefix}_locate_{field_name}",
-            on_click=_set_highlight,
-            args=(value,),
-            help=f"Locate in document: {value[:80]}",
-        )
+    if _is_excerpt_field(field_name, value):
+        with c_btn:
+            st.button(
+                "🔎",
+                key=f"{key_prefix}_locate_{field_name}",
+                on_click=_set_highlight,
+                args=(value,),
+                help=f"Locate in document: {value[:80]}",
+            )
 
 
 def _render_field(field_name, value, key_prefix):

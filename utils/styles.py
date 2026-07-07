@@ -48,12 +48,15 @@ VALIDATE_PAGE_STYLES = """
     .mesa-row {
         display: flex;
         gap: 8px;
-        padding: 1px 0;
+        padding: 4px 2px;
         font-size: 0.86rem;
         align-items: baseline;
+        border-bottom: 1px solid #eceef1;
     }
     .mesa-label {
-        flex: 0 0 38%;
+        /* all rows now share the same [6,1] column geometry, so a percentage
+           basis aligns values consistently without crushing them when nested */
+        flex: 0 0 42%;
         font-weight: 600;
         color: #57606a;
         word-break: break-word;
@@ -67,19 +70,24 @@ VALIDATE_PAGE_STYLES = """
         font-style: italic;
     }
     .mesa-nested-label {
-        font-weight: 600;
+        font-weight: 700;
         color: #24292f;
-        font-size: 0.86rem;
-        margin: 4px 0 2px;
+        font-size: 0.88rem;
+        margin: 8px 0 2px;
     }
-    /* tighten and compact only the field rows that carry a locate button */
+    /* tighten vertical spacing between field rows inside entity cards */
+    div[data-testid="stVerticalBlock"]:has(> div[data-testid="stHorizontalBlock"] .mesa-row) {
+        gap: 0.1rem;
+    }
+    /* keep the locate button on the same baseline as its row, compact */
     div[data-testid="stHorizontalBlock"]:has(.mesa-row) {
         gap: 0.3rem;
+        align-items: center;
     }
     div[data-testid="stHorizontalBlock"]:has(.mesa-row) .stButton > button {
         padding: 0 0.35rem;
-        min-height: 1.7rem;
-        line-height: 1.5rem;
+        min-height: 1.6rem;
+        line-height: 1.4rem;
     }
 </style>
 """
