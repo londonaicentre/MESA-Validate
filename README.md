@@ -92,6 +92,31 @@ from the [validation protocol](GUIDE.md). If a profile references a field that
 no longer exists in the schema, that selection is skipped with a warning and
 the rest still applies.
 
+## Section summaries (glossary)
+
+Validators may not recognise schema names like `ContextSummary` or `topography`.
+A one-line plain-English summary is shown under each section title in the
+session wizard, the Validate page, and the clinician packet.
+
+Summaries resolve in this order: a curated `glossary/<schema_module>.yaml`
+override → the schema's own `Field(description=...)` (first sentence) →
+for enum values, a humanised version of the value. The glossary file is
+optional — without it the app falls back to the schema descriptions.
+
+To seed a glossary for a new schema, generate a starter and edit it:
+
+```python
+from utils.schema_inspector import SchemaInspector
+from utils.glossary import starter_glossary
+import yaml
+insp = SchemaInspector("your_module", "YourRootClass")
+print(yaml.safe_dump(starter_glossary(insp), sort_keys=False))
+```
+
+Save the result to `glossary/your_module.yaml` and reword entries for
+validators. Keys are flat: `ClassName`, `ClassName.field`, or
+`EnumClass.enum_value`.
+
 ## Deploying to clinicians (validation packets)
 
 Clinicians do not need Python, a server, or this app. A **validation packet**

@@ -76,6 +76,15 @@ def test_write_packet(tmp_path, session, document_ids):
     assert "packet-data" in path.read_text(encoding="utf-8")
 
 
+def test_selections_carry_summaries(session, document_ids):
+    data = build_packet_data(session, document_ids, "dr_smith")
+    by_key = {s["key"]: s for s in data["selections"]}
+    topo = by_key["basemodel_field_PrimaryCancerFacts_topography"]
+    assert topo["desc"] == "The body site where the primary cancer started (e.g. breast, lung)."
+    # field_glossary is available for nested sub-object headings
+    assert isinstance(data["field_glossary"], dict)
+
+
 def test_unknown_document_id_raises(session):
     with pytest.raises(FileNotFoundError):
         build_packet_data(session, ["nope"], "x")

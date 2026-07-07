@@ -5,6 +5,7 @@
 import streamlit as st
 
 from utils.document_pane import render_document_pane
+from utils.glossary import describe_selection, load_glossary
 from utils.predictions_loader import load_prediction_file
 from utils.schema_inspector import SchemaInspector
 from utils.session_manager import SessionManager
@@ -113,6 +114,7 @@ else:
 
             with st.container(height=800):
                 existing_results = progress["results"].get(document_id, {})
+                glossary = load_glossary(session.schema_module)
 
                 results = {}
 
@@ -126,14 +128,18 @@ else:
 
                     selection_key = selection.build_key()
                     current_value = existing_results.get(selection_key)
+                    summary = describe_selection(selection, inspector, glossary)
 
                     with st.expander(f"**{title}**", expanded=True):
+                        if summary:
+                            st.caption(summary)
                         result = generate_validation_block(
                             selection,
                             extraction_data,
                             inspector,
                             key_prefix=f"document_{current_index}_selection_{i}",
                             current_value=current_value,
+                            glossary=glossary,
                         )
 
                         results[selection_key] = result

@@ -10,6 +10,11 @@ import json
 from datetime import datetime
 from pathlib import Path
 
+from utils.glossary import (
+    describe_field_by_name,
+    describe_selection,
+    load_glossary,
+)
 from utils.predictions_loader import load_prediction_file
 from utils.profile_manager import _slugify
 from utils.schema_inspector import SchemaInspector
@@ -23,15 +28,28 @@ TEXTMATCH_PLACEHOLDER = "__TEXTMATCH_JS__"
 
 def build_packet_data(session, document_ids, packet_name):
     inspector = SchemaInspector(session.schema_module, session.root_class)
+    glossary = load_glossary(session.schema_module)
 
     selections_meta = [
         {
             "key": s.build_key(),
             "title": selection_title(s),
             "kind": selection_kind(s, inspector),
+            "desc": describe_selection(s, inspector, glossary),
         }
         for s in session.selections
     ]
+
+    # field-name -> summary, for nested sub-object headings inside cards
+    field_glossary = {}
+    for _, info in inspector.classes.items():
+        if info["type"] != "BaseModel":
+            continue
+        for field_name in info["class"].model_fields:
+            if field_name not in field_glossary:
+                summary = describe_field_by_name(field_name, inspector, glossary)
+                if summary:
+                    field_glossary[field_name] = summary
 
     documents = []
     for document_id in document_ids:
@@ -57,6 +75,7 @@ def build_packet_data(session, document_ids, packet_name):
         "schema_module": session.schema_module,
         "created_at": datetime.now().isoformat(timespec="seconds"),
         "selections": selections_meta,
+        "field_glossary": field_glossary,
         "documents": documents,
     }
 

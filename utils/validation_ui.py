@@ -8,6 +8,7 @@ import html as html_lib
 
 import streamlit as st
 
+from utils.glossary import describe_field_by_name
 from utils.schema_inspector import SchemaInspector
 from utils.selection_resolver import resolve_selection, selection_kind
 
@@ -66,34 +67,44 @@ def _render_scalar_field(field_name, value, key_prefix):
             )
 
 
-def _render_field(field_name, value, key_prefix):
+def _nested_heading(field_name, count=None, describe_heading=None):
+    suffix = f" ({count})" if count is not None else ""
+    st.markdown(
+        f"<div class='mesa-nested-label'>{html_lib.escape(str(field_name))}{suffix}</div>",
+        unsafe_allow_html=True,
+    )
+    if describe_heading:
+        summary = describe_heading(field_name)
+        if summary:
+            st.caption(summary)
+
+
+def _render_field(field_name, value, key_prefix, describe_heading=None):
     """
     Render one field of an entity, recursing into nested objects and lists of
     objects so nothing is shown as raw JSON.
     """
     # nested object -> heading + its own bordered card
     if isinstance(value, dict) and value:
-        st.markdown(
-            f"<div class='mesa-nested-label'>{html_lib.escape(str(field_name))}</div>",
-            unsafe_allow_html=True,
-        )
+        _nested_heading(field_name, describe_heading=describe_heading)
         with st.container(border=True):
             for sub_name, sub_value in value.items():
-                _render_field(sub_name, sub_value, f"{key_prefix}_{field_name}")
+                _render_field(
+                    sub_name, sub_value, f"{key_prefix}_{field_name}", describe_heading
+                )
         return
 
     # list of objects -> heading + one bordered card per item
     if isinstance(value, list) and value and all(isinstance(x, dict) for x in value):
-        st.markdown(
-            f"<div class='mesa-nested-label'>{html_lib.escape(str(field_name))} "
-            f"({len(value)})</div>",
-            unsafe_allow_html=True,
-        )
+        _nested_heading(field_name, count=len(value), describe_heading=describe_heading)
         for i, item in enumerate(value):
             with st.container(border=True):
                 for sub_name, sub_value in item.items():
                     _render_field(
-                        sub_name, sub_value, f"{key_prefix}_{field_name}_{i}"
+                        sub_name,
+                        sub_value,
+                        f"{key_prefix}_{field_name}_{i}",
+                        describe_heading,
                     )
         return
 
@@ -110,11 +121,12 @@ def _render_field(field_name, value, key_prefix):
     _render_scalar_field(field_name, value, key_prefix)
 
 
-def render_entity_card(item, key_prefix):
+def render_entity_card(item, key_prefix, describe_heading=None):
     """
     Render a dict as a fully-expanded card (label/value rows, nulls dimmed,
     nested objects as nested cards); excerpt-like values get an inline locate
-    button for jump-to-source.
+    button for jump-to-source. describe_heading(field_name) optionally supplies
+    a one-line summary shown under nested sub-object headings.
     """
     if not isinstance(item, dict):
         with st.container(border=True):
@@ -123,10 +135,10 @@ def render_entity_card(item, key_prefix):
 
     with st.container(border=True):
         for field_name, value in item.items():
-            _render_field(field_name, value, key_prefix)
+            _render_field(field_name, value, key_prefix, describe_heading)
 
 
-def display_field_value(value, field_name="", key_prefix=""):
+def display_field_value(value, field_name="", key_prefix="", describe_heading=None):
     """
     Display a field value with compact formatting
     """
@@ -136,7 +148,9 @@ def display_field_value(value, field_name="", key_prefix=""):
             unsafe_allow_html=True,
         )
     elif isinstance(value, dict):
-        render_entity_card(value, key_prefix=f"{key_prefix}_{field_name}")
+        render_entity_card(
+            value, key_prefix=f"{key_prefix}_{field_name}", describe_heading=describe_heading
+        )
     elif isinstance(value, list):
         if not value:
             st.markdown(
@@ -147,7 +161,9 @@ def display_field_value(value, field_name="", key_prefix=""):
             for i, item in enumerate(value, 1):
                 if isinstance(item, dict):
                     render_entity_card(
-                        item, key_prefix=f"{key_prefix}_{field_name}_{i}"
+                        item,
+                        key_prefix=f"{key_prefix}_{field_name}_{i}",
+                        describe_heading=describe_heading,
                     )
                 else:
                     st.markdown(
@@ -283,7 +299,12 @@ def show_item_validation(
 
 
 def generate_validation_block(
-    selection, extraction_data, inspector: SchemaInspector, key_prefix, current_value=None
+    selection,
+    extraction_data,
+    inspector: SchemaInspector,
+    key_prefix,
+    current_value=None,
+    glossary=None,
 ):
     """
     Generate validation UI for any given selection
@@ -294,6 +315,8 @@ def generate_validation_block(
         inspector: SchemaInspector instance
         key_prefix: Prefix for UI keys
         current_value: Current saved value (optional)
+        glossary: Section-summary glossary dict (optional) used to caption
+            nested sub-object headings
 
     Returns:
         Validation result
@@ -303,6 +326,9 @@ def generate_validation_block(
         return None
 
     result = None
+
+    def describe_heading(field_name):
+        return describe_field_by_name(field_name, inspector, glossary or {})
 
     try:
         if selection.selection_type in ("basemodel_class", "enum_value"):
@@ -348,17 +374,27 @@ def generate_validation_block(
             if selection.selection_type == "basemodel_class":
                 if value:
                     if isinstance(value, dict):
-                        render_entity_card(value, key_prefix=item_key_prefix)
+                        render_entity_card(
+                            value,
+                            key_prefix=item_key_prefix,
+                            describe_heading=describe_heading,
+                        )
                     else:
                         display_field_value(
-                            value, selection.class_name, key_prefix=item_key_prefix
+                            value,
+                            selection.class_name,
+                            key_prefix=item_key_prefix,
+                            describe_heading=describe_heading,
                         )
                 else:
                     st.info(f"No {selection.class_name} data found in prediction")
             else:
                 if value is not None:
                     display_field_value(
-                        value, selection.field_name, key_prefix=item_key_prefix
+                        value,
+                        selection.field_name,
+                        key_prefix=item_key_prefix,
+                        describe_heading=describe_heading,
                     )
                 else:
                     st.info(f"No data found for {selection.field_name}")

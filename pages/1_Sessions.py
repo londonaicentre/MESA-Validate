@@ -6,6 +6,12 @@ import uuid
 
 import streamlit as st
 
+from utils.glossary import (
+    describe_class,
+    describe_enum_value,
+    describe_field,
+    load_glossary,
+)
 from utils.models import FieldSelection, Session
 from utils.packet_builder import write_packet
 from utils.predictions_loader import list_prediction_folders
@@ -326,6 +332,10 @@ with st.expander("Create New Session", expanded=False):
 
             st.write("Select classes, fields, or enum values to validate:")
 
+            glossary = load_glossary(
+                st.session_state.setup_data["schema_module"]
+            )
+
             selections = []
 
             basemodel_classes = {
@@ -341,6 +351,10 @@ with st.expander("Create New Session", expanded=False):
 
             for class_name, class_info in basemodel_classes.items():
                 with st.expander(f"**{class_name}**", expanded=False):
+                    class_summary = describe_class(class_name, inspector, glossary)
+                    if class_summary:
+                        st.caption(class_summary)
+
                     whole_class = st.checkbox(
                         f"Select entire {class_name} class", key=f"class_{class_name}"
                     )
@@ -360,6 +374,9 @@ with st.expander("Create New Session", expanded=False):
                             f"{field_name} ({field_info['type']})",
                             key=f"field_{class_name}_{field_name}",
                             disabled=whole_class,
+                            help=describe_field(
+                                class_name, field_name, inspector, glossary
+                            ),
                         )
 
                         if field_selected and not whole_class:
@@ -387,7 +404,11 @@ with st.expander("Create New Session", expanded=False):
 
                             for enum_value in class_info["values"]:
                                 value_selected = st.checkbox(
-                                    enum_value, key=f"enum_{class_name}_{enum_value}"
+                                    enum_value,
+                                    key=f"enum_{class_name}_{enum_value}",
+                                    help=describe_enum_value(
+                                        class_name, enum_value, glossary
+                                    ),
                                 )
 
                                 if value_selected:

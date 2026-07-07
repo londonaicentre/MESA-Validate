@@ -1,0 +1,45 @@
+# Plain-English section summaries shown to validators.
+#
+# Keys are section identifiers, flat:
+#   ClassName                         -> a whole class / block
+#   ClassName.field                   -> a single field
+#   EnumClass.enum_value              -> one enum value used as a filter
+#
+# Anything not listed here falls back automatically to the schema's own
+# Field(description=...), so you only need to curate the entries that need
+# friendlier wording. Regenerate a starter with utils.glossary.starter_glossary.
+
+# --- Sections (BaseModel classes) ---
+ContextSummary: "What type of document this is, plus a brief summary of the patient's current cancer treatment status."
+FuturePlan: "Planned future treatment, investigations, or clinical-trial involvement."
+MolecularBiomarkerProfile: "A single molecular biomarker (e.g. ER, PR, HER2, EGFR) and whether it is altered, negative, or equivocal."
+OtherCancerFacts: "A separate historical or concurrent cancer, distinct from the main primary cancer described."
+PatientFinding: "A comorbidity, symptom, examination finding, or social/functional factor about the patient."
+PerformanceStatus: "The patient's most recent performance status (e.g. ECOG or Karnofsky)."
+PrimaryCancer: "All details of the main (primary) cancer: core facts, tumour biology, scores, spread, and event timeline."
+PrimaryCancerFacts: "Core facts about the primary cancer: site, type, stage, and date of diagnosis."
+PrimaryCancerScore: "A specialist staging or grading score (e.g. Gleason, FIGO, Dukes, Breslow)."
+PrimaryCancerSpread: "Confirmed sites where the cancer has spread (metastases or involved lymph nodes)."
+PrimaryCancerTimelineEvent: "A single dated event in the cancer history (treatment, response, progression, or complication)."
+PrimaryCancerTumourFacts: "Molecular and genomic characteristics of the tumour (MSI, TMB, and biomarkers)."
+
+# --- Fields (MESA validation protocol) ---
+PrimaryCancerFacts.topography: "The body site where the primary cancer started (e.g. breast, lung)."
+PrimaryCancerFacts.morphology: "The histological type of the cancer — how the tumour cells look under the microscope."
+PrimaryCancerFacts.diagnosis_year: "The year the primary cancer was diagnosed."
+PrimaryCancerFacts.diagnosis_month: "The month the primary cancer was diagnosed."
+PrimaryCancerFacts.tnm_stage: "The TNM stage (Tumour, Nodes, Metastasis) of the primary cancer."
+
+# --- Timeline event types ---
+TimelineEventType.had_systemic_or_radiotherapy_treatment: "The patient received systemic therapy (e.g. chemotherapy, immunotherapy) or radiotherapy."
+TimelineEventType.had_surgical_treatment_performed: "The patient underwent surgery for the cancer."
+TimelineEventType.experienced_toxicity_or_complication_related_to_treatment: "The patient had a side effect or complication caused by treatment."
+TimelineEventType.experienced_treatment_reduction_or_stop: "The patient's treatment was reduced in dose or stopped."
+TimelineEventType.considered_for_clinical_trial: "The patient was considered for a clinical trial."
+TimelineEventType.enrolled_to_clinical_trial: "The patient was enrolled onto a clinical trial."
+TimelineEventType.positive_treatment_response_on_assessment: "Assessment showed a positive response to treatment."
+TimelineEventType.evidence_of_metastatic_progression: "New evidence that the cancer has spread or progressed to distant sites."
+TimelineEventType.radiology_evidence_of_disease_progression: "Imaging (scan) evidence that the disease has progressed."
+TimelineEventType.experienced_disease_remission: "The patient's disease went into remission."
+TimelineEventType.experienced_disease_recurrence: "The cancer came back after a period of disease control."
+TimelineEventType.patient_died: "The patient died."

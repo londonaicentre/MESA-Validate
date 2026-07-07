@@ -137,6 +137,8 @@
   .null-value { color: #999; font-style: italic; }
   .nested-label { font-weight: 700; color: #24292f; font-size: 0.86rem; margin: 8px 0 3px; }
   .entity-card .entity-card { margin-top: 3px; }
+  .block-desc { font-size: 0.82rem; color: var(--muted); padding: 2px 12px 8px; }
+  .nested-desc { font-size: 0.78rem; color: var(--muted); margin: -1px 0 3px; }
   .locate-chip {
     display: inline-block;
     border: 1px solid #c3d4e4;
@@ -460,6 +462,14 @@ function isPlainObject(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
+function appendDesc(container, text, cls) {
+  if (!text) return;
+  const d = document.createElement("div");
+  d.className = cls;
+  d.textContent = text;
+  container.appendChild(d);
+}
+
 /* One label/value row; excerpt-like values get an inline locate chip. */
 function appendScalarRow(container, fieldName, value) {
   const row = document.createElement("div");
@@ -494,6 +504,7 @@ function renderField(container, fieldName, value) {
     heading.className = "nested-label";
     heading.textContent = fieldName;
     container.appendChild(heading);
+    appendDesc(container, (DATA.field_glossary || {})[fieldName], "nested-desc");
     container.appendChild(entityCard(value));
     return;
   }
@@ -503,6 +514,7 @@ function renderField(container, fieldName, value) {
     heading.className = "nested-label";
     heading.textContent = fieldName + " (" + value.length + ")";
     container.appendChild(heading);
+    appendDesc(container, (DATA.field_glossary || {})[fieldName], "nested-desc");
     value.forEach((item) => container.appendChild(entityCard(item)));
     return;
   }
@@ -687,6 +699,7 @@ function renderDocument() {
     title.className = "block-title";
     title.textContent = selectionMeta.title;
     section.appendChild(title);
+    appendDesc(section, selectionMeta.desc, "block-desc");
     if (selectionMeta.kind === "list") {
       renderListBlock(section, doc, selectionMeta);
     } else {
