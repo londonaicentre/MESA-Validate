@@ -133,6 +133,8 @@
   .field-label { flex: 0 0 42%; font-weight: 600; color: var(--muted); word-break: break-word; }
   .field-value { flex: 1; word-break: break-word; }
   .null-value { color: #999; font-style: italic; }
+  .nested-label { font-weight: 700; color: #24292f; font-size: 0.86rem; margin: 8px 0 3px; }
+  .entity-card .entity-card { margin-top: 3px; }
   .locate-chip {
     display: inline-block;
     border: 1px solid #c3d4e4;
@@ -432,47 +434,81 @@ function makeLocateChip(query) {
   return chip;
 }
 
-function entityCard(item) {
-  const card = document.createElement("div");
-  card.className = "entity-card";
-  if (item === null || item === undefined || typeof item !== "object" || Array.isArray(item)) {
-    const row = document.createElement("div");
-    row.className = "field-row";
-    const value = document.createElement("span");
-    value.className = "field-value";
-    if (item === null || item === undefined) {
-      value.classList.add("null-value");
-      value.textContent = "—";
-    } else {
-      value.textContent = Array.isArray(item) ? JSON.stringify(item) : String(item);
-    }
-    row.appendChild(value);
-    card.appendChild(row);
-    return card;
-  }
-  Object.entries(item).forEach(([fieldName, value]) => {
-    const row = document.createElement("div");
-    row.className = "field-row";
+function isPlainObject(value) {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+/* One label/value row; excerpt-like values get an inline locate chip. */
+function appendScalarRow(container, fieldName, value) {
+  const row = document.createElement("div");
+  row.className = "field-row";
+  if (fieldName !== null) {
     const label = document.createElement("span");
     label.className = "field-label";
     label.textContent = fieldName;
-    const valueEl = document.createElement("span");
-    valueEl.className = "field-value";
-    if (value === null || value === undefined) {
-      valueEl.classList.add("null-value");
-      valueEl.textContent = "—";
-    } else if (typeof value === "object") {
-      valueEl.textContent = JSON.stringify(value);
-    } else {
-      valueEl.textContent = String(value);
-    }
-    if (TextMatch.isExcerptField(fieldName, value)) {
-      valueEl.appendChild(makeLocateChip(value));
-    }
     row.appendChild(label);
-    row.appendChild(valueEl);
-    card.appendChild(row);
-  });
+  }
+  const valueEl = document.createElement("span");
+  valueEl.className = "field-value";
+  if (value === null || value === undefined) {
+    valueEl.classList.add("null-value");
+    valueEl.textContent = "—";
+  } else {
+    valueEl.textContent = String(value);
+  }
+  if (TextMatch.isExcerptField(fieldName, value)) {
+    valueEl.appendChild(makeLocateChip(String(value)));
+  }
+  row.appendChild(valueEl);
+  container.appendChild(row);
+}
+
+/* Render one field of an entity, recursing into nested objects and lists of
+   objects so nothing is shown as raw JSON. */
+function renderField(container, fieldName, value) {
+  // nested object -> heading + its own nested card
+  if (isPlainObject(value) && Object.keys(value).length) {
+    const heading = document.createElement("div");
+    heading.className = "nested-label";
+    heading.textContent = fieldName;
+    container.appendChild(heading);
+    container.appendChild(entityCard(value));
+    return;
+  }
+  // list of objects -> heading + one nested card per item
+  if (Array.isArray(value) && value.length && value.every(isPlainObject)) {
+    const heading = document.createElement("div");
+    heading.className = "nested-label";
+    heading.textContent = fieldName + " (" + value.length + ")";
+    container.appendChild(heading);
+    value.forEach((item) => container.appendChild(entityCard(item)));
+    return;
+  }
+  // list of scalars -> single joined row
+  if (Array.isArray(value) && value.length) {
+    appendScalarRow(container, fieldName, value.map(String).join(", "));
+    return;
+  }
+  // scalar, null, or empty container (shown as an em dash)
+  const scalar = value !== null && typeof value === "object" ? null : value;
+  appendScalarRow(container, fieldName, scalar);
+}
+
+function entityCard(item) {
+  const card = document.createElement("div");
+  card.className = "entity-card";
+  if (Array.isArray(item) && item.length && item.every(isPlainObject)) {
+    item.forEach((sub) => card.appendChild(entityCard(sub)));
+    return card;
+  }
+  if (item === null || item === undefined || typeof item !== "object" || Array.isArray(item)) {
+    const scalar = Array.isArray(item) ? item.map(String).join(", ") : item;
+    appendScalarRow(card, null, scalar);
+    return card;
+  }
+  Object.entries(item).forEach(([fieldName, value]) =>
+    renderField(card, fieldName, value)
+  );
   return card;
 }
 
