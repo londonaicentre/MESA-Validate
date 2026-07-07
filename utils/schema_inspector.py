@@ -100,6 +100,9 @@ class SchemaInspector:
         if self.root_class is None:
             return None
 
+        if self.root_class.__name__ == target_class_name:
+            return path
+
         return self._find_class_path_recursive(self.root_class, target_class_name, path)
 
     def find_enum_containers(self, enum_class_name):
