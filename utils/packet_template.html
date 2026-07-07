@@ -84,6 +84,8 @@
     min-height: 0;
   }
   h2 { font-size: 1rem; margin: 4px 0 10px; }
+  .doc-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .reflow-toggle { font-size: 0.8rem; font-weight: 400; color: var(--muted); display: flex; align-items: center; gap: 4px; cursor: pointer; white-space: nowrap; }
   #doc-text {
     white-space: pre-wrap;
     word-wrap: break-word;
@@ -186,7 +188,12 @@
 </nav>
 <main>
   <section class="pane" id="doc-pane">
-    <h2>Document <span id="doc-id" style="font-weight:400;color:var(--muted);font-size:0.8rem"></span></h2>
+    <h2 class="doc-heading">
+      <span>Document <span id="doc-id" style="font-weight:400;color:var(--muted);font-size:0.8rem"></span></span>
+      <label class="reflow-toggle" title="Insert a line break wherever the document has 3 or more spaces in a row">
+        <input type="checkbox" id="reflow-check"> Reflow spaces
+      </label>
+    </h2>
     <div id="doc-banner"></div>
     <div id="doc-text"></div>
   </section>
@@ -352,6 +359,20 @@ function goTo(index) {
 
 /* ---------- document pane ---------- */
 
+let reflow = false;      // replace runs of 3+ spaces with line breaks
+let currentQuery = null; // last located query, so the toggle can re-highlight
+
+function reflowText(text) {
+  return text.replace(/ {3,}/g, "\n");
+}
+
+/* The text currently shown in the pane; all highlighting matches against
+   this same string so offsets stay consistent with the display. */
+function currentDocText() {
+  const raw = DATA.documents[state.currentIndex].content;
+  return reflow ? reflowText(raw) : raw;
+}
+
 function showDocBanner(message) {
   const banner = document.getElementById("doc-banner");
   banner.innerHTML = "";
@@ -364,7 +385,7 @@ function showDocBanner(message) {
 }
 
 function renderDocText(highlightResult, activeOccurrence) {
-  const docText = DATA.documents[state.currentIndex].content;
+  const docText = currentDocText();
   const el = document.getElementById("doc-text");
   el.innerHTML = "";
   if (!highlightResult || !highlightResult.ranges.length) {
@@ -390,7 +411,8 @@ function renderDocText(highlightResult, activeOccurrence) {
 }
 
 function onLocate(chip, query) {
-  const docText = DATA.documents[state.currentIndex].content;
+  currentQuery = query;
+  const docText = currentDocText();
   const result = TextMatch.findMatches(docText, query);
   if (!result.ranges.length) {
     showDocBanner("“" + query.slice(0, 60) + (query.length > 60 ? "…" : "") + "” not found verbatim in document");
@@ -652,6 +674,7 @@ function renderListBlock(container, doc, selectionMeta) {
 function renderDocument() {
   const doc = DATA.documents[state.currentIndex];
   document.getElementById("doc-id").textContent = doc.document_id;
+  currentQuery = null;
   showDocBanner("");
   renderDocText(null, 0);
 
@@ -792,6 +815,32 @@ window.addEventListener("beforeunload", (e) => {
     e.returnValue = "";
   }
 });
+
+/* Reflow toggle: re-render the document (and re-apply any active highlight)
+   against the transformed text. */
+document.getElementById("reflow-check").addEventListener("change", (e) => {
+  reflow = e.target.checked;
+  try { localStorage.setItem("mesa-reflow", reflow ? "1" : "0"); } catch (_) {}
+  if (currentQuery) {
+    const result = TextMatch.findMatches(currentDocText(), currentQuery);
+    if (result.ranges.length) {
+      const occ = activeLocate.occurrence % result.ranges.length;
+      showDocBanner(
+        result.strategy === "fuzzy"
+          ? "Approximate match shown (text differs slightly from the document)"
+          : ""
+      );
+      renderDocText(result, occ);
+    } else {
+      renderDocText(null, 0);
+    }
+  } else {
+    renderDocText(null, 0);
+  }
+});
+
+try { reflow = localStorage.getItem("mesa-reflow") === "1"; } catch (_) {}
+document.getElementById("reflow-check").checked = reflow;
 
 loadLocal();
 renderDocument();
