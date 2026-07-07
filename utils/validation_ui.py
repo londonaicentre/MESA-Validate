@@ -262,7 +262,7 @@ def generate_validation_block(
                                 and args[0].__name__ == selection.class_name
                             ):
                                 parent_path = inspector.find_class_path(parent_class_name)
-                                if parent_path:
+                                if parent_path is not None:
                                     list_path = ".".join(parent_path + [field_name])
                                     items = extract_field_value(
                                         extraction_data, list_path
@@ -282,7 +282,7 @@ def generate_validation_block(
 
             else:
                 path = inspector.find_class_path(selection.class_name)
-                if path:
+                if path is not None:
                     class_data = extract_field_value(extraction_data, ".".join(path))
                 else:
                     st.warning(f"Could not find path for {selection.class_name}")
@@ -306,7 +306,7 @@ def generate_validation_block(
 
         elif selection.selection_type == "basemodel_field":
             path = inspector.find_class_path(selection.class_name)
-            if path:
+            if path is not None:
                 field_path = ".".join(path + [selection.field_name])
                 field_value = extract_field_value(extraction_data, field_path)
             else:
