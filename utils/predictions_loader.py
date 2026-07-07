@@ -198,6 +198,9 @@ def extract_field_value(data: dict[str, Any], field_path: str) -> Any:
     """
     Extract a field value from nested dictionary using dot notation
     """
+    if not field_path:
+        return data
+
     current = data
     for part in field_path.split("."):
         if isinstance(current, dict) and part in current:
