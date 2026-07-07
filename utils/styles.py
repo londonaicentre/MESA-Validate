@@ -66,6 +66,12 @@ VALIDATE_PAGE_STYLES = """
         color: #999;
         font-style: italic;
     }
+    .mesa-nested-label {
+        font-weight: 600;
+        color: #24292f;
+        font-size: 0.86rem;
+        margin: 4px 0 2px;
+    }
     /* tighten and compact only the field rows that carry a locate button */
     div[data-testid="stHorizontalBlock"]:has(.mesa-row) {
         gap: 0.3rem;

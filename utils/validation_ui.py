@@ -5,7 +5,6 @@ Builds validation interface for each item depending on type of item
 """
 
 import html as html_lib
-import json
 
 import streamlit as st
 
@@ -31,8 +30,6 @@ def _set_highlight(value):
 def _format_value(value):
     if value is None:
         return "<span class='mesa-null'>—</span>"
-    if isinstance(value, (dict, list)):
-        return html_lib.escape(json.dumps(value))
     return html_lib.escape(str(value))
 
 
@@ -44,7 +41,7 @@ def _field_row_html(field_name, value):
     )
 
 
-def _render_field_row(field_name, value, key_prefix):
+def _render_scalar_field(field_name, value, key_prefix):
     """
     One label/value row. Excerpt-like values get a compact locate button on
     the same row (Streamlit widgets are block-level, so a per-row column
@@ -69,10 +66,55 @@ def _render_field_row(field_name, value, key_prefix):
         )
 
 
+def _render_field(field_name, value, key_prefix):
+    """
+    Render one field of an entity, recursing into nested objects and lists of
+    objects so nothing is shown as raw JSON.
+    """
+    # nested object -> heading + its own bordered card
+    if isinstance(value, dict) and value:
+        st.markdown(
+            f"<div class='mesa-nested-label'>{html_lib.escape(str(field_name))}</div>",
+            unsafe_allow_html=True,
+        )
+        with st.container(border=True):
+            for sub_name, sub_value in value.items():
+                _render_field(sub_name, sub_value, f"{key_prefix}_{field_name}")
+        return
+
+    # list of objects -> heading + one bordered card per item
+    if isinstance(value, list) and value and all(isinstance(x, dict) for x in value):
+        st.markdown(
+            f"<div class='mesa-nested-label'>{html_lib.escape(str(field_name))} "
+            f"({len(value)})</div>",
+            unsafe_allow_html=True,
+        )
+        for i, item in enumerate(value):
+            with st.container(border=True):
+                for sub_name, sub_value in item.items():
+                    _render_field(
+                        sub_name, sub_value, f"{key_prefix}_{field_name}_{i}"
+                    )
+        return
+
+    # list of scalars -> single joined row
+    if isinstance(value, list) and value:
+        _render_scalar_field(
+            field_name, ", ".join(str(x) for x in value), key_prefix
+        )
+        return
+
+    # scalar, None, or empty container (shown as an em dash)
+    if isinstance(value, (dict, list)):
+        value = None
+    _render_scalar_field(field_name, value, key_prefix)
+
+
 def render_entity_card(item, key_prefix):
     """
-    Render a dict as a fully-expanded card (label/value rows, nulls dimmed);
-    excerpt-like values get an inline locate button for jump-to-source.
+    Render a dict as a fully-expanded card (label/value rows, nulls dimmed,
+    nested objects as nested cards); excerpt-like values get an inline locate
+    button for jump-to-source.
     """
     if not isinstance(item, dict):
         with st.container(border=True):
@@ -81,7 +123,7 @@ def render_entity_card(item, key_prefix):
 
     with st.container(border=True):
         for field_name, value in item.items():
-            _render_field_row(field_name, value, key_prefix)
+            _render_field(field_name, value, key_prefix)
 
 
 def display_field_value(value, field_name="", key_prefix=""):
@@ -93,6 +135,8 @@ def display_field_value(value, field_name="", key_prefix=""):
             f"<div style='color:#666; font-style:italic;'>{field_name}: Not present</div>",
             unsafe_allow_html=True,
         )
+    elif isinstance(value, dict):
+        render_entity_card(value, key_prefix=f"{key_prefix}_{field_name}")
     elif isinstance(value, list):
         if not value:
             st.markdown(
@@ -100,10 +144,6 @@ def display_field_value(value, field_name="", key_prefix=""):
                 unsafe_allow_html=True,
             )
         else:
-            st.markdown(
-                f"<div style='font-weight:600;'>{field_name}:</div>",
-                unsafe_allow_html=True,
-            )
             for i, item in enumerate(value, 1):
                 if isinstance(item, dict):
                     render_entity_card(
@@ -114,14 +154,9 @@ def display_field_value(value, field_name="", key_prefix=""):
                         f"<div style='margin-left:10px;'>{i}. {item}</div>",
                         unsafe_allow_html=True,
                     )
-    elif isinstance(value, dict):
-        st.markdown(
-            f"<div style='font-weight:600;'>{field_name}:</div>", unsafe_allow_html=True
-        )
-        render_entity_card(value, key_prefix=f"{key_prefix}_{field_name}")
     else:
         with st.container(border=True):
-            _render_field_row(field_name, value, key_prefix)
+            _render_scalar_field(field_name, value, key_prefix)
 
 
 def is_value_present(value):
