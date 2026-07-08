@@ -153,6 +153,53 @@ else:
                     st.session_state.delete_confirm = session.id
                     st.rerun()
 
+            with st.expander("View settings"):
+                dcol1, dcol2 = st.columns(2)
+                with dcol1:
+                    st.markdown("**Schema**")
+                    st.caption(f"{session.schema_module} · {session.root_class}")
+                    st.markdown("**Predictions folder**")
+                    st.caption(session.predictions_folder)
+                    st.markdown("**Sample size**")
+                    st.caption(str(session.sample_size))
+                    st.markdown("**Created**")
+                    st.caption(
+                        session.created_at.strftime("%Y-%m-%d %H:%M")
+                        if hasattr(session.created_at, "strftime")
+                        else str(session.created_at)
+                    )
+                with dcol2:
+                    class_sel = [
+                        s
+                        for s in session.selections
+                        if s.selection_type == "basemodel_class"
+                    ]
+                    field_sel = [
+                        s
+                        for s in session.selections
+                        if s.selection_type == "basemodel_field"
+                    ]
+                    enum_sel = [
+                        s
+                        for s in session.selections
+                        if s.selection_type == "enum_value"
+                    ]
+                    st.markdown(
+                        f"**Selections ({len(session.selections)})**"
+                    )
+                    if class_sel:
+                        st.caption("Whole classes")
+                        for s in class_sel:
+                            st.write(f"- {s.class_name}")
+                    if field_sel:
+                        st.caption("Individual fields")
+                        for s in field_sel:
+                            st.write(f"- {s.class_name}.{s.field_name}")
+                    if enum_sel:
+                        st.caption("Enum values")
+                        for s in enum_sel:
+                            st.write(f"- {s.class_name}.{s.enum_value}")
+
             st.markdown("---")
 
 ## UI: DELETE CONFIRMATION
