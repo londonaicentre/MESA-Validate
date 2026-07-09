@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any
 from mesa_runner.adapters.io_schemas import DocumentInput
 from pydantic import BaseModel, ValidationError
 
-from utils.types import (
+from mesa_validate.types import (
     Err,
     FilesystemInferenceRecord,
     LegacyPredictionRecord,
@@ -19,8 +19,8 @@ from utils.types import (
 )
 
 if TYPE_CHECKING:
-    from utils.models import Session
-    from utils.schema_inspector import SchemaInspector
+    from mesa_validate.models import Session
+    from mesa_validate.schema_inspector import SchemaInspector
 
 
 def _load_json_records(path: str | Path) -> list[dict[str, Any]]:
@@ -216,7 +216,7 @@ def validate_and_filter_files(
     """
     Validate files against schema and filter out invalid ones
     """
-    from utils.schema_inspector import SchemaInspector
+    from mesa_validate.schema_inspector import SchemaInspector
 
     inspector = SchemaInspector(session.schema_module, session.root_class)
     valid_files = []

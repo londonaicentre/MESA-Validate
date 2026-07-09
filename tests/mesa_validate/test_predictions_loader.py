@@ -6,8 +6,8 @@ import pytest
 from pydantic import BaseModel
 from pytest_mock import MockerFixture
 
-from utils.models import Session
-from utils.predictions_loader import (
+from mesa_validate.models import Session
+from mesa_validate.predictions_loader import (
     _load_json_records,
     _load_prediction_folder,
     _normalise_record,
@@ -18,7 +18,7 @@ from utils.predictions_loader import (
     load_prediction_file,
     validate_and_filter_files,
 )
-from utils.types import Err, Ok, PredictionDocument
+from mesa_validate.types import Err, Ok, PredictionDocument
 
 
 class SampleSchema(BaseModel):
@@ -75,9 +75,9 @@ def validate_and_filter_files_mocks(
     mocker: MockerFixture,
 ) -> ValidateAndFilterFilesMocks:
     return ValidateAndFilterFilesMocks(
-        mocker.patch("utils.schema_inspector.SchemaInspector"),
-        mocker.patch("utils.predictions_loader.load_prediction_file"),
-        mocker.patch("utils.predictions_loader._validate_output_schema"),
+        mocker.patch("mesa_validate.schema_inspector.SchemaInspector"),
+        mocker.patch("mesa_validate.predictions_loader.load_prediction_file"),
+        mocker.patch("mesa_validate.predictions_loader._validate_output_schema"),
     )
 
 
@@ -101,8 +101,8 @@ def load_prediction_folder_mocks(mocker: MockerFixture) -> LoadPredictionFolderM
         mocker.patch.object(Path, "exists"),
         mocker.patch.object(Path, "is_dir"),
         mocker.patch.object(Path, "glob"),
-        mocker.patch("utils.predictions_loader._load_json_records"),
-        mocker.patch("utils.predictions_loader._normalise_record"),
+        mocker.patch("mesa_validate.predictions_loader._load_json_records"),
+        mocker.patch("mesa_validate.predictions_loader._normalise_record"),
     )
 
 
@@ -118,14 +118,14 @@ def list_prediction_folders_mocks(mocker: MockerFixture) -> ListPredictionFolder
 @pytest.fixture
 def load_prediction_file_mocks(mocker: MockerFixture) -> LoadPredictionFileMocks:
     return LoadPredictionFileMocks(
-        mocker.patch("utils.predictions_loader._load_prediction_folder"),
+        mocker.patch("mesa_validate.predictions_loader._load_prediction_folder"),
     )
 
 
 @pytest.fixture
 def get_prediction_files_mocks(mocker: MockerFixture) -> GetPredictionFilesMocks:
     return GetPredictionFilesMocks(
-        mocker.patch("utils.predictions_loader._load_prediction_folder"),
+        mocker.patch("mesa_validate.predictions_loader._load_prediction_folder"),
     )
 
 

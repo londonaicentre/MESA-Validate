@@ -2,13 +2,20 @@
 validation_ui.py - Dynamic validation UI generation for selections
 
 Builds validation interface for each item depending on type of item
+Item resolution and storage encoding live in selection_resolver.py, kept
+free of Streamlit so they can be reused by other frontends
 """
 
 import streamlit as st
-from typing import get_args, get_origin
 
-from utils.predictions_loader import extract_field_value
-from utils.schema_inspector import SchemaInspector
+from mesa_validate.schema_inspector import SchemaInspector
+from mesa_validate.selection_resolver import (
+    encode_binary_result,
+    encode_list_item_result,
+    is_value_present,
+    map_storage_to_ui,
+    resolve_selection,
+)
 
 
 def display_field_value(value, field_name=""):
@@ -63,36 +70,6 @@ def display_field_value(value, field_name=""):
         )
 
 
-def is_value_present(value):
-    """
-    Detect if a field value is present (not null/empty)
-    Returns True if value is present
-    """
-    if value is None:
-        return False
-    if isinstance(value, str) and value.strip() == "":
-        return False
-    if isinstance(value, (list, dict)) and len(value) == 0:
-        return False
-    return True
-
-
-def map_storage_to_ui(storage_value):
-    """
-    Convert storage format to UI display value
-    UI only shows NONE/CORRECT/INCORRECT
-    """
-    mapping = {
-        "PRESENT_CORRECT": "CORRECT",
-        "ABSENT_CORRECT": "CORRECT",
-        "PRESENT_INCORRECT": "INCORRECT",
-        "ABSENT_INCORRECT": "INCORRECT",
-        "NONE": "NONE",
-        "NOT_APPLICABLE": "NOT_APPLICABLE",
-    }
-    return mapping.get(storage_value, "NONE")
-
-
 def show_item_validation(
     items, key_prefix, current_value=None, show_missed_count=False
 ):
@@ -125,12 +102,7 @@ def show_item_validation(
             label_visibility="collapsed",
         )
 
-        if user_choice == "None":
-            return None
-        elif user_choice == "Correct":
-            return "PRESENT_CORRECT" if is_present else "ABSENT_CORRECT"
-        elif user_choice == "Incorrect":
-            return "PRESENT_INCORRECT" if is_present else "ABSENT_INCORRECT"
+        return encode_binary_result(user_choice, is_present)
 
     else:
         if isinstance(current_value, dict):
@@ -167,13 +139,7 @@ def show_item_validation(
                     label_visibility="collapsed",
                 )
 
-                # convert to storage: none -> null, correct -> true, incorrect -> false
-                if user_choice == "None":
-                    item_results.append(None)
-                elif user_choice == "Correct":
-                    item_results.append(True)
-                else:
-                    item_results.append(False)
+                item_results.append(encode_list_item_result(user_choice))
 
         # show missed count for lists (always show, even if no items)
         missed = st.number_input(
@@ -186,23 +152,12 @@ def show_item_validation(
         return {"items": item_results, "missed": missed}
 
 
-def filter_by_enum_value(items, enum_field_name, enum_value):
-    """
-    Filter list items by enum value
-    """
-    if not isinstance(items, list):
-        return []
-
-    filtered = []
-    for item in items:
-        if isinstance(item, dict) and item.get(enum_field_name) == enum_value:
-            filtered.append(item)
-
-    return filtered
-
-
 def generate_validation_block(
-    selection, extraction_data, inspector: SchemaInspector, key_prefix, current_value=None
+    selection,
+    extraction_data,
+    inspector: SchemaInspector,
+    key_prefix,
+    current_value=None,
 ):
     """
     Generate validation UI for any given selection
@@ -222,53 +177,13 @@ def generate_validation_block(
         return None
 
     result = None
-    root_class = inspector.root_class
-    classes = inspector.classes
 
     try:
+        resolved = resolve_selection(selection, extraction_data, inspector)
+
         if selection.selection_type == "basemodel_class":
-            is_list_item = inspector.is_class_used_as_list_item(selection.class_name)
-
-            class_info = classes.get(selection.class_name)
-            if not class_info:
-                st.error(f"Class {selection.class_name} not found in schema")
-                return None
-
-            if is_list_item:
-                found_items = []
-
-                for parent_class_name, parent_class_info in classes.items():
-                    if parent_class_info["type"] != "BaseModel":
-                        continue
-
-                    parent_class = parent_class_info["class"]
-                    for field_name, field_info in parent_class.model_fields.items():
-                        annotation = field_info.annotation
-
-                        origin = get_origin(annotation)
-                        if str(origin) == "typing.Union":
-                            args = get_args(annotation)
-                            for arg in args:
-                                if arg is not type(None):
-                                    annotation = arg
-                                    break
-
-                        origin = get_origin(annotation)
-                        if origin is list:
-                            args = get_args(annotation)
-                            if (
-                                args
-                                and hasattr(args[0], "__name__")
-                                and args[0].__name__ == selection.class_name
-                            ):
-                                parent_path = inspector.find_class_path(parent_class_name)
-                                if parent_path is not None:
-                                    list_path = ".".join(parent_path + [field_name])
-                                    items = extract_field_value(
-                                        extraction_data, list_path
-                                    )
-                                    if isinstance(items, list):
-                                        found_items.extend(items)
+            if resolved["is_list"]:
+                found_items = resolved["items"]
 
                 if not found_items:
                     st.info(f"No {selection.class_name} items found in prediction")
@@ -281,12 +196,9 @@ def generate_validation_block(
                 )
 
             else:
-                path = inspector.find_class_path(selection.class_name)
-                if path is not None:
-                    class_data = extract_field_value(extraction_data, ".".join(path))
-                else:
+                class_data = resolved["items"][0]
+                if not resolved["path_found"]:
                     st.warning(f"Could not find path for {selection.class_name}")
-                    class_data = None
 
                 if class_data:
                     if isinstance(class_data, dict):
@@ -305,13 +217,9 @@ def generate_validation_block(
                 )
 
         elif selection.selection_type == "basemodel_field":
-            path = inspector.find_class_path(selection.class_name)
-            if path is not None:
-                field_path = ".".join(path + [selection.field_name])
-                field_value = extract_field_value(extraction_data, field_path)
-            else:
+            field_value = resolved["items"][0]
+            if not resolved["path_found"]:
                 st.warning(f"Could not find path for {selection.class_name}")
-                field_value = None
 
             if field_value is not None:
                 display_field_value(field_value, selection.field_name)
@@ -326,25 +234,7 @@ def generate_validation_block(
             )
 
         elif selection.selection_type == "enum_value":
-            enum_class = classes.get(selection.class_name, {}).get("class")
-            if not enum_class:
-                st.error(f"Enum {selection.class_name} not found")
-                return None
-
-            containers = inspector.find_enum_containers(selection.class_name)
-            found_items = []
-
-            for container_class_name, enum_field_name in containers:
-                container_path = inspector.find_class_path(container_class_name)
-                if container_path:
-                    items = extract_field_value(
-                        extraction_data, ".".join(container_path)
-                    )
-                    if isinstance(items, list):
-                        filtered = filter_by_enum_value(
-                            items, enum_field_name, selection.enum_value
-                        )
-                        found_items.extend(filtered)
+            found_items = resolved["items"]
 
             if not found_items:
                 st.info(
@@ -358,6 +248,9 @@ def generate_validation_block(
                 show_missed_count=True,
             )
 
+    except ValueError as e:
+        st.error(str(e))
+        return None
     except Exception as e:
         st.error(f"Error generating validation UI: {e}")
         st.exception(e)

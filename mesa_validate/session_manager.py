@@ -16,8 +16,8 @@ import random
 import shutil
 from pathlib import Path
 
-from utils.models import Session
-from utils.predictions_loader import get_prediction_files, validate_and_filter_files
+from mesa_validate.models import Session
+from mesa_validate.predictions_loader import get_prediction_files, validate_and_filter_files
 
 
 class SessionManager:

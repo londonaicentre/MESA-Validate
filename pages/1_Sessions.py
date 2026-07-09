@@ -6,11 +6,11 @@ import uuid
 
 import streamlit as st
 
-from utils.models import FieldSelection, Session
-from utils.predictions_loader import list_prediction_folders
-from utils.schema_inspector import SchemaInspector
-from utils.schema_loader import get_schema_list
-from utils.session_manager import SessionManager
+from mesa_validate.models import FieldSelection, Session
+from mesa_validate.predictions_loader import list_prediction_folders
+from mesa_validate.schema_inspector import SchemaInspector
+from mesa_validate.schema_loader import get_schema_list
+from mesa_validate.session_manager import SessionManager
 
 st.set_page_config(page_title="Sessions", layout="wide")
 st.logo("aic_logo.png")
