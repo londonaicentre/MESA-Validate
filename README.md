@@ -11,7 +11,7 @@ presto-validate/
 │   ├── 1_Sessions.py         # Session management
 │   ├── 2_Validate.py         # Validation interface
 │   └── 3_Analysis.py         # View results and metrics
-├── utils/
+├── mesa_validate/
 │   ├── models.py             # Defining data models
 │   ├── session_manager.py    # 'CRUD' functions
 │   ├── schema_loader.py      # Schema config loading

@@ -5,12 +5,12 @@
 import pandas as pd
 import streamlit as st
 
-from utils.metrics import (
+from mesa_validate.metrics import (
     aggregate_metrics,
     export_to_csv_string,
     format_metrics_summary,
 )
-from utils.session_manager import SessionManager
+from mesa_validate.session_manager import SessionManager
 
 st.set_page_config(page_title="Analysis", layout="wide")
 st.logo("aic_logo.png")

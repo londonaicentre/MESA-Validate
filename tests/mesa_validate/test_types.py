@@ -3,7 +3,7 @@ from datetime import datetime
 import pytest
 from mesa_runner.adapters.io_schemas import DocumentInput
 
-from utils.types import (
+from mesa_validate.types import (
     FilesystemInferenceRecord,
     LegacyPredictionRecord,
     PredictionDocument,
