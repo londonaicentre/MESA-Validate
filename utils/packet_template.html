@@ -84,6 +84,17 @@
     min-height: 0;
   }
   h2 { font-size: 1rem; margin: 4px 0 10px; }
+  #packet-info { background: #fff; border-bottom: 1px solid var(--border); padding: 6px 16px; font-size: 0.84rem; }
+  #packet-info > summary { cursor: pointer; color: var(--muted); font-weight: 600; list-style: none; }
+  #packet-info > summary::-webkit-details-marker { display: none; }
+  #packet-info[open] > summary { margin-bottom: 8px; }
+  .info-grid { display: grid; grid-template-columns: max-content 1fr; gap: 3px 14px; align-items: baseline; }
+  .info-grid dt, .info-grid .k { font-weight: 600; color: var(--muted); }
+  .info-grid .v { word-break: break-word; }
+  .info-fields { margin-top: 8px; }
+  .info-fields-label { font-weight: 600; color: var(--muted); margin-bottom: 2px; }
+  .info-fields ul { margin: 0; padding-left: 18px; columns: 2; }
+  .info-fields li { font-size: 0.82rem; }
   .doc-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
   .reflow-toggle { font-size: 0.8rem; font-weight: 400; color: var(--muted); display: flex; align-items: center; gap: 4px; cursor: pointer; white-space: nowrap; }
   #doc-text {
@@ -182,6 +193,14 @@
   <button id="btn-load" title="Resume from a previously saved results file">Load results file</button>
   <input type="file" id="load-file" accept=".json,application/json" hidden>
 </header>
+<details id="packet-info">
+  <summary>&#9432; Packet info</summary>
+  <div class="info-grid" id="info-grid"></div>
+  <div class="info-fields">
+    <div class="info-fields-label">Fields being validated</div>
+    <ul id="info-fields-list"></ul>
+  </div>
+</details>
 <nav>
   <button id="btn-prev">&#9664; Previous</button>
   <select id="doc-select"></select>
@@ -855,6 +874,38 @@ document.getElementById("reflow-check").addEventListener("change", (e) => {
 try { reflow = localStorage.getItem("mesa-reflow") === "1"; } catch (_) {}
 document.getElementById("reflow-check").checked = reflow;
 
+function renderPacketInfo() {
+  const rows = [
+    ["Packet", DATA.packet_name],
+    ["Session", DATA.session_name],
+    ["Schema", DATA.schema_module + (DATA.root_class ? " · " + DATA.root_class : "")],
+    ["Predictions folder", DATA.predictions_folder || "—"],
+    ["Session sample size", DATA.sample_size != null ? String(DATA.sample_size) : "—"],
+    ["Documents in packet", String(DATA.documents.length)],
+    ["Generated", String(DATA.created_at || "").replace("T", " ").slice(0, 16) || "—"],
+  ];
+  const grid = document.getElementById("info-grid");
+  grid.innerHTML = "";
+  rows.forEach(([k, v]) => {
+    const kd = document.createElement("div");
+    kd.className = "k";
+    kd.textContent = k;
+    const vd = document.createElement("div");
+    vd.className = "v";
+    vd.textContent = v;
+    grid.appendChild(kd);
+    grid.appendChild(vd);
+  });
+  const ul = document.getElementById("info-fields-list");
+  ul.innerHTML = "";
+  DATA.selections.forEach((s) => {
+    const li = document.createElement("li");
+    li.textContent = s.title + (s.kind === "list" ? " (list)" : "");
+    ul.appendChild(li);
+  });
+}
+
+renderPacketInfo();
 loadLocal();
 renderDocument();
 </script>
