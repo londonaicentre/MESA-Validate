@@ -17,6 +17,71 @@ st.logo("aic_logo.png")
 
 st.markdown(VALIDATE_PAGE_STYLES, unsafe_allow_html=True)
 
+
+def _result_is_incorrect(result):
+    """A block is 'incorrect' if the single verdict is Incorrect, or (for lists)
+    any item is Incorrect or the model missed items."""
+    if isinstance(result, str):
+        return result.endswith("_INCORRECT")
+    if isinstance(result, dict):
+        return any(x is False for x in result.get("items", [])) or (
+            result.get("missed", 0) > 0
+        )
+    return False
+
+
+def _render_comment_box(
+    session, document_id, selection_key, result, progress, block_prefix
+):
+    """
+    Hidden-by-default freetext comment for one block. Opens when the validator
+    clicks 'Add comment' or when the block is marked Incorrect. Streamlit forbids
+    nested expanders (blocks already sit inside one), so this uses a button
+    toggle + text_area rather than an expander/popover.
+    """
+    saved_comment = (
+        progress.get("comments", {}).get(document_id, {}).get(selection_key, "")
+    )
+    is_incorrect = _result_is_incorrect(result)
+
+    open_key = f"{block_prefix}_comment_open"
+    dismissed_key = f"{block_prefix}_comment_dismissed"
+    text_key = f"{block_prefix}_comment_text"
+
+    # re-arm auto-open if the verdict later flips back to incorrect
+    if not is_incorrect:
+        st.session_state[dismissed_key] = False
+
+    show_comment = (
+        st.session_state.get(open_key, False)
+        or bool(saved_comment)
+        or (is_incorrect and not st.session_state.get(dismissed_key, False))
+    )
+
+    if not show_comment:
+        if st.button("Add comment", key=f"{block_prefix}_comment_add"):
+            st.session_state[open_key] = True
+            st.rerun()
+        return
+
+    def _save_comment(dk=document_id, sk=selection_key, tk=text_key):
+        st.session_state.progress = SessionManager(session.id).save_comment(
+            dk, sk, st.session_state.get(tk, "")
+        )
+
+    st.text_area(
+        "Comment",
+        value=saved_comment,
+        key=text_key,
+        on_change=_save_comment,
+        label_visibility="collapsed",
+        placeholder="Optional comment for the coordinator…",
+    )
+    if st.button("Hide comment", key=f"{block_prefix}_comment_hide"):
+        st.session_state[open_key] = False
+        st.session_state[dismissed_key] = True
+        st.rerun()
+
 if "active_session" not in st.session_state:
     st.session_state.active_session = None
 
@@ -143,6 +208,15 @@ else:
                         )
 
                         results[selection_key] = result
+
+                        _render_comment_box(
+                            session,
+                            document_id,
+                            selection_key,
+                            result,
+                            progress,
+                            block_prefix=f"document_{current_index}_selection_{i}",
+                        )
 
                 # save results immediately if any non-none values exist
                 non_none_results = {

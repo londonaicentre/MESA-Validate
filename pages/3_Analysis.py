@@ -7,6 +7,7 @@ import json
 import pandas as pd
 import streamlit as st
 
+from utils.comments import format_comments_rows
 from utils.metrics import (
     aggregate_metrics,
     export_to_csv_string,
@@ -14,6 +15,25 @@ from utils.metrics import (
 )
 from utils.results_import import combine_progress, parse_results_payload
 from utils.session_manager import SessionManager
+
+
+def render_comments(progress, selections, *, download_name=None, key=None):
+    """Render a validator-comments table with an optional CSV download."""
+    rows = format_comments_rows(progress, selections)
+    if not rows:
+        st.caption("No comments recorded.")
+        return
+    df = pd.DataFrame(rows)
+    st.dataframe(df, use_container_width=True, hide_index=True)
+    if download_name:
+        st.download_button(
+            "Download Comments CSV",
+            data=df.to_csv(index=False),
+            file_name=download_name,
+            mime="text/csv",
+            use_container_width=True,
+            key=key,
+        )
 
 st.set_page_config(page_title="Analysis", layout="wide")
 st.logo("aic_logo.png")
@@ -81,6 +101,9 @@ else:
                 else:
                     st.info("No completed results in this packet")
 
+                st.markdown("**Validator comments**")
+                render_comments(packet_progress, session.selections)
+
             if len(parsed_packets) > 1:
                 st.markdown("#### All packets combined")
                 combined = combine_progress(parsed_packets)
@@ -91,6 +114,13 @@ else:
                         use_container_width=True,
                         hide_index=True,
                     )
+                st.markdown("**Validator comments (all packets)**")
+                render_comments(
+                    combined,
+                    session.selections,
+                    download_name=f"{session.name}_all_packets_comments.csv",
+                    key="dl_combined_comments",
+                )
 
         st.markdown("---")
 
@@ -115,6 +145,17 @@ else:
 
         with col4:
             st.metric("Selections", len(session.selections))
+
+        st.markdown("---")
+
+        ## UI: VALIDATOR COMMENTS (shown regardless of completion)
+        st.subheader("Validator Comments")
+        render_comments(
+            progress,
+            session.selections,
+            download_name=f"{session.name}_comments.csv",
+            key="dl_session_comments",
+        )
 
         st.markdown("---")
 

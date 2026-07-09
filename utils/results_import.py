@@ -31,6 +31,7 @@ def parse_results_payload(data):
     progress = {
         "results": data["results"],
         "completed_files": data["completed_files"],
+        "comments": data.get("comments", {}),
     }
     return meta, progress
 
@@ -40,11 +41,13 @@ def combine_progress(parsed):
     Pool multiple packets into one progress dict. Document ids are namespaced
     by packet so the same document validated by two clinicians counts twice.
     """
-    combined = {"results": {}, "completed_files": []}
+    combined = {"results": {}, "completed_files": [], "comments": {}}
     for meta, progress in parsed:
         prefix = meta["packet_name"] + "::"
         for document_id, doc_results in progress["results"].items():
             combined["results"][prefix + document_id] = doc_results
+        for document_id, doc_comments in progress.get("comments", {}).items():
+            combined["comments"][prefix + document_id] = doc_comments
         combined["completed_files"].extend(
             prefix + document_id for document_id in progress["completed_files"]
         )

@@ -93,6 +93,7 @@ class SessionManager:
                 "files": [],
                 "results": {},
                 "completed_files": [],
+                "comments": {},
             }
 
         try:
@@ -104,6 +105,7 @@ class SessionManager:
                 "files": [],
                 "results": {},
                 "completed_files": [],
+                "comments": {},
             }
 
         return progress_data
@@ -130,6 +132,27 @@ class SessionManager:
         progress["results"][document_id].update(results)
         self.save_progress(progress)
 
+        return progress
+
+    def save_comment(self, document_id, selection_key, text):
+        """
+        Save or clear a freetext comment for one block, returns updated progress.
+        Empty/whitespace text deletes the entry and prunes an emptied document map.
+        """
+        progress = self.load_progress()
+        progress.setdefault("comments", {})  # tolerate old progress files
+
+        text = (text or "").strip()
+        if not text:
+            doc_map = progress["comments"].get(document_id)
+            if doc_map and selection_key in doc_map:
+                del doc_map[selection_key]
+                if not doc_map:
+                    del progress["comments"][document_id]
+        else:
+            progress["comments"].setdefault(document_id, {})[selection_key] = text
+
+        self.save_progress(progress)
         return progress
 
     # Exclusion operations for invalid documents

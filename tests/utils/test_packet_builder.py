@@ -85,6 +85,22 @@ def test_selections_carry_summaries(session, document_ids):
     assert isinstance(data["field_glossary"], dict)
 
 
+def test_packet_data_has_no_comments(session, document_ids):
+    # comments are runtime validator input, never seeded into packet DATA
+    data = build_packet_data(session, document_ids, "dr_smith")
+    assert "comments" not in data
+
+
+def test_template_has_comment_hooks():
+    from pathlib import Path
+
+    html = Path("utils/packet_template.html").read_text(encoding="utf-8")
+    assert "function getComment" in html
+    assert "function setComment" in html
+    assert "comment-input" in html
+    assert "comments: state.comments" in html  # persisted in resultsPayload
+
+
 def test_unknown_document_id_raises(session):
     with pytest.raises(FileNotFoundError):
         build_packet_data(session, ["nope"], "x")

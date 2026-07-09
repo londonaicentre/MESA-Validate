@@ -64,3 +64,26 @@ def test_combine_progress_namespaces_documents():
     }
     metrics = aggregate_metrics(combined, [SEL])
     assert metrics[KEY]["total"] == 2  # both clinicians' doc-1 counted
+
+
+def test_parse_carries_comments():
+    payload = {**PAYLOAD, "comments": {"doc-1": {KEY: "looks off"}}}
+    _, progress = parse_results_payload(payload)
+    assert progress["comments"]["doc-1"][KEY] == "looks off"
+
+
+def test_parse_defaults_comments_when_absent():
+    _, progress = parse_results_payload(PAYLOAD)
+    assert progress["comments"] == {}
+
+
+def test_combine_namespaces_comments():
+    p1 = parse_results_payload(
+        {**PAYLOAD, "comments": {"doc-1": {KEY: "smith note"}}}
+    )
+    p2 = parse_results_payload(
+        {**PAYLOAD, "packet_name": "dr_jones", "comments": {"doc-1": {KEY: "jones note"}}}
+    )
+    combined = combine_progress([p1, p2])
+    assert combined["comments"]["dr_smith::doc-1"][KEY] == "smith note"
+    assert combined["comments"]["dr_jones::doc-1"][KEY] == "jones note"

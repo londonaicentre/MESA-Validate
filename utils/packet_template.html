@@ -149,6 +149,15 @@
   .nested-label { font-weight: 700; color: #24292f; font-size: 0.86rem; margin: 8px 0 3px; }
   .entity-card .entity-card { margin-top: 3px; }
   .block-desc { font-size: 0.82rem; color: var(--muted); padding: 2px 12px 8px; }
+  .comment-area { margin-top: 8px; }
+  .comment-link { color: var(--accent); font-size: 0.82rem; cursor: pointer; }
+  .comment-link:hover { text-decoration: underline; }
+  .comment-input {
+    display: none; width: 100%; margin-top: 4px; font: inherit; font-size: 0.85rem;
+    padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px;
+    resize: vertical; min-height: 48px; color: #1f2328; background: var(--card-bg);
+    box-sizing: border-box;
+  }
   .nested-desc { font-size: 0.78rem; color: var(--muted); margin: -1px 0 3px; }
   .locate-chip {
     display: inline-block;
@@ -243,6 +252,7 @@ const STORE_KEY = "mesa-packet:" + DATA.packet_name + ":" + DATA.created_at;
 let state = {
   currentIndex: 0,
   results: {},        // document_id -> selection_key -> value (progress.json formats)
+  comments: {},       // document_id -> selection_key -> freetext comment
   completed: [],      // document_ids
   savedAt: null,
   dirty: false,
@@ -261,6 +271,7 @@ function resultsPayload() {
     saved_at: new Date().toISOString(),
     completed_files: state.completed,
     results: state.results,
+    comments: state.comments,
   };
 }
 
@@ -270,6 +281,7 @@ function loadLocal() {
     if (raw) {
       const saved = JSON.parse(raw);
       state.results = saved.results || {};
+      state.comments = saved.comments || {};
       state.completed = saved.completed_files || [];
       state.savedAt = saved.saved_at || null;
     }
@@ -306,6 +318,26 @@ function setValue(documentId, selectionKey, value) {
 
 function getValue(documentId, selectionKey) {
   return (state.results[documentId] || {})[selectionKey];
+}
+
+function getComment(documentId, selectionKey) {
+  return (state.comments[documentId] || {})[selectionKey] || "";
+}
+
+function setComment(documentId, selectionKey, text) {
+  text = (text || "").trim();
+  if (!state.comments[documentId]) state.comments[documentId] = {};
+  if (!text) {
+    delete state.comments[documentId][selectionKey];
+    if (Object.keys(state.comments[documentId]).length === 0) {
+      delete state.comments[documentId];
+    }
+  } else {
+    state.comments[documentId][selectionKey] = text;
+  }
+  state.dirty = true;
+  persistLocal();
+  updateHeader();
 }
 
 /* ---------- value semantics (mirrors Streamlit app exactly) ---------- */
@@ -584,6 +616,47 @@ function radioRow(name, current, onChange) {
   return row;
 }
 
+/* Hidden-by-default freetext comment for a block. Reveals when a comment
+   already exists or the block is Incorrect; returns { reveal() } so the radio
+   handlers can open it when the verdict flips to Incorrect / missed > 0. */
+function appendCommentArea(body, doc, selectionMeta, isIncorrect) {
+  const key = selectionMeta.key;
+  const existing = getComment(doc.document_id, key);
+  const wrap = document.createElement("div");
+  wrap.className = "comment-area";
+
+  const link = document.createElement("span");
+  link.className = "comment-link";
+  link.textContent = "+ Add comment";
+
+  const ta = document.createElement("textarea");
+  ta.className = "comment-input";
+  ta.placeholder = "Optional comment for the coordinator…";
+  ta.value = existing;
+  ta.addEventListener("input", () => setComment(doc.document_id, key, ta.value));
+
+  function setOpen(open) {
+    ta.style.display = open ? "block" : "none";
+    link.style.display = open ? "none" : "inline";
+  }
+  link.addEventListener("click", () => {
+    wrap.dataset.dismissed = "0";
+    setOpen(true);
+    ta.focus();
+  });
+  setOpen(!!existing || isIncorrect);
+
+  wrap.appendChild(link);
+  wrap.appendChild(ta);
+  body.appendChild(wrap);
+
+  return {
+    reveal() {
+      if (wrap.dataset.dismissed !== "1") setOpen(true);
+    },
+  };
+}
+
 function renderSingleBlock(container, doc, selectionMeta) {
   const block = doc.blocks[selectionMeta.key];
   const value = block.value;
@@ -631,9 +704,11 @@ function renderSingleBlock(container, doc, selectionMeta) {
         selectionMeta.key,
         binaryValue(choice === "none" ? null : choice, value)
       );
+      if (choice === "incorrect") commentApi.reveal();
       updateHeader();
     })
   );
+  const commentApi = appendCommentArea(body, doc, selectionMeta, current === "incorrect");
   container.appendChild(body);
 }
 
@@ -661,6 +736,9 @@ function renderListBlock(container, doc, selectionMeta) {
       selectionMeta.key,
       noAnswer ? null : { items: itemResults, missed: missed || 0 }
     );
+    if (itemChoices.some((c) => c === "incorrect") || (missed || 0) > 0) {
+      commentApi.reveal();
+    }
     updateHeader();
   }
 
@@ -698,6 +776,10 @@ function renderListBlock(container, doc, selectionMeta) {
   missedRow.appendChild(missedLabel);
   missedRow.appendChild(missedInput);
   body.appendChild(missedRow);
+
+  const listIncorrect =
+    itemChoices.some((c) => c === "incorrect") || (storedMissed || 0) > 0;
+  const commentApi = appendCommentArea(body, doc, selectionMeta, listIncorrect);
 
   container.appendChild(body);
 }
@@ -807,6 +889,7 @@ function loadResultsFile(file) {
       )) return;
     }
     state.results = loaded.results || {};
+    state.comments = loaded.comments || {};
     state.completed = loaded.completed_files || [];
     state.savedAt = loaded.saved_at || null;
     state.dirty = false;
