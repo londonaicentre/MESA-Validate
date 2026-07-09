@@ -96,6 +96,16 @@
   .info-fields ul { margin: 0; padding-left: 18px; columns: 2; }
   .info-fields li { font-size: 0.82rem; }
   .doc-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .val-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .block-filter { display: inline-flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+  .block-filter button {
+    border: none; border-radius: 0; border-left: 1px solid var(--border);
+    padding: 3px 10px; font-size: 0.78rem; font-weight: 600; color: var(--muted);
+    background: #fff; cursor: pointer;
+  }
+  .block-filter button:first-child { border-left: none; }
+  .block-filter button.active { background: var(--accent); color: #fff; }
+  .filter-count { font-size: 0.8rem; color: var(--muted); margin-bottom: 8px; }
   .reflow-toggle { font-size: 0.8rem; font-weight: 400; color: var(--muted); display: flex; align-items: center; gap: 4px; cursor: pointer; white-space: nowrap; }
   #doc-text {
     white-space: pre-wrap;
@@ -228,7 +238,15 @@
     <div id="doc-text"></div>
   </section>
   <section class="pane" id="val-pane">
-    <h2>Validation</h2>
+    <h2 class="val-heading">
+      <span>Validation</span>
+      <span class="block-filter" id="block-filter">
+        <button type="button" data-f="all">All</button>
+        <button type="button" data-f="extracted">Extracted</button>
+        <button type="button" data-f="empty">Empty</button>
+      </span>
+    </h2>
+    <div class="filter-count" id="filter-count"></div>
     <div id="val-blocks"></div>
     <div id="complete-row">
       <input type="checkbox" id="complete-check">
@@ -784,6 +802,25 @@ function renderListBlock(container, doc, selectionMeta) {
   container.appendChild(body);
 }
 
+let blockFilter = "all";  // "all" | "extracted" | "empty"
+try { blockFilter = localStorage.getItem("mesa-block-filter") || "all"; } catch (_) {}
+
+function blockIsExtracted(doc, selectionMeta) {
+  const block = doc.blocks[selectionMeta.key];
+  if (selectionMeta.kind === "list") return (block.items || []).length > 0;
+  return isPresent(block.value);
+}
+
+function updateFilterUI(nExtracted, nEmpty) {
+  document.querySelectorAll("#block-filter button").forEach((b) => {
+    b.classList.toggle("active", b.dataset.f === blockFilter);
+  });
+  let note = nExtracted + " extracted · " + nEmpty + " empty";
+  if (blockFilter === "extracted" && nEmpty) note += " · " + nEmpty + " empty hidden";
+  else if (blockFilter === "empty" && nExtracted) note += " · " + nExtracted + " extracted hidden";
+  document.getElementById("filter-count").textContent = note;
+}
+
 function renderDocument() {
   const doc = DATA.documents[state.currentIndex];
   document.getElementById("doc-id").textContent = doc.document_id;
@@ -793,7 +830,13 @@ function renderDocument() {
 
   const blocks = document.getElementById("val-blocks");
   blocks.innerHTML = "";
+  let nExtracted = 0, nEmpty = 0, shown = 0;
   DATA.selections.forEach((selectionMeta) => {
+    const extracted = blockIsExtracted(doc, selectionMeta);
+    extracted ? nExtracted++ : nEmpty++;
+    if (blockFilter === "extracted" && !extracted) return;
+    if (blockFilter === "empty" && extracted) return;
+    shown++;
     const section = document.createElement("div");
     section.className = "selection-block";
     const title = document.createElement("div");
@@ -808,6 +851,13 @@ function renderDocument() {
     }
     blocks.appendChild(section);
   });
+  if (shown === 0) {
+    const note = document.createElement("div");
+    note.className = "not-present";
+    note.textContent = "No " + blockFilter + " blocks for this document.";
+    blocks.appendChild(note);
+  }
+  updateFilterUI(nExtracted, nEmpty);
 
   const check = document.getElementById("complete-check");
   check.checked = state.completed.includes(doc.document_id);
@@ -987,6 +1037,15 @@ function renderPacketInfo() {
     ul.appendChild(li);
   });
 }
+
+document.querySelectorAll("#block-filter button").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    blockFilter = btn.dataset.f;
+    try { localStorage.setItem("mesa-block-filter", blockFilter); } catch (_) {}
+    document.getElementById("val-pane").scrollTop = 0;
+    renderDocument();
+  });
+});
 
 renderPacketInfo();
 loadLocal();

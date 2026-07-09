@@ -8,9 +8,10 @@ from utils.document_pane import render_document_pane
 from utils.glossary import describe_selection, load_glossary
 from utils.predictions_loader import load_prediction_file
 from utils.schema_inspector import SchemaInspector
+from utils.selection_resolver import resolve_selection
 from utils.session_manager import SessionManager
 from utils.styles import VALIDATE_PAGE_STYLES
-from utils.validation_ui import generate_validation_block
+from utils.validation_ui import generate_validation_block, is_value_present
 
 st.set_page_config(page_title="Validate", layout="wide")
 st.logo("aic_logo.png")
@@ -28,6 +29,15 @@ def _result_is_incorrect(result):
             result.get("missed", 0) > 0
         )
     return False
+
+
+def _block_is_extracted(selection, extraction_data, inspector):
+    """A block is 'extracted' if the model produced content: a single value that
+    is present, or a list/enum block with at least one item."""
+    block = resolve_selection(selection, extraction_data, inspector)
+    if block["kind"] == "list":
+        return len(block["items"]) > 0
+    return is_value_present(block["value"])
 
 
 def _render_comment_box(
@@ -177,13 +187,44 @@ else:
         with val_col:
             st.markdown("### Validation")
 
+            extracted_flags = [
+                _block_is_extracted(sel, extraction_data, inspector)
+                for sel in session.selections
+            ]
+            n_extracted = sum(extracted_flags)
+            n_empty = len(extracted_flags) - n_extracted
+
+            block_filter = st.segmented_control(
+                "Show blocks",
+                options=["All", "Extracted", "Empty"],
+                default="All",
+                key="block_filter",
+                label_visibility="collapsed",
+            )
+            block_filter = block_filter or "All"
+
+            count_note = f"{n_extracted} extracted · {n_empty} empty"
+            if block_filter == "Extracted" and n_empty:
+                count_note += f" · {n_empty} empty hidden"
+            elif block_filter == "Empty" and n_extracted:
+                count_note += f" · {n_extracted} extracted hidden"
+            st.caption(count_note)
+
             with st.container(height=800):
                 existing_results = progress["results"].get(document_id, {})
                 glossary = load_glossary(session.schema_module)
 
                 results = {}
+                shown = 0
 
                 for i, selection in enumerate(session.selections):
+                    is_extracted = extracted_flags[i]
+                    if block_filter == "Extracted" and not is_extracted:
+                        continue
+                    if block_filter == "Empty" and is_extracted:
+                        continue
+                    shown += 1
+
                     if selection.selection_type == "basemodel_class":
                         title = selection.class_name
                     elif selection.selection_type == "basemodel_field":
@@ -217,6 +258,12 @@ else:
                             progress,
                             block_prefix=f"document_{current_index}_selection_{i}",
                         )
+
+                if shown == 0:
+                    st.info(
+                        f"No {block_filter.lower()} blocks for this document. "
+                        "Switch the filter above to see other blocks."
+                    )
 
                 # save results immediately if any non-none values exist
                 non_none_results = {
