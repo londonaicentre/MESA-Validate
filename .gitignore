@@ -37,3 +37,4 @@ results/
 
 # local preview launcher (machine-specific paths)
 .claude/launch.json
+.superpowers/
