@@ -5,6 +5,8 @@ import pytest
 
 from utils.models import FieldSelection, Session
 from utils.packet_builder import build_packet_data, build_packet_html, write_packet
+from utils.schema_inspector import SchemaInspector
+from utils.validation_plan import build_validation_plan, flatten_targets
 
 
 @pytest.fixture()
@@ -47,14 +49,23 @@ def test_packet_data_shape(session, document_ids):
     assert data["packet_name"] == "dr_smith"
     assert data["session_name"] == "test_val"
     assert len(data["documents"]) == 2
-    assert len(data["selections"]) == 3
-    keys = {s["key"] for s in data["selections"]}
+
+    inspector = SchemaInspector(session.schema_module, session.root_class)
+    plan = build_validation_plan(session.selections, inspector)
+    targets = flatten_targets(plan)
+    keys = {t.key for t in targets}
+    kinds = {t.key: ("list" if t.kind == "list" else "single") for t in targets}
+
+    assert data["plan"] and data["plan"][0]["class_name"] == plan[0].class_name
+
     doc = data["documents"][0]
     assert set(doc["blocks"]) == keys
     assert isinstance(doc["content"], str) and doc["document_id"]
-    kinds = {s["key"]: s["kind"] for s in data["selections"]}
     for key, block in doc["blocks"].items():
         assert block["kind"] == kinds[key]
+
+    # a concrete key from the fixture's PrimaryCancerFacts.topography selection
+    assert "primary_cancer.primary_cancer_facts.topography" in doc["blocks"]
 
 
 def test_html_embeds_escaped_json(session, document_ids):
@@ -76,11 +87,11 @@ def test_write_packet(tmp_path, session, document_ids):
     assert "packet-data" in path.read_text(encoding="utf-8")
 
 
-def test_selections_carry_summaries(session, document_ids):
+def test_plan_targets_carry_summaries(session, document_ids):
     data = build_packet_data(session, document_ids, "dr_smith")
-    by_key = {s["key"]: s for s in data["selections"]}
-    topo = by_key["basemodel_field_PrimaryCancerFacts_topography"]
-    assert topo["desc"] == "The body site where the primary cancer started (e.g. breast, lung)."
+    group = next(g for g in data["plan"] if g["class_name"] == "PrimaryCancerFacts")
+    topo = next(t for t in group["targets"] if t["field_name"] == "topography")
+    assert topo["summary"] == "Most suitable anatomical site of primary cancer."
     # field_glossary is available for nested sub-object headings
     assert isinstance(data["field_glossary"], dict)
 

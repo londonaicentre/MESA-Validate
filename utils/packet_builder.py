@@ -11,14 +11,14 @@ from datetime import datetime
 from pathlib import Path
 
 from utils.glossary import (
+    describe_class,
     describe_field_by_name,
-    describe_selection,
     load_glossary,
 )
 from utils.predictions_loader import load_prediction_file
 from utils.profile_manager import _slugify
 from utils.schema_inspector import SchemaInspector
-from utils.selection_resolver import resolve_selection, selection_kind, selection_title
+from utils.validation_plan import build_validation_plan, flatten_targets, resolve_target
 
 TEMPLATE_PATH = Path(__file__).parent / "packet_template.html"
 TEXTMATCH_PATH = Path(__file__).parent / "textmatch.js"
@@ -26,19 +26,38 @@ PACKET_DATA_PLACEHOLDER = "__PACKET_DATA__"
 TEXTMATCH_PLACEHOLDER = "__TEXTMATCH_JS__"
 
 
+def _group_to_dict(group, inspector, glossary):
+    """Serialize a validation_plan Group (with nested subgroups) to plain dicts."""
+    return {
+        "path": group.path,
+        "class_name": group.class_name,
+        "title": group.title,
+        "summary": describe_class(group.class_name, inspector, glossary),
+        "targets": [
+            {
+                "key": t.key,
+                "kind": t.kind,
+                "field_name": t.field_name,
+                "title": t.title,
+                "summary": describe_field_by_name(t.field_name, inspector, glossary)
+                if t.field_name
+                else None,
+            }
+            for t in group.targets
+        ],
+        "subgroups": [
+            _group_to_dict(sg, inspector, glossary) for sg in group.subgroups
+        ],
+    }
+
+
 def build_packet_data(session, document_ids, packet_name):
     inspector = SchemaInspector(session.schema_module, session.root_class)
     glossary = load_glossary(session.schema_module)
 
-    selections_meta = [
-        {
-            "key": s.build_key(),
-            "title": selection_title(s),
-            "kind": selection_kind(s, inspector),
-            "desc": describe_selection(s, inspector, glossary),
-        }
-        for s in session.selections
-    ]
+    plan = build_validation_plan(session.selections, inspector)
+    targets = flatten_targets(plan)
+    plan_data = [_group_to_dict(group, inspector, glossary) for group in plan]
 
     # field-name -> summary, for nested sub-object headings inside cards
     field_glossary = {}
@@ -54,11 +73,10 @@ def build_packet_data(session, document_ids, packet_name):
     documents = []
     for document_id in document_ids:
         prediction = load_prediction_file(document_id, session.predictions_folder)
+        inference = prediction.get("document_inference") or {}
         blocks = {
-            s.build_key(): resolve_selection(
-                s, prediction.get("document_inference") or {}, inspector
-            )
-            for s in session.selections
+            target.key: resolve_target(target, inference, inspector)
+            for target in targets
         }
         documents.append(
             {
@@ -77,7 +95,7 @@ def build_packet_data(session, document_ids, packet_name):
         "predictions_folder": session.predictions_folder,
         "sample_size": session.sample_size,
         "created_at": datetime.now().isoformat(timespec="seconds"),
-        "selections": selections_meta,
+        "plan": plan_data,
         "field_glossary": field_glossary,
         "documents": documents,
     }
