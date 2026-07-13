@@ -5,6 +5,8 @@ metrics.py - Metrics calculation for validation results
 import csv
 from io import StringIO
 
+from utils.validation_plan import build_validation_plan, flatten_targets
+
 
 def calculate_binary_accuracy(results):
     """
@@ -136,50 +138,50 @@ def calculate_list_metrics(results):
     }
 
 
-def aggregate_metrics(progress_data, selections):
+def aggregate_metrics(progress_data, selections, inspector):
     """
-    Aggregate metrics across all files for each selection.
+    Aggregate metrics across all files for each validation plan target.
 
     Args:
         progress_data:
             results Dict
         selections:
             List of FieldSelection objects
+        inspector:
+            SchemaInspector for the session's schema, used to build the
+            validation plan (and thus the canonical target keys) that the
+            selections resolve to.
 
     Returns:
-        Dict mapping selection keys to their metrics
+        Dict mapping target keys to their metrics
     """
     metrics = {}
 
     completed_files = set(progress_data.get("completed_files", []))
+    targets = flatten_targets(build_validation_plan(selections, inspector))
 
-    selection_keys = []
-    for selection in selections:
-        key = selection.build_key()
-        selection_keys.append((key, selection))
+    for target in targets:
+        results_for_target = [
+            file_results[target.key]
+            for file_path, file_results in progress_data.get("results", {}).items()
+            if file_path in completed_files and target.key in file_results
+        ]
+        if not results_for_target:
+            continue
 
-    for selection_key, selection in selection_keys:
-        results_for_selection = []
-
-        for file_path, file_results in progress_data.get("results", {}).items():
-            if file_path in completed_files and selection_key in file_results:
-                results_for_selection.append(file_results[selection_key])
-
-        if results_for_selection:
-            first_result = results_for_selection[0]
-
-            if isinstance(first_result, str):
-                metrics[selection_key] = {
-                    "type": "binary",
-                    "selection": selection,
-                    **calculate_binary_accuracy(results_for_selection),
-                }
-            elif isinstance(first_result, dict):
-                metrics[selection_key] = {
-                    "type": "list",
-                    "selection": selection,
-                    **calculate_list_metrics(results_for_selection),
-                }
+        first = results_for_target[0]
+        if isinstance(first, str):
+            metrics[target.key] = {
+                "type": "binary",
+                "target": target,
+                **calculate_binary_accuracy(results_for_target),
+            }
+        elif isinstance(first, dict):
+            metrics[target.key] = {
+                "type": "list",
+                "target": target,
+                **calculate_list_metrics(results_for_target),
+            }
 
     return metrics
 
@@ -190,14 +192,7 @@ def _build_metrics_rows(metrics):
     """
     rows = []
     for key, metric_data in metrics.items():
-        selection = metric_data["selection"]
-
-        if selection.selection_type == "basemodel_class":
-            name = f"{selection.class_name} (class)"
-        elif selection.selection_type == "basemodel_field":
-            name = f"{selection.class_name}.{selection.field_name}"
-        else:
-            name = f"{selection.class_name}.{selection.enum_value}"
+        name = metric_data["target"].title
 
         row = {
             "selection": name,
@@ -224,11 +219,11 @@ def _build_metrics_rows(metrics):
     return rows
 
 
-def export_to_csv(progress_data, selections, output_path):
+def export_to_csv(progress_data, selections, inspector, output_path):
     """
     Export summary metrics to CSV for download
     """
-    metrics = aggregate_metrics(progress_data, selections)
+    metrics = aggregate_metrics(progress_data, selections, inspector)
     if not metrics:
         return
 
@@ -248,9 +243,9 @@ def export_to_csv(progress_data, selections, output_path):
         writer.writerows(rows)
 
 
-def export_to_csv_string(progress_data, selections):
+def export_to_csv_string(progress_data, selections, inspector):
     """Export summary metrics to CSV string for download"""
-    metrics = aggregate_metrics(progress_data, selections)
+    metrics = aggregate_metrics(progress_data, selections, inspector)
     if not metrics:
         return ""
 
@@ -288,14 +283,7 @@ def format_metrics_summary(metrics):
     summary = []
 
     for key, metric_data in metrics.items():
-        selection = metric_data["selection"]
-
-        if selection.selection_type == "basemodel_class":
-            name = f"{selection.class_name} (class)"
-        elif selection.selection_type == "basemodel_field":
-            name = f"{selection.class_name}.{selection.field_name}"
-        else:
-            name = f"{selection.class_name}.{selection.enum_value}"
+        name = metric_data["target"].title
 
         if metric_data["type"] == "binary":
             summary.append(

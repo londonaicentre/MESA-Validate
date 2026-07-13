@@ -3,13 +3,19 @@ import pytest
 from utils.metrics import aggregate_metrics
 from utils.models import FieldSelection
 from utils.results_import import combine_progress, parse_results_payload
+from utils.schema_inspector import SchemaInspector
 
 SEL = FieldSelection(
     selection_type="basemodel_field",
     class_name="PrimaryCancerFacts",
     field_name="topography",
 )
-KEY = SEL.build_key()
+KEY = "primary_cancer.primary_cancer_facts.topography"
+
+
+@pytest.fixture(scope="module")
+def inspector():
+    return SchemaInspector("oncollamaschemav3", "OncoLlamaModel")
 
 PAYLOAD = {
     "packet_name": "dr_smith",
@@ -36,7 +42,7 @@ def test_parse_rejects_garbage():
         parse_results_payload({"foo": "bar"})
 
 
-def test_packet_metrics_match_native_progress():
+def test_packet_metrics_match_native_progress(inspector):
     _, progress = parse_results_payload(PAYLOAD)
     native = {
         "results": PAYLOAD["results"],
@@ -44,10 +50,12 @@ def test_packet_metrics_match_native_progress():
         "current_file_index": 0,
         "files": ["doc-1", "doc-2"],
     }
-    assert aggregate_metrics(progress, [SEL]) == aggregate_metrics(native, [SEL])
+    assert aggregate_metrics(progress, [SEL], inspector) == aggregate_metrics(
+        native, [SEL], inspector
+    )
 
 
-def test_combine_progress_namespaces_documents():
+def test_combine_progress_namespaces_documents(inspector):
     p1 = parse_results_payload(PAYLOAD)
     p2 = parse_results_payload(
         {
@@ -62,7 +70,7 @@ def test_combine_progress_namespaces_documents():
         "dr_smith::doc-1",
         "dr_jones::doc-1",
     }
-    metrics = aggregate_metrics(combined, [SEL])
+    metrics = aggregate_metrics(combined, [SEL], inspector)
     assert metrics[KEY]["total"] == 2  # both clinicians' doc-1 counted
 
 
