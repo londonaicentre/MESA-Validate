@@ -255,11 +255,46 @@ class _PlanAccumulator:
         return [self._by_path[p] for p in self._order]
 
 
+# Canonical clinical order for top-level validation blocks. Groups whose
+# class_name appears here are shown in this order; anything not listed (future
+# classes, leftover enum blocks) keeps its first-seen order after these. The
+# through-line is: case overview -> primary cancer core -> biology ->
+# staging/spread -> history -> patient status/findings -> other cancers -> plan.
+CLINICAL_BLOCK_ORDER = [
+    "ContextSummary",
+    "PrimaryCancer",
+    "PrimaryCancerFacts",
+    "PrimaryCancerTumourFacts",
+    "MolecularBiomarkerProfile",
+    "PrimaryCancerScore",
+    "PrimaryCancerSpread",
+    "PrimaryCancerTimelineEvent",
+    "PerformanceStatus",
+    "PatientFinding",
+    "OtherCancerFacts",
+    "FuturePlan",
+]
+_ORDER_RANK = {name: i for i, name in enumerate(CLINICAL_BLOCK_ORDER)}
+
+
+def _clinical_sort(groups):
+    """Order top-level groups by CLINICAL_BLOCK_ORDER, stably. Unranked classes
+    keep their existing relative order at the end (never dropped)."""
+    return [
+        g
+        for _, g in sorted(
+            enumerate(groups),
+            key=lambda p: (_ORDER_RANK.get(p[1].class_name, len(_ORDER_RANK)), p[0]),
+        )
+    ]
+
+
 def build_validation_plan(selections, inspector):
     """Return an ordered list of top-level Groups for the given selections.
 
     Nested objects become subgroups (rendered indented); list fields and enum
-    filters become list targets; every leaf appears exactly once.
+    filters become list targets; every leaf appears exactly once. Top-level
+    blocks are ordered by CLINICAL_BLOCK_ORDER.
     """
     acc = _PlanAccumulator(inspector)
     for selection in selections:
@@ -271,7 +306,7 @@ def build_validation_plan(selections, inspector):
     for g in all_groups:
         _collect_nested_paths(g, nested_paths)
     top_level = [g for g in all_groups if g.path not in nested_paths]
-    return _dedup_prefer_nested(top_level)
+    return _clinical_sort(_dedup_prefer_nested(top_level))
 
 
 def _collect_nested_paths(group, acc):

@@ -172,30 +172,51 @@ def storage_to_choice(stored):
     return None
 
 
+def _is_nested_value(value):
+    """A nested object or list-of-objects that must be rendered recursively
+    rather than stringified into a single row."""
+    if isinstance(value, dict) and value:
+        return True
+    if isinstance(value, list) and value and any(isinstance(x, dict) for x in value):
+        return True
+    return False
+
+
 def render_leaf_toggle(target, resolved, key_prefix, stored):
     """
     One label/value row (+ 🔎 locate button for excerpt-like values) with a
-    compact ✓/✗ toggle pair. Untouched = unreviewed; clicking the lit icon
-    clears back to unreviewed. Returns the storage verdict (or None).
+    compact ✓/✗ toggle pair. Nested BaseModel values (a non-list object field
+    selected on its own) are rendered as a full-width card instead of raw JSON,
+    with the toggle on its own row below. Untouched = unreviewed; clicking the
+    lit icon clears back to unreviewed. Returns the storage verdict (or None).
     """
     value = resolved["value"]
     is_present = is_value_present(value)
     choice = storage_to_choice(stored)
 
-    c_text, c_ok, c_no = st.columns([6, 1, 1], vertical_alignment="center")
-    with c_text:
-        st.markdown(
-            f"<span class='mesa-toggle-row'></span>{_field_row_html(target.field_name, value)}",
-            unsafe_allow_html=True,
-        )
-        if _is_excerpt_field(target.field_name, value):
-            st.button(
-                "🔎",
-                key=f"{key_prefix}_locate",
-                on_click=_set_highlight,
-                args=(value,),
-                help=f"Locate: {str(value)[:80]}",
+    nested = _is_nested_value(value)
+    if nested:
+        # Full-width recursive render (heading + bordered card), then a
+        # toggle-only row below -- mirrors render_list_target's item layout.
+        _render_field(target.field_name, value, key_prefix)
+        c_text, c_ok, c_no = st.columns([6, 1, 1], vertical_alignment="center")
+        with c_text:
+            st.markdown("<span class='mesa-toggle-row'></span>", unsafe_allow_html=True)
+    else:
+        c_text, c_ok, c_no = st.columns([6, 1, 1], vertical_alignment="center")
+        with c_text:
+            st.markdown(
+                f"<span class='mesa-toggle-row'></span>{_field_row_html(target.field_name, value)}",
+                unsafe_allow_html=True,
             )
+            if _is_excerpt_field(target.field_name, value):
+                st.button(
+                    "🔎",
+                    key=f"{key_prefix}_locate",
+                    on_click=_set_highlight,
+                    args=(value,),
+                    help=f"Locate: {str(value)[:80]}",
+                )
 
     def _toggle(new_choice):
         # clicking the lit icon clears back to unreviewed
