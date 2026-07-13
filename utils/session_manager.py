@@ -18,6 +18,64 @@ from pathlib import Path
 
 from utils.models import Session
 from utils.predictions_loader import get_prediction_files, validate_and_filter_files
+from utils.schema_inspector import SchemaInspector
+from utils.validation_plan import target_key
+
+
+def _old_to_new_key(selection, inspector):
+    """Map one selection's legacy build_key() to its new target key, or None to drop.
+
+    Drops whole-object-class verdicts (single verdict can't split per field) and
+    list-typed field verdicts (single string can't become per-item).
+    """
+    old = selection.build_key()
+    if selection.selection_type == "enum_value":
+        return old, f"enum::{selection.class_name}.{selection.enum_value}"
+    if selection.selection_type == "basemodel_class":
+        if inspector.is_class_used_as_list_item(selection.class_name):
+            return old, f"list::{selection.class_name}"
+        return old, None  # object class -> unrecoverable
+    if selection.selection_type == "basemodel_field":
+        meta = inspector.get_class_fields(selection.class_name).get(selection.field_name)
+        parts = inspector.find_class_path(selection.class_name)
+        if meta is None or not parts or meta["is_list"]:
+            return old, None  # list-field single verdict can't migrate
+        return old, ".".join(parts + [selection.field_name])
+    return old, None
+
+
+def migrate_results_to_paths(progress, session, inspector):
+    """Best-effort in-place remap of legacy build_key() results to path keys.
+
+    Returns (progress, dropped_keys). Idempotent: sets schema_keys_version=2.
+    """
+    mapping = {}
+    for selection in session.selections:
+        old, new = _old_to_new_key(selection, inspector)
+        mapping[old] = new
+
+    dropped = []
+    for _document_id, doc_results in progress.get("results", {}).items():
+        remapped = {}
+        for old_key, value in doc_results.items():
+            new_key = mapping.get(old_key, old_key)
+            if new_key is None:
+                dropped.append(old_key)
+                continue
+            remapped[new_key] = value
+        doc_results.clear()
+        doc_results.update(remapped)
+
+    # comments are keyed by group/selection; remap where we can, else keep
+    for _document_id, doc_comments in progress.get("comments", {}).items():
+        remapped = {k: v for k, v in (
+            (mapping.get(ck, ck), cv) for ck, cv in doc_comments.items()
+        ) if k is not None}
+        doc_comments.clear()
+        doc_comments.update(remapped)
+
+    progress["schema_keys_version"] = 2
+    return progress, dropped
 
 
 class SessionManager:
@@ -107,6 +165,19 @@ class SessionManager:
                 "completed_files": [],
                 "comments": {},
             }
+
+        if progress_data.get("schema_keys_version") != 2 and progress_data.get("results"):
+            try:
+                session = self.load_config()
+                inspector = SchemaInspector(session.schema_module, session.root_class)
+                if self.progress_path.exists():
+                    shutil.copyfile(self.progress_path, self.progress_path.with_suffix(".json.bak"))
+                progress_data, _dropped = migrate_results_to_paths(
+                    progress_data, session, inspector
+                )
+                self.save_progress(progress_data)
+            except Exception:
+                pass  # never block loading on migration
 
         return progress_data
 

@@ -41,3 +41,40 @@ def test_save_comment_tolerates_legacy_progress_without_comments(manager):
     )
     manager.save_comment("doc-1", "k1", "added later")
     assert manager.load_progress()["comments"]["doc-1"]["k1"] == "added later"
+
+
+from utils.models import FieldSelection, Session
+from utils.schema_inspector import SchemaInspector
+from utils.session_manager import migrate_results_to_paths
+
+
+def _session(selections):
+    return Session(
+        id="t", name="t", schema_module="oncollamaschemav3",
+        root_class="OncoLlamaModel", predictions_folder=".", sample_size=1,
+        selections=selections,
+    )
+
+
+def test_migration_remaps_scalar_field_and_drops_whole_class():
+    inspector = SchemaInspector("oncollamaschemav3", "OncoLlamaModel")
+    session = _session([
+        FieldSelection(selection_type="basemodel_field",
+                       class_name="PrimaryCancerFacts", field_name="topography"),
+        FieldSelection(selection_type="basemodel_class", class_name="PrimaryCancer"),
+    ])
+    progress = {
+        "results": {
+            "doc1": {
+                "basemodel_field_PrimaryCancerFacts_topography": "PRESENT_CORRECT",
+                "basemodel_class_PrimaryCancer": "PRESENT_CORRECT",  # unrecoverable
+            }
+        },
+        "completed_files": [], "comments": {},
+    }
+    migrated, dropped = migrate_results_to_paths(progress, session, inspector)
+    doc = migrated["results"]["doc1"]
+    assert doc["primary_cancer.primary_cancer_facts.topography"] == "PRESENT_CORRECT"
+    assert "basemodel_field_PrimaryCancerFacts_topography" not in doc
+    assert "basemodel_class_PrimaryCancer" not in doc
+    assert "basemodel_class_PrimaryCancer" in dropped
