@@ -111,6 +111,35 @@ def test_summarize_counts_leaves_and_list_items(inspector):
     assert summary["unvalidated"] >= 1      # remaining untouched leaves
 
 
+def test_dedup_prefers_nested_list_field_over_list_item_class(inspector):
+    # Selecting both the container (PrimaryCancer) and the list-item class it
+    # contains (PrimaryCancerScore) should not produce two targets pointing at
+    # the same underlying data. The nested path-based list field wins; the
+    # redundant top-level list::Class group is dropped entirely.
+    selections = [
+        FieldSelection(selection_type="basemodel_class", class_name="PrimaryCancer"),
+        FieldSelection(selection_type="basemodel_class", class_name="PrimaryCancerScore"),
+    ]
+    groups = build_validation_plan(selections, inspector)
+    all_keys = [t.key for t in flatten_targets(groups)]
+
+    assert "primary_cancer.primary_cancer_scores" in all_keys
+    assert "list::PrimaryCancerScore" not in all_keys
+    assert not any(g.class_name == "PrimaryCancerScore" for g in groups)
+
+
+def test_no_dedup_when_container_not_selected(inspector):
+    # With only the list-item class selected (no container selection), there
+    # is nothing nested to prefer, so the list::Class target must remain.
+    selections = [
+        FieldSelection(selection_type="basemodel_class", class_name="PrimaryCancerScore"),
+    ]
+    groups = build_validation_plan(selections, inspector)
+    all_keys = [t.key for t in flatten_targets(groups)]
+
+    assert "list::PrimaryCancerScore" in all_keys
+
+
 def test_group_rollup_matches_summarize(inspector):
     groups = build_validation_plan(
         [FieldSelection(selection_type="basemodel_class", class_name="PrimaryCancer")],

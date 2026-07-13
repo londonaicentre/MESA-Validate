@@ -10,7 +10,7 @@ is validated exactly once.
 """
 
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Optional, get_args, get_origin
 
 from utils.predictions_loader import extract_field_value
 from utils.selection_resolver import resolve_selection
@@ -35,6 +35,11 @@ class ListTarget:
     title: str
     source_selection: Optional[object] = None  # for enum / list-item-class resolution
     kind: str = "list"
+    # Name of the list ITEM class, populated only for path-based list-field
+    # targets (built from a container recursing into a List[Item] field).
+    # None for "list::Class" and "enum::" targets, whose class_name already
+    # names the item class.
+    item_class_name: Optional[str] = None
 
 
 @dataclass
@@ -92,15 +97,52 @@ def target_key(obj, inspector=None):
     return None
 
 
-def _leaf_or_list_target(class_name, field_name, field_meta, class_path):
+def _list_item_class_name(owner_class_name, field_name, inspector):
+    """Name of the item class for a List[Item] (optionally Optional[...]) field.
+
+    Returns None if the field isn't found, isn't a list, or the item type has
+    no name (e.g. a bare scalar list).
+    """
+    class_info = inspector.classes.get(owner_class_name)
+    if not class_info or class_info["type"] != "BaseModel":
+        return None
+    model_fields = class_info["class"].model_fields
+    field_info = model_fields.get(field_name)
+    if field_info is None:
+        return None
+    annotation = field_info.annotation
+
+    # unwrap Optional[...]/Union[...]
+    origin = get_origin(annotation)
+    if str(origin) == "typing.Union":
+        args = get_args(annotation)
+        annotation = next((a for a in args if a is not type(None)), annotation)
+        origin = get_origin(annotation)
+
+    if origin is not list:
+        return None
+    args = get_args(annotation)
+    if not args:
+        return None
+    item_type = args[0]
+    return getattr(item_type, "__name__", None)
+
+
+def _leaf_or_list_target(class_name, field_name, field_meta, class_path, inspector=None):
     path = f"{class_path}.{field_name}"
     if field_meta["is_list"]:
+        item_class_name = (
+            _list_item_class_name(class_name, field_name, inspector)
+            if inspector is not None
+            else None
+        )
         return ListTarget(
             key=path,
             path=path,
             field_name=field_name,
             class_name=class_name,
             title=f"{class_name}.{field_name}",
+            item_class_name=item_class_name,
         )
     return LeafTarget(
         key=path,
@@ -148,7 +190,10 @@ class _PlanAccumulator:
                     group.subgroups.append(sub)
             else:
                 self.add_target(
-                    group, _leaf_or_list_target(class_name, field_name, meta, class_path)
+                    group,
+                    _leaf_or_list_target(
+                        class_name, field_name, meta, class_path, self.inspector
+                    ),
                 )
         return group
 
@@ -181,7 +226,14 @@ class _PlanAccumulator:
             if meta is None:
                 return
             self.add_target(
-                group, _leaf_or_list_target(selection.class_name, selection.field_name, meta, class_path)
+                group,
+                _leaf_or_list_target(
+                    selection.class_name,
+                    selection.field_name,
+                    meta,
+                    class_path,
+                    insp,
+                ),
             )
 
         elif selection.selection_type == "enum_value":
@@ -218,13 +270,62 @@ def build_validation_plan(selections, inspector):
     nested_paths = set()
     for g in all_groups:
         _collect_nested_paths(g, nested_paths)
-    return [g for g in all_groups if g.path not in nested_paths]
+    top_level = [g for g in all_groups if g.path not in nested_paths]
+    return _dedup_prefer_nested(top_level)
 
 
 def _collect_nested_paths(group, acc):
     for sg in group.subgroups:
         acc.add(sg.path)
         _collect_nested_paths(sg, acc)
+
+
+def _dedup_prefer_nested(groups):
+    """Drop redundant "list::Class" groups whose data is already covered by
+    a nested path-based List[Class] field elsewhere in the plan.
+
+    A validator may select both a container (e.g. PrimaryCancer) and a
+    list-item class it contains (e.g. PrimaryCancerScore). That produces two
+    targets over the same underlying data: a nested path-based list field
+    (key like "primary_cancer.primary_cancer_scores") and a synthetic
+    top-level "list::PrimaryCancerScore" target. Prefer the nested one and
+    remove the synthetic duplicate; if that empties its group, drop the
+    group too.
+    """
+    covered_item_classes = {
+        t.item_class_name
+        for t in flatten_targets(groups)
+        if isinstance(t, ListTarget) and t.item_class_name is not None
+    }
+    if not covered_item_classes:
+        return groups
+
+    for g in groups:
+        _remove_redundant_list_class_targets(g, covered_item_classes)
+
+    return [g for g in groups if g.targets or g.subgroups]
+
+
+def _remove_redundant_list_class_targets(group, covered_item_classes):
+    group.targets = [
+        t
+        for t in group.targets
+        if not (
+            isinstance(t, ListTarget)
+            and t.key.startswith("list::")
+            and t.key[len("list::") :] in covered_item_classes
+        )
+    ]
+    group.subgroups = [
+        sg
+        for sg in group.subgroups
+        if _keep_subgroup(sg, covered_item_classes)
+    ]
+
+
+def _keep_subgroup(subgroup, covered_item_classes):
+    _remove_redundant_list_class_targets(subgroup, covered_item_classes)
+    return bool(subgroup.targets or subgroup.subgroups)
 
 
 def flatten_targets(groups):
