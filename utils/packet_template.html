@@ -183,8 +183,18 @@
   }
   .locate-chip:hover { background: #dcebfa; }
   .locate-chip .miss { color: #a15c00; margin-left: 4px; }
-  .radio-row { display: flex; gap: 16px; margin: 6px 0 2px; align-items: center; }
-  .radio-row label { display: flex; gap: 4px; align-items: center; font-size: 0.88rem; cursor: pointer; }
+  .leaf-row { align-items: center; }
+  .verdict-btns { display: flex; gap: 4px; flex: 0 0 auto; }
+  .verdict-btn {
+    padding: 2px 9px; font-size: 0.9rem; line-height: 1.4; border-radius: 6px;
+    border: 1px solid var(--border); background: #fff; color: var(--muted);
+  }
+  .verdict-btn.ok.active { background: #e6f4ea; border-color: #34a853; color: #1e7e34; }
+  .verdict-btn.no.active { background: #fce8e6; border-color: #ea4335; color: #a6291d; }
+  .item-verdict-row { margin: -2px 0 8px; }
+  .subgroup { margin: 8px 0; padding-left: 10px; border-left: 2px solid var(--border); }
+  .subgroup-body { padding: 4px 0 0; }
+  .group-rollup { font-size: 0.8rem; color: var(--muted); margin: 2px 0 8px; padding: 0 12px; }
   .missed-row { margin-top: 8px; font-size: 0.88rem; display: flex; align-items: center; gap: 8px; }
   .missed-row input { width: 70px; font: inherit; padding: 3px 6px; }
   .not-present { color: #777; font-style: italic; font-size: 0.88rem; margin-bottom: 6px; }
@@ -615,23 +625,42 @@ function entityCard(item) {
   return card;
 }
 
-function radioRow(name, current, onChange) {
-  // current: "none" | "correct" | "incorrect"
-  const row = document.createElement("div");
-  row.className = "radio-row";
-  [["none", "None"], ["correct", "Correct"], ["incorrect", "Incorrect"]].forEach(([value, text]) => {
-    const label = document.createElement("label");
-    const input = document.createElement("input");
-    input.type = "radio";
-    input.name = name;
-    input.value = value;
-    input.checked = current === value;
-    input.addEventListener("change", () => onChange(value));
-    label.appendChild(input);
-    label.appendChild(document.createTextNode(text));
-    row.appendChild(label);
-  });
-  return row;
+/* Two icon buttons (✓/✗); clicking the already-lit one clears back to
+   unreviewed. Mirrors the app's render_leaf_toggle / render_list_target
+   lit-icon-clears toggle. current: "correct" | "incorrect" | null. */
+function verdictButtons(current, onChange) {
+  const wrap = document.createElement("span");
+  wrap.className = "verdict-btns";
+  let choice = current;
+
+  const btnOk = document.createElement("button");
+  btnOk.type = "button";
+  btnOk.className = "verdict-btn ok";
+  btnOk.textContent = "✓";
+  btnOk.title = "Correct";
+
+  const btnNo = document.createElement("button");
+  btnNo.type = "button";
+  btnNo.className = "verdict-btn no";
+  btnNo.textContent = "✗";
+  btnNo.title = "Incorrect";
+
+  function refresh() {
+    btnOk.classList.toggle("active", choice === "correct");
+    btnNo.classList.toggle("active", choice === "incorrect");
+  }
+  refresh();
+
+  function pick(newChoice) {
+    choice = choice === newChoice ? null : newChoice;
+    refresh();
+    onChange(choice);
+  }
+  btnOk.addEventListener("click", () => pick("correct"));
+  btnNo.addEventListener("click", () => pick("incorrect"));
+  wrap.appendChild(btnOk);
+  wrap.appendChild(btnNo);
+  return wrap;
 }
 
 /* Hidden-by-default freetext comment for a block. Reveals when a comment
@@ -675,72 +704,133 @@ function appendCommentArea(body, doc, selectionMeta, isIncorrect) {
   };
 }
 
-function renderSingleBlock(container, doc, selectionMeta) {
-  const block = doc.blocks[selectionMeta.key];
-  const value = block.value;
-  const body = document.createElement("div");
-  body.className = "block-body";
+/* ---------- plan-driven rendering (grouped, per-field ✓/✗) ---------- */
 
-  if (!isPresent(value)) {
-    const note = document.createElement("div");
-    note.className = "not-present";
-    note.textContent = "Not present in extraction";
-    body.appendChild(note);
-    if (value !== null && value !== undefined) body.appendChild(entityCard(value));
-  } else if (typeof value === "object" && !Array.isArray(value)) {
-    body.appendChild(entityCard(value));
-  } else {
-    const card = document.createElement("div");
-    card.className = "entity-card";
-    const row = document.createElement("div");
-    row.className = "field-row";
-    const label = document.createElement("span");
-    label.className = "field-label";
-    label.textContent = selectionMeta.title.split(".").pop();
-    const valueEl = document.createElement("span");
-    valueEl.className = "field-value";
-    valueEl.textContent = String(value);
-    if (TextMatch.isExcerptField(selectionMeta.title.split(".").pop(), value)) {
-      valueEl.appendChild(makeLocateChip(String(value)));
-    }
-    row.appendChild(label);
-    row.appendChild(valueEl);
-    card.appendChild(row);
-    body.appendChild(card);
-  }
-
-  const stored = getValue(doc.document_id, selectionMeta.key);
-  let current = "none";
-  if (typeof stored === "string") {
-    if (stored.endsWith("_CORRECT")) current = "correct";
-    else if (stored.endsWith("_INCORRECT")) current = "incorrect";
-  }
-  body.appendChild(
-    radioRow("r_" + doc.document_id + "_" + selectionMeta.key, current, (choice) => {
-      setValue(
-        doc.document_id,
-        selectionMeta.key,
-        binaryValue(choice === "none" ? null : choice, value)
-      );
-      if (choice === "incorrect") commentApi.reveal();
-      updateHeader();
-    })
-  );
-  const commentApi = appendCommentArea(body, doc, selectionMeta, current === "incorrect");
-  container.appendChild(body);
+/* All leaf/list targets under a group, depth-first including subgroups —
+   mirrors validation_plan.flatten_targets([group]). */
+function collectGroupTargets(group) {
+  let out = group.targets.slice();
+  group.subgroups.forEach((sg) => { out = out.concat(collectGroupTargets(sg)); });
+  return out;
 }
 
-function renderListBlock(container, doc, selectionMeta) {
-  const block = doc.blocks[selectionMeta.key];
-  const items = block.items || [];
-  const body = document.createElement("div");
-  body.className = "block-body";
+/* Storage verdict -> "correct" | "incorrect" | null (storage_to_choice). */
+function storedChoice(stored) {
+  if (typeof stored === "string") {
+    if (stored.endsWith("_CORRECT")) return "correct";
+    if (stored.endsWith("_INCORRECT")) return "incorrect";
+  }
+  return null;
+}
 
-  const stored = getValue(doc.document_id, selectionMeta.key);
+function targetIsIncorrect(doc, target) {
+  const stored = getValue(doc.document_id, target.key);
+  if (target.kind === "leaf") return storedChoice(stored) === "incorrect";
+  const items = (stored && stored.items) || [];
+  const missed = (stored && stored.missed) || 0;
+  return items.some((x) => x === false) || missed > 0;
+}
+
+function groupIsIncorrect(doc, group) {
+  return collectGroupTargets(group).some((t) => targetIsIncorrect(doc, t));
+}
+
+/* Derive correct/incorrect/unvalidated counts from stored verdicts, mirroring
+   validation_plan.summarize_results exactly (list items counted individually;
+   missed items add to incorrect; an all-untouched list counts as one
+   unvalidated slot). */
+function targetVerdictCounts(doc, targets) {
+  let correct = 0, incorrect = 0, unvalidated = 0;
+  targets.forEach((t) => {
+    const stored = getValue(doc.document_id, t.key);
+    if (t.kind === "leaf") {
+      const choice = storedChoice(stored);
+      if (choice === "correct") correct++;
+      else if (choice === "incorrect") incorrect++;
+      else unvalidated++;
+    } else {
+      const items = (stored && stored.items) || [];
+      const missed = (stored && stored.missed) || 0;
+      if (!items.length && !missed) {
+        unvalidated++;
+        return;
+      }
+      items.forEach((item) => {
+        if (item === true) correct++;
+        else if (item === false) incorrect++;
+        else unvalidated++;
+      });
+      incorrect += missed || 0;
+    }
+  });
+  return { correct, incorrect, unvalidated };
+}
+
+/* Compact label/value row + 🔎 locate chip + ✓/✗ toggle. Mirrors the app's
+   render_leaf_toggle. onChange() is called after every toggle so the caller
+   can refresh roll-ups / reveal the group's comment box. */
+function renderLeaf(doc, target, onChange) {
+  const block = doc.blocks[target.key];
+  const value = block.value;
+
+  const wrap = document.createElement("div");
+  wrap.className = "leaf-target";
+
+  const row = document.createElement("div");
+  row.className = "field-row leaf-row";
+
+  const label = document.createElement("span");
+  label.className = "field-label";
+  label.textContent = target.field_name;
+  row.appendChild(label);
+
+  const valueEl = document.createElement("span");
+  valueEl.className = "field-value";
+  if (!isPresent(value)) {
+    valueEl.classList.add("null-value");
+    valueEl.textContent = "—";
+  } else {
+    valueEl.textContent = String(value);
+  }
+  if (TextMatch.isExcerptField(target.field_name, value)) {
+    valueEl.appendChild(makeLocateChip(String(value)));
+  }
+  row.appendChild(valueEl);
+
+  row.appendChild(
+    verdictButtons(storedChoice(getValue(doc.document_id, target.key)), (choice) => {
+      setValue(doc.document_id, target.key, binaryValue(choice, value));
+      onChange();
+    })
+  );
+  wrap.appendChild(row);
+  appendDesc(wrap, target.summary, "nested-desc");
+  return wrap;
+}
+
+/* Per-item ✓/✗ toggle + a "missed" count input, for list/enum targets.
+   Mirrors the app's render_list_target. Storage shape is unchanged:
+   {"items": [true|false|null, ...], "missed": int}. */
+function renderListTarget(doc, target, onChange) {
+  const block = doc.blocks[target.key];
+  const items = block.items || [];
+
+  const wrap = document.createElement("div");
+  wrap.className = "list-target";
+
+  const heading = document.createElement("div");
+  heading.className = "nested-label";
+  heading.textContent = (target.field_name || target.title) + " (" + items.length + ")";
+  wrap.appendChild(heading);
+  appendDesc(wrap, target.summary, "nested-desc");
+
+  const stored = getValue(doc.document_id, target.key);
   const storedItems = (stored && stored.items) || [];
   const storedMissed = (stored && stored.missed) || 0;
+  // one slot per item, filled in as each row renders below (late binding
+  // safe: each closure captures its own index `i`, not a shared variable).
   const itemChoices = items.map((_, i) =>
-    storedItems[i] === true ? "correct" : storedItems[i] === false ? "incorrect" : "none"
+    storedItems[i] === true ? "correct" : storedItems[i] === false ? "incorrect" : null
   );
   let missed = storedMissed;
 
@@ -751,31 +841,27 @@ function renderListBlock(container, doc, selectionMeta) {
     const noAnswer = itemResults.every((r) => r === null) && (!missed || missed === 0);
     setValue(
       doc.document_id,
-      selectionMeta.key,
+      target.key,
       noAnswer ? null : { items: itemResults, missed: missed || 0 }
     );
-    if (itemChoices.some((c) => c === "incorrect") || (missed || 0) > 0) {
-      commentApi.reveal();
-    }
-    updateHeader();
+    onChange();
   }
 
   if (!items.length) {
     const note = document.createElement("div");
     note.className = "not-present";
     note.textContent = "No items extracted";
-    body.appendChild(note);
+    wrap.appendChild(note);
   }
 
   items.forEach((item, i) => {
-    body.appendChild(entityCard(item));
-    body.appendChild(
-      radioRow(
-        "r_" + doc.document_id + "_" + selectionMeta.key + "_" + i,
-        itemChoices[i],
-        (choice) => { itemChoices[i] = choice; commit(); }
-      )
+    wrap.appendChild(entityCard(item));
+    const itemRow = document.createElement("div");
+    itemRow.className = "item-verdict-row";
+    itemRow.appendChild(
+      verdictButtons(itemChoices[i], (choice) => { itemChoices[i] = choice; commit(); })
     );
+    wrap.appendChild(itemRow);
   });
 
   const missedRow = document.createElement("div");
@@ -793,22 +879,87 @@ function renderListBlock(container, doc, selectionMeta) {
   });
   missedRow.appendChild(missedLabel);
   missedRow.appendChild(missedInput);
-  body.appendChild(missedRow);
+  wrap.appendChild(missedRow);
 
-  const listIncorrect =
-    itemChoices.some((c) => c === "incorrect") || (storedMissed || 0) > 0;
-  const commentApi = appendCommentArea(body, doc, selectionMeta, listIncorrect);
+  return wrap;
+}
 
-  container.appendChild(body);
+/* One Group: header (+ summary caption + roll-up line), its leaf/list
+   targets, then its subgroups indented at depth+1. Mirrors the app's
+   render_group, minus the comment box (attached once per top-level group by
+   the caller, keyed by group.path — see renderDocument).
+
+   `rollupRefreshers` collects every group-in-this-tree's own roll-up
+   refresher (this group's + every subgroup's) so a single leaf/list toggle
+   anywhere in the subtree can repaint every ancestor AND descendant roll-up
+   line, not just its immediate parent's. `onAnyChange` is called after every
+   ✓/✗ toggle so the top-level caller can also re-check the group's comment
+   reveal state and the header. */
+function renderGroup(doc, group, depth, rollupRefreshers, onAnyChange) {
+  const wrap = document.createElement("div");
+  if (depth === 0) {
+    wrap.className = "selection-block";
+    const title = document.createElement("div");
+    title.className = "block-title";
+    title.textContent = group.title || group.class_name;
+    wrap.appendChild(title);
+  } else {
+    wrap.className = "subgroup";
+    wrap.style.marginLeft = depth * 16 + "px";
+    const heading = document.createElement("div");
+    heading.className = "nested-label";
+    heading.textContent = group.class_name;
+    wrap.appendChild(heading);
+  }
+  appendDesc(wrap, group.summary, depth === 0 ? "block-desc" : "nested-desc");
+
+  const rollup = document.createElement("div");
+  rollup.className = "group-rollup";
+  wrap.appendChild(rollup);
+
+  function refreshRollup() {
+    const c = targetVerdictCounts(doc, collectGroupTargets(group));
+    rollup.textContent =
+      "▸ " + c.correct + " correct · " + c.incorrect + " incorrect · " + c.unvalidated + " unvalidated";
+  }
+  rollupRefreshers.push(refreshRollup);
+
+  const body = document.createElement("div");
+  body.className = depth === 0 ? "block-body" : "subgroup-body";
+  wrap.appendChild(body);
+
+  const onChange = () => {
+    rollupRefreshers.forEach((fn) => fn());
+    onAnyChange();
+  };
+
+  group.targets.forEach((target) => {
+    body.appendChild(
+      target.kind === "list"
+        ? renderListTarget(doc, target, onChange)
+        : renderLeaf(doc, target, onChange)
+    );
+  });
+
+  group.subgroups.forEach((sub) => {
+    body.appendChild(renderGroup(doc, sub, depth + 1, rollupRefreshers, onAnyChange));
+  });
+
+  refreshRollup();
+  return wrap;
 }
 
 let blockFilter = "all";  // "all" | "extracted" | "empty"
 try { blockFilter = localStorage.getItem("mesa-block-filter") || "all"; } catch (_) {}
 
-function blockIsExtracted(doc, selectionMeta) {
-  const block = doc.blocks[selectionMeta.key];
-  if (selectionMeta.kind === "list") return (block.items || []).length > 0;
-  return isPresent(block.value);
+/* A (top-level) group is "extracted" if any of its recursive targets has a
+   present value / non-empty list. Mirrors _group_has_extracted. */
+function groupIsExtracted(doc, group) {
+  return collectGroupTargets(group).some((target) => {
+    const block = doc.blocks[target.key];
+    if (target.kind === "list") return (block.items || []).length > 0;
+    return isPresent(block.value);
+  });
 }
 
 function updateFilterUI(nExtracted, nEmpty) {
@@ -831,24 +982,26 @@ function renderDocument() {
   const blocks = document.getElementById("val-blocks");
   blocks.innerHTML = "";
   let nExtracted = 0, nEmpty = 0, shown = 0;
-  DATA.selections.forEach((selectionMeta) => {
-    const extracted = blockIsExtracted(doc, selectionMeta);
+  DATA.plan.forEach((group) => {
+    const extracted = groupIsExtracted(doc, group);
     extracted ? nExtracted++ : nEmpty++;
     if (blockFilter === "extracted" && !extracted) return;
     if (blockFilter === "empty" && extracted) return;
     shown++;
-    const section = document.createElement("div");
-    section.className = "selection-block";
-    const title = document.createElement("div");
-    title.className = "block-title";
-    title.textContent = selectionMeta.title;
-    section.appendChild(title);
-    appendDesc(section, selectionMeta.desc, "block-desc");
-    if (selectionMeta.kind === "list") {
-      renderListBlock(section, doc, selectionMeta);
-    } else {
-      renderSingleBlock(section, doc, selectionMeta);
-    }
+
+    const rollupRefreshers = [];
+    let commentApi = null;
+    const onAnyChange = () => {
+      if (commentApi && groupIsIncorrect(doc, group)) commentApi.reveal();
+      updateHeader();
+    };
+    const section = renderGroup(doc, group, 0, rollupRefreshers, onAnyChange);
+    commentApi = appendCommentArea(
+      section,
+      doc,
+      { key: group.path },
+      groupIsIncorrect(doc, group)
+    );
     blocks.appendChild(section);
   });
   if (shown === 0) {
@@ -1031,10 +1184,12 @@ function renderPacketInfo() {
   });
   const ul = document.getElementById("info-fields-list");
   ul.innerHTML = "";
-  DATA.selections.forEach((s) => {
-    const li = document.createElement("li");
-    li.textContent = s.title + (s.kind === "list" ? " (list)" : "");
-    ul.appendChild(li);
+  DATA.plan.forEach((group) => {
+    collectGroupTargets(group).forEach((t) => {
+      const li = document.createElement("li");
+      li.textContent = t.title + (t.kind === "list" ? " (list)" : "");
+      ul.appendChild(li);
+    });
   });
 }
 
