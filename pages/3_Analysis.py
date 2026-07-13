@@ -14,12 +14,13 @@ from utils.metrics import (
     format_metrics_summary,
 )
 from utils.results_import import combine_progress, parse_results_payload
+from utils.schema_inspector import SchemaInspector
 from utils.session_manager import SessionManager
 
 
-def render_comments(progress, selections, *, download_name=None, key=None):
+def render_comments(progress, selections, inspector, *, download_name=None, key=None):
     """Render a validator-comments table with an optional CSV download."""
-    rows = format_comments_rows(progress, selections)
+    rows = format_comments_rows(progress, selections, inspector)
     if not rows:
         st.caption("No comments recorded.")
         return
@@ -52,6 +53,7 @@ else:
 
     if selected_session_name:
         session = session_options[selected_session_name]
+        inspector = SchemaInspector(session.schema_module, session.root_class)
 
         progress = SessionManager(session.id).load_progress()
 
@@ -90,7 +92,7 @@ else:
                     f"({len(packet_progress['completed_files'])} completed docs)"
                 )
                 packet_metrics = aggregate_metrics(
-                    packet_progress, session.selections
+                    packet_progress, session.selections, inspector
                 )
                 if packet_metrics:
                     st.dataframe(
@@ -102,12 +104,14 @@ else:
                     st.info("No completed results in this packet")
 
                 st.markdown("**Validator comments**")
-                render_comments(packet_progress, session.selections)
+                render_comments(packet_progress, session.selections, inspector)
 
             if len(parsed_packets) > 1:
                 st.markdown("#### All packets combined")
                 combined = combine_progress(parsed_packets)
-                combined_metrics = aggregate_metrics(combined, session.selections)
+                combined_metrics = aggregate_metrics(
+                    combined, session.selections, inspector
+                )
                 if combined_metrics:
                     st.dataframe(
                         pd.DataFrame(format_metrics_summary(combined_metrics)),
@@ -118,6 +122,7 @@ else:
                 render_comments(
                     combined,
                     session.selections,
+                    inspector,
                     download_name=f"{session.name}_all_packets_comments.csv",
                     key="dl_combined_comments",
                 )
@@ -153,6 +158,7 @@ else:
         render_comments(
             progress,
             session.selections,
+            inspector,
             download_name=f"{session.name}_comments.csv",
             key="dl_session_comments",
         )
@@ -165,7 +171,7 @@ else:
                 "No completed documents yet. Mark documents as complete to see analysis."
             )
         else:
-            metrics = aggregate_metrics(progress, session.selections)
+            metrics = aggregate_metrics(progress, session.selections, inspector)
 
             if not metrics:
                 st.info("No metrics to display")
@@ -194,7 +200,9 @@ else:
                 ## UI: EXPORT RESULTS
                 st.subheader("Export Results")
 
-                csv_data = export_to_csv_string(progress, session.selections)
+                csv_data = export_to_csv_string(
+                    progress, session.selections, inspector
+                )
 
                 st.download_button(
                     label="Download Results CSV",
