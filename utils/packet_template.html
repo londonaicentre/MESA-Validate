@@ -191,7 +191,11 @@
   }
   .verdict-btn.ok.active { background: #e6f4ea; border-color: #34a853; color: #1e7e34; }
   .verdict-btn.no.active { background: #fce8e6; border-color: #ea4335; color: #a6291d; }
-  .item-verdict-row { margin: -2px 0 8px; }
+  .item-verdict-row {
+    display: flex; justify-content: flex-end;
+    margin-top: 6px; padding-top: 6px;
+    border-top: 1px solid #f0f2f4;
+  }
   .bulk-controls {
     display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
     margin: 0 0 8px; padding: 0 12px;
@@ -904,13 +908,16 @@ function renderListTarget(doc, target, onChange) {
   }
 
   items.forEach((item, i) => {
-    wrap.appendChild(entityCard(item));
+    // Verdict row lives INSIDE the item's card as a right-aligned footer, so it
+    // is unambiguous which card it validates.
+    const card = entityCard(item);
     const itemRow = document.createElement("div");
     itemRow.className = "item-verdict-row";
     itemRow.appendChild(
       verdictButtons(itemChoices[i], (choice) => { itemChoices[i] = choice; commit(); })
     );
-    wrap.appendChild(itemRow);
+    card.appendChild(itemRow);
+    wrap.appendChild(card);
   });
 
   const missedRow = document.createElement("div");
