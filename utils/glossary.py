@@ -120,6 +120,28 @@ def describe_enum_value(enum_class_name, value, glossary):
     return _humanize(value)
 
 
+def enum_field_options(class_name, field_name, inspector, glossary):
+    """Allowed values (with optional glossary descriptions) for an enum-typed
+    field, so the validation UI can reveal the permitted set.
+
+    Returns ``{"enum_class": str, "values": [{"value": str, "desc": str|None}]}``
+    or ``None`` when the field is not an enum. ``desc`` is the curated glossary
+    entry for that value, or ``None`` when none exists (name-only display).
+    """
+    meta = inspector.get_class_fields(class_name).get(field_name)
+    if not meta or not meta.get("is_enum"):
+        return None
+    enum_class = meta.get("type")
+    info = inspector.classes.get(enum_class)
+    if not info or info.get("type") != "Enum":
+        return None
+    values = [
+        {"value": v, "desc": glossary.get(f"{enum_class}.{v}")}
+        for v in (info.get("values") or [])
+    ]
+    return {"enum_class": enum_class, "values": values}
+
+
 def describe_selection(selection, inspector, glossary):
     """One-line summary for a FieldSelection, or None if nothing sensible exists."""
     if selection.selection_type == "basemodel_class":

@@ -4,6 +4,7 @@ from utils.glossary import (
     describe_class,
     describe_field_by_name,
     describe_selection,
+    enum_field_options,
     load_glossary,
     starter_glossary,
 )
@@ -90,3 +91,33 @@ def test_starter_glossary_covers_all_classes(inspector):
     assert "PerformanceStatus" in starter
     assert "PrimaryCancerFacts.topography" in starter
     assert all(isinstance(v, str) and v for v in starter.values())
+
+
+def test_enum_field_options_lists_values(inspector):
+    opts = enum_field_options("PrimaryCancerFacts", "topography", inspector, {})
+    assert opts is not None
+    assert opts["enum_class"] == "TopographyType"
+    vals = [v["value"] for v in opts["values"]]
+    assert "lung" in vals
+    assert all(set(v.keys()) == {"value", "desc"} for v in opts["values"])
+
+
+def test_enum_field_options_uses_glossary_desc(inspector):
+    glossary = {"TopographyType.lung": "The lung."}
+    opts = enum_field_options("PrimaryCancerFacts", "topography", inspector, glossary)
+    lung = next(v for v in opts["values"] if v["value"] == "lung")
+    assert lung["desc"] == "The lung."
+    # a value with no glossary entry has desc None (name-only display)
+    other = next(v for v in opts["values"] if v["desc"] is None)
+    assert other is not None
+
+
+def test_enum_field_options_none_for_scalar(inspector):
+    assert (
+        enum_field_options("PrimaryCancerFacts", "topography_name_desc", inspector, {})
+        is None
+    )
+
+
+def test_enum_field_options_none_for_unknown_field(inspector):
+    assert enum_field_options("PrimaryCancerFacts", "nope", inspector, {}) is None

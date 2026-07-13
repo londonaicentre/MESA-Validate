@@ -197,6 +197,31 @@
     border-top: 1px solid #f0f2f4;
   }
   .leaf-verdict-row { display: flex; justify-content: flex-end; margin: 4px 0 8px; }
+  /* enum allowed-values popover */
+  .enum-chip {
+    display: inline-block; margin-left: 6px; padding: 0 6px;
+    font-size: 0.72rem; line-height: 1.5; color: #57606a;
+    background: #f3f4f6; border: 1px solid var(--border); border-radius: 10px;
+    cursor: pointer; white-space: nowrap; user-select: none;
+  }
+  .enum-chip:hover { background: #e9ebee; }
+  .enum-panel {
+    position: absolute; z-index: 50; max-height: 300px; overflow-y: auto;
+    background: #fff; border: 1px solid var(--border); border-radius: 8px;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.14); padding: 8px;
+  }
+  .enum-head {
+    font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.03em;
+    color: #8a919b; margin-bottom: 5px;
+  }
+  .enum-warn { font-size: 0.8rem; color: #a6291d; margin-bottom: 5px; }
+  .enum-opt { font-size: 0.84rem; padding: 3px 6px; border-radius: 4px; word-break: break-word; }
+  .enum-cur { background: #e6f4ea; font-weight: 700; }
+  .enum-badge {
+    font-size: 0.66rem; font-weight: 700; color: #1e7e34; background: #cfe9d6;
+    border-radius: 3px; padding: 0 4px; margin-left: 6px; text-transform: uppercase;
+  }
+  .enum-desc { color: #8a919b; font-weight: 400; }
   .bulk-controls {
     display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
     margin: 0 0 8px; padding: 0 12px;
@@ -556,6 +581,90 @@ function isPlainObject(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
+/* ---------- enum allowed-values popover ---------- */
+/* enumFor(className) -> (fieldName) => allowed-value metadata | null */
+function enumFor(className) {
+  const map = DATA.enum_options || {};
+  return (fieldName) => (className ? map[className + "." + fieldName] : null) || null;
+}
+
+let _openEnumPanel = null;
+function closeEnumPanel() {
+  if (_openEnumPanel) { _openEnumPanel.remove(); _openEnumPanel = null; }
+}
+document.addEventListener("click", closeEnumPanel);
+window.addEventListener("resize", closeEnumPanel);
+
+function buildEnumPanel(enumOptions, currentValue) {
+  const panel = document.createElement("div");
+  panel.className = "enum-panel";
+  panel.addEventListener("click", (e) => e.stopPropagation());
+
+  const head = document.createElement("div");
+  head.className = "enum-head";
+  head.textContent = "Allowed values · " + enumOptions.enum_class;
+  panel.appendChild(head);
+
+  const present = new Set(enumOptions.values.map((v) => v.value));
+  const cur =
+    currentValue !== null && ["string", "number"].includes(typeof currentValue)
+      ? String(currentValue)
+      : null;
+  if (cur !== null && !present.has(cur)) {
+    const warn = document.createElement("div");
+    warn.className = "enum-warn";
+    warn.textContent = "⚠️ current value “" + cur + "” is not in the allowed set";
+    panel.appendChild(warn);
+  }
+  enumOptions.values.forEach((opt) => {
+    const isCur = cur !== null && cur === opt.value;
+    const row = document.createElement("div");
+    row.className = "enum-opt" + (isCur ? " enum-cur" : "");
+    const name = document.createElement("span");
+    name.textContent = opt.value;
+    row.appendChild(name);
+    if (isCur) {
+      const badge = document.createElement("span");
+      badge.className = "enum-badge";
+      badge.textContent = "current";
+      row.appendChild(badge);
+    }
+    if (opt.desc) {
+      const d = document.createElement("span");
+      d.className = "enum-desc";
+      d.textContent = " — " + opt.desc;
+      row.appendChild(d);
+    }
+    panel.appendChild(row);
+  });
+  return panel;
+}
+
+function enumChip(enumOptions, currentValue) {
+  const chip = document.createElement("span");
+  chip.className = "enum-chip";
+  chip.textContent = "▾ " + enumOptions.values.length + " values";
+  chip.title = "Show allowed values";
+  chip.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const wasOpen = _openEnumPanel && _openEnumPanel._owner === chip;
+    closeEnumPanel();
+    if (wasOpen) return;
+    const panel = buildEnumPanel(enumOptions, currentValue);
+    panel._owner = chip;
+    document.body.appendChild(panel);
+    const r = chip.getBoundingClientRect();
+    const width = 320;
+    let left = window.scrollX + r.left;
+    const maxLeft = window.scrollX + document.documentElement.clientWidth - width - 8;
+    panel.style.top = window.scrollY + r.bottom + 4 + "px";
+    panel.style.left = Math.max(8, Math.min(left, maxLeft)) + "px";
+    panel.style.width = width + "px";
+    _openEnumPanel = panel;
+  });
+  return chip;
+}
+
 function appendDesc(container, text, cls) {
   if (!text) return;
   const d = document.createElement("div");
@@ -564,8 +673,9 @@ function appendDesc(container, text, cls) {
   container.appendChild(d);
 }
 
-/* One label/value row; excerpt-like values get an inline locate chip. */
-function appendScalarRow(container, fieldName, value) {
+/* One label/value row; excerpt-like values get an inline locate chip, enum
+   values a '▾ N values' popover chip. */
+function appendScalarRow(container, fieldName, value, enumOptions) {
   const row = document.createElement("div");
   row.className = "field-row";
   if (fieldName !== null) {
@@ -585,13 +695,18 @@ function appendScalarRow(container, fieldName, value) {
   if (TextMatch.isExcerptField(fieldName, value)) {
     valueEl.appendChild(makeLocateChip(String(value)));
   }
+  if (enumOptions) {
+    valueEl.appendChild(enumChip(enumOptions, value));
+  }
   row.appendChild(valueEl);
   container.appendChild(row);
 }
 
 /* Render one field of an entity, recursing into nested objects and lists of
-   objects so nothing is shown as raw JSON. */
-function renderField(container, fieldName, value) {
+   objects so nothing is shown as raw JSON. ``enumFor`` (if given) supplies enum
+   allowed-value popovers for THIS level's scalar fields; it is not forwarded
+   into nested sub-objects (whose fields belong to a different class). */
+function renderField(container, fieldName, value, enumFor) {
   // nested object -> heading + its own nested card
   if (isPlainObject(value) && Object.keys(value).length) {
     const heading = document.createElement("div");
@@ -612,17 +727,18 @@ function renderField(container, fieldName, value) {
     value.forEach((item) => container.appendChild(entityCard(item)));
     return;
   }
+  const enumOptions = enumFor ? enumFor(fieldName) : null;
   // list of scalars -> single joined row
   if (Array.isArray(value) && value.length) {
-    appendScalarRow(container, fieldName, value.map(String).join(", "));
+    appendScalarRow(container, fieldName, value.map(String).join(", "), enumOptions);
     return;
   }
   // scalar, null, or empty container (shown as an em dash)
   const scalar = value !== null && typeof value === "object" ? null : value;
-  appendScalarRow(container, fieldName, scalar);
+  appendScalarRow(container, fieldName, scalar, enumOptions);
 }
 
-function entityCard(item) {
+function entityCard(item, enumFor) {
   const card = document.createElement("div");
   card.className = "entity-card";
   if (Array.isArray(item) && item.length && item.every(isPlainObject)) {
@@ -634,8 +750,9 @@ function entityCard(item) {
     appendScalarRow(card, null, scalar);
     return card;
   }
+  // enumFor applies to this item's direct fields only (see renderField).
   Object.entries(item).forEach(([fieldName, value]) =>
-    renderField(card, fieldName, value)
+    renderField(card, fieldName, value, enumFor)
   );
   return card;
 }
@@ -832,14 +949,14 @@ function renderLeaf(doc, target, onChange) {
     });
 
   // Nested BaseModel leaf -> render as a card (not raw "[object Object]"), with
-  // the verdict on its own row below.
+  // the verdict on its own row below; the card's direct fields get enum popovers.
   if (isPlainObject(value) && Object.keys(value).length) {
     const heading = document.createElement("div");
     heading.className = "nested-label";
     heading.textContent = target.field_name;
     wrap.appendChild(heading);
     appendDesc(wrap, target.summary, "nested-desc");
-    wrap.appendChild(entityCard(value));
+    wrap.appendChild(entityCard(value, enumFor(target.nested_class)));
     const vrow = document.createElement("div");
     vrow.className = "leaf-verdict-row";
     const btns = mkVerdict();
@@ -868,6 +985,10 @@ function renderLeaf(doc, target, onChange) {
   }
   if (TextMatch.isExcerptField(target.field_name, value)) {
     valueEl.appendChild(makeLocateChip(String(value)));
+  }
+  const enumOptions = enumFor(target.owner_class)(target.field_name);
+  if (enumOptions) {
+    valueEl.appendChild(enumChip(enumOptions, value));
   }
   row.appendChild(valueEl);
 
@@ -927,10 +1048,11 @@ function renderListTarget(doc, target, onChange) {
     wrap.appendChild(note);
   }
 
+  const itemEnumFor = enumFor(target.item_class);
   items.forEach((item, i) => {
     // Verdict row lives INSIDE the item's card as a right-aligned footer, so it
     // is unambiguous which card it validates.
-    const card = entityCard(item);
+    const card = entityCard(item, itemEnumFor);
     const itemRow = document.createElement("div");
     itemRow.className = "item-verdict-row";
     itemRow.appendChild(

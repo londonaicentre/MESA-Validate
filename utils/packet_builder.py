@@ -15,6 +15,7 @@ from utils.glossary import (
     describe_enum_value,
     describe_field,
     describe_field_by_name,
+    enum_field_options,
     load_glossary,
 )
 from utils.predictions_loader import load_prediction_file
@@ -48,6 +49,32 @@ def _target_summary(target, inspector, glossary):
     return describe_field(target.class_name, target.field_name, inspector, glossary)
 
 
+def _leaf_nested_class(target, inspector):
+    """Class of a single nested-BaseModel leaf (rendered as a card), else None."""
+    meta = inspector.get_class_fields(target.class_name).get(target.field_name)
+    if meta and meta.get("is_basemodel") and not meta.get("is_list"):
+        return meta.get("type")
+    return None
+
+
+def _target_to_dict(t, inspector, glossary):
+    d = {
+        "key": t.key,
+        "kind": t.kind,
+        "field_name": t.field_name,
+        "title": t.title,
+        "summary": _target_summary(t, inspector, glossary),
+    }
+    if t.kind == "leaf":
+        # class context for revealing enum allowed values (scalar leaf or the
+        # direct fields of a nested-BaseModel leaf card)
+        d["owner_class"] = t.class_name
+        d["nested_class"] = _leaf_nested_class(t, inspector)
+    else:
+        d["item_class"] = getattr(t, "item_class_name", None) or t.class_name
+    return d
+
+
 def _group_to_dict(group, inspector, glossary):
     """Serialize a validation_plan Group (with nested subgroups) to plain dicts."""
     return {
@@ -55,20 +82,25 @@ def _group_to_dict(group, inspector, glossary):
         "class_name": group.class_name,
         "title": group.title,
         "summary": describe_class(group.class_name, inspector, glossary),
-        "targets": [
-            {
-                "key": t.key,
-                "kind": t.kind,
-                "field_name": t.field_name,
-                "title": t.title,
-                "summary": _target_summary(t, inspector, glossary),
-            }
-            for t in group.targets
-        ],
+        "targets": [_target_to_dict(t, inspector, glossary) for t in group.targets],
         "subgroups": [
             _group_to_dict(sg, inspector, glossary) for sg in group.subgroups
         ],
     }
+
+
+def _build_enum_options(inspector, glossary):
+    """Map ``ClassName.field`` -> enum allowed-value metadata for every enum
+    field in the schema, so the packet can reveal permitted values per field."""
+    out = {}
+    for class_name, info in inspector.classes.items():
+        if info.get("type") != "BaseModel":
+            continue
+        for field_name in inspector.get_class_fields(class_name):
+            opts = enum_field_options(class_name, field_name, inspector, glossary)
+            if opts:
+                out[f"{class_name}.{field_name}"] = opts
+    return out
 
 
 def build_packet_data(session, document_ids, packet_name):
@@ -117,6 +149,7 @@ def build_packet_data(session, document_ids, packet_name):
         "created_at": datetime.now().isoformat(timespec="seconds"),
         "plan": plan_data,
         "field_glossary": field_glossary,
+        "enum_options": _build_enum_options(inspector, glossary),
         "documents": documents,
     }
 

@@ -102,5 +102,49 @@ VALIDATE_PAGE_STYLES = """
         line-height: 1.4rem;
         font-size: 0.95rem;
     }
+    /* enum allowed-values popover: compact trigger + readable option list */
+    div[data-testid="stPopover"] button {
+        padding: 0 0.4rem;
+        min-height: 1.6rem;
+        line-height: 1.4rem;
+        font-size: 0.78rem;
+        color: #57606a;
+    }
+    .mesa-enum-head {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: #8a919b;
+        margin-bottom: 4px;
+    }
+    .mesa-enum-warn {
+        font-size: 0.82rem;
+        color: #a6291d;
+        margin-bottom: 4px;
+    }
+    .mesa-enum-opt {
+        font-size: 0.86rem;
+        padding: 2px 6px;
+        border-radius: 4px;
+        word-break: break-word;
+    }
+    .mesa-enum-cur {
+        background: #e6f4ea;
+        font-weight: 700;
+    }
+    .mesa-enum-badge {
+        font-size: 0.68rem;
+        font-weight: 700;
+        color: #1e7e34;
+        background: #cfe9d6;
+        border-radius: 3px;
+        padding: 0 4px;
+        margin-left: 6px;
+        text-transform: uppercase;
+    }
+    .mesa-enum-desc {
+        color: #8a919b;
+        font-weight: 400;
+    }
 </style>
 """
