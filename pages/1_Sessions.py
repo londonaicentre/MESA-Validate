@@ -403,7 +403,8 @@ with st.expander("Create New Session", expanded=False):
                         st.caption(class_summary)
 
                     whole_class = st.checkbox(
-                        f"Select entire {class_name} class", key=f"class_{class_name}"
+                        f"Select entire {class_name} class", key=f"class_{class_name}",
+                        help="Validates every field in this class individually."
                     )
 
                     if whole_class:
@@ -420,13 +421,12 @@ with st.expander("Create New Session", expanded=False):
                         field_selected = st.checkbox(
                             f"{field_name} ({field_info['type']})",
                             key=f"field_{class_name}_{field_name}",
-                            disabled=whole_class,
                             help=describe_field(
                                 class_name, field_name, inspector, glossary
                             ),
                         )
 
-                        if field_selected and not whole_class:
+                        if field_selected:
                             selections.append(
                                 FieldSelection(
                                     selection_type="basemodel_field",
