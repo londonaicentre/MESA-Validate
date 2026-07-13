@@ -43,6 +43,20 @@ def test_save_comment_tolerates_legacy_progress_without_comments(manager):
     assert manager.load_progress()["comments"]["doc-1"]["k1"] == "added later"
 
 
+def test_save_results_clear_keys_removes_cleared_verdict(manager):
+    manager.save_results("docX", {"a.b": "PRESENT_CORRECT", "a.c": "PRESENT_INCORRECT"})
+    manager.save_results("docX", {"a.c": "PRESENT_INCORRECT"}, clear_keys=["a.b"])
+    doc = manager.load_progress()["results"]["docX"]
+    assert "a.b" not in doc
+    assert doc["a.c"] == "PRESENT_INCORRECT"
+
+
+def test_save_results_clear_last_key_removes_document_entry(manager):
+    manager.save_results("docX", {"a.b": "PRESENT_CORRECT"})
+    manager.save_results("docX", {}, clear_keys=["a.b"])
+    assert "docX" not in manager.load_progress()["results"]
+
+
 from utils.models import FieldSelection, Session
 from utils.schema_inspector import SchemaInspector
 from utils.session_manager import migrate_results_to_paths

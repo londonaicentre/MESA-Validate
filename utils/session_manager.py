@@ -204,19 +204,28 @@ class SessionManager:
         with open(self.progress_path, "w") as f:
             json.dump(progress_data, f, indent=2)
 
-    def save_results(self, document_id, results):
+    def save_results(self, document_id, results, clear_keys=None):
         """
-        Save validation results for a single document, returns updated progress
+        Save validation results for a single document, returns updated progress.
+
+        `clear_keys` removes previously-saved verdicts for keys that were
+        cleared back to unreviewed, so the clear persists across reloads
+        instead of the old on-disk verdict reappearing.
         """
-        if not results:
+        if not results and not clear_keys:
             return self.load_progress()
 
         progress = self.load_progress()
 
-        if document_id not in progress["results"]:
-            progress["results"][document_id] = {}
+        doc = progress["results"].setdefault(document_id, {})
+        doc.update(results)
 
-        progress["results"][document_id].update(results)
+        for key in clear_keys or []:
+            doc.pop(key, None)
+
+        if not doc:
+            progress["results"].pop(document_id, None)
+
         self.save_progress(progress)
 
         return progress

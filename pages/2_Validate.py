@@ -260,13 +260,15 @@ else:
                         "Switch the filter above to see other blocks."
                     )
 
-                # save results immediately if any non-none values exist
-                non_none_results = {
-                    k: v for k, v in results.items() if v != "NONE" and v is not None
-                }
-                if non_none_results:
+                # save results immediately: persist non-none verdicts, and delete
+                # any rendered verdict that was cleared back to unreviewed so the
+                # clear survives a reload instead of the stale on-disk value
+                # reappearing.
+                to_save = {k: v for k, v in results.items() if v is not None and v != "NONE"}
+                to_clear = [k for k, v in results.items() if v is None or v == "NONE"]
+                if to_save or to_clear:
                     st.session_state.progress = SessionManager(session.id).save_results(
-                        document_id, non_none_results
+                        document_id, to_save, clear_keys=to_clear
                     )
 
                 st.markdown("---")
