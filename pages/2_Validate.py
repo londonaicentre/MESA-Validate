@@ -5,13 +5,13 @@
 import streamlit as st
 
 from utils.document_pane import render_document_pane
-from utils.glossary import describe_selection, load_glossary
+from utils.glossary import load_glossary
 from utils.predictions_loader import load_prediction_file
 from utils.schema_inspector import SchemaInspector
-from utils.selection_resolver import resolve_selection
 from utils.session_manager import SessionManager
 from utils.styles import VALIDATE_PAGE_STYLES
-from utils.validation_ui import generate_validation_block, is_value_present
+from utils.validation_plan import build_validation_plan, flatten_targets, resolve_target
+from utils.validation_ui import is_value_present, render_group
 
 st.set_page_config(page_title="Validate", layout="wide")
 st.logo("aic_logo.png")
@@ -20,8 +20,8 @@ st.markdown(VALIDATE_PAGE_STYLES, unsafe_allow_html=True)
 
 
 def _result_is_incorrect(result):
-    """A block is 'incorrect' if the single verdict is Incorrect, or (for lists)
-    any item is Incorrect or the model missed items."""
+    """A target is 'incorrect' if its verdict is Incorrect, or (for lists) any
+    item is Incorrect or the model missed items."""
     if isinstance(result, str):
         return result.endswith("_INCORRECT")
     if isinstance(result, dict):
@@ -31,17 +31,26 @@ def _result_is_incorrect(result):
     return False
 
 
-def _block_is_extracted(selection, extraction_data, inspector):
-    """A block is 'extracted' if the model produced content: a single value that
-    is present, or a list/enum block with at least one item."""
-    block = resolve_selection(selection, extraction_data, inspector)
-    if block["kind"] == "list":
-        return len(block["items"]) > 0
-    return is_value_present(block["value"])
+def _group_is_incorrect(group_results):
+    """A group is 'incorrect' if any target rendered under it is incorrect."""
+    return any(_result_is_incorrect(v) for v in group_results.values())
+
+
+def _group_has_extracted(group, extraction_data, inspector):
+    """A group is 'extracted' if any target in it (or its subgroups) has
+    content: a single value that is present, or a list with at least one item."""
+    for target in flatten_targets([group]):
+        resolved = resolve_target(target, extraction_data, inspector)
+        if resolved["kind"] == "list":
+            if resolved["items"]:
+                return True
+        elif is_value_present(resolved["value"]):
+            return True
+    return False
 
 
 def _render_comment_box(
-    session, document_id, selection_key, result, progress, block_prefix
+    session, document_id, selection_key, is_incorrect, progress, block_prefix
 ):
     """
     Hidden-by-default freetext comment for one block. Opens when the validator
@@ -52,7 +61,6 @@ def _render_comment_box(
     saved_comment = (
         progress.get("comments", {}).get(document_id, {}).get(selection_key, "")
     )
-    is_incorrect = _result_is_incorrect(result)
 
     open_key = f"{block_prefix}_comment_open"
     dismissed_key = f"{block_prefix}_comment_dismissed"
@@ -187,9 +195,10 @@ else:
         with val_col:
             st.markdown("### Validation")
 
+            plan = build_validation_plan(session.selections, inspector)
+
             extracted_flags = [
-                _block_is_extracted(sel, extraction_data, inspector)
-                for sel in session.selections
+                _group_has_extracted(group, extraction_data, inspector) for group in plan
             ]
             n_extracted = sum(extracted_flags)
             n_empty = len(extracted_flags) - n_extracted
@@ -217,46 +226,32 @@ else:
                 results = {}
                 shown = 0
 
-                for i, selection in enumerate(session.selections):
-                    is_extracted = extracted_flags[i]
+                for gi, group in enumerate(plan):
+                    is_extracted = extracted_flags[gi]
                     if block_filter == "Extracted" and not is_extracted:
                         continue
                     if block_filter == "Empty" and is_extracted:
                         continue
                     shown += 1
 
-                    if selection.selection_type == "basemodel_class":
-                        title = selection.class_name
-                    elif selection.selection_type == "basemodel_field":
-                        title = f"{selection.class_name}.{selection.field_name}"
-                    else:
-                        title = f"{selection.class_name}.{selection.enum_value}"
-
-                    selection_key = selection.build_key()
-                    current_value = existing_results.get(selection_key)
-                    summary = describe_selection(selection, inspector, glossary)
-
-                    with st.expander(f"**{title}**", expanded=True):
-                        if summary:
-                            st.caption(summary)
-                        result = generate_validation_block(
-                            selection,
+                    with st.expander(f"**{group.class_name}**", expanded=True):
+                        group_results = render_group(
+                            group,
                             extraction_data,
                             inspector,
-                            key_prefix=f"document_{current_index}_selection_{i}",
-                            current_value=current_value,
+                            key_prefix=f"doc_{current_index}_g{gi}",
+                            doc_results=existing_results,
                             glossary=glossary,
                         )
-
-                        results[selection_key] = result
+                        results.update(group_results)
 
                         _render_comment_box(
                             session,
                             document_id,
-                            selection_key,
-                            result,
+                            group.path,
+                            _group_is_incorrect(group_results),
                             progress,
-                            block_prefix=f"document_{current_index}_selection_{i}",
+                            block_prefix=f"doc_{current_index}_g{gi}",
                         )
 
                 if shown == 0:

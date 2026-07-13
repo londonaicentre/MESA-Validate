@@ -8,9 +8,10 @@ import html as html_lib
 
 import streamlit as st
 
-from utils.glossary import describe_field_by_name
+from utils.glossary import describe_class, describe_field_by_name
 from utils.schema_inspector import SchemaInspector
 from utils.selection_resolver import resolve_selection, selection_kind
+from utils.validation_plan import group_rollup, resolve_target
 
 EXCERPT_SUFFIXES = ("_desc", "_name_desc", "_summary")
 
@@ -412,3 +413,197 @@ def generate_validation_block(
         return None
 
     return result
+
+
+# --- Grouped, per-field validation UI (validation plan driven) -------------
+
+
+def toggle_to_storage(choice, is_present):
+    """Map a ✓/✗/None choice + presence to a storage verdict (or None)."""
+    if choice == "correct":
+        return "PRESENT_CORRECT" if is_present else "ABSENT_CORRECT"
+    if choice == "incorrect":
+        return "PRESENT_INCORRECT" if is_present else "ABSENT_INCORRECT"
+    return None
+
+
+def storage_to_choice(stored):
+    """Inverse: storage verdict -> 'correct' | 'incorrect' | None."""
+    if isinstance(stored, str) and stored.endswith("_CORRECT"):
+        return "correct"
+    if isinstance(stored, str) and stored.endswith("_INCORRECT"):
+        return "incorrect"
+    return None
+
+
+def render_leaf_toggle(target, resolved, key_prefix, stored):
+    """
+    One label/value row (+ 🔎 locate button for excerpt-like values) with a
+    compact ✓/✗ toggle pair. Untouched = unreviewed; clicking the lit icon
+    clears back to unreviewed. Returns the storage verdict (or None).
+    """
+    value = resolved["value"]
+    is_present = is_value_present(value)
+    choice = storage_to_choice(stored)
+
+    c_text, c_ok, c_no = st.columns([6, 1, 1], vertical_alignment="center")
+    with c_text:
+        st.markdown(
+            f"<span class='mesa-toggle-row'></span>{_field_row_html(target.field_name, value)}",
+            unsafe_allow_html=True,
+        )
+        if _is_excerpt_field(target.field_name, value):
+            st.button(
+                "🔎",
+                key=f"{key_prefix}_locate",
+                on_click=_set_highlight,
+                args=(value,),
+                help=f"Locate: {str(value)[:80]}",
+            )
+
+    def _toggle(new_choice):
+        # clicking the lit icon clears back to unreviewed
+        st.session_state[f"{key_prefix}_choice"] = (
+            None
+            if st.session_state.get(f"{key_prefix}_choice") == new_choice
+            else new_choice
+        )
+
+    if f"{key_prefix}_choice" not in st.session_state:
+        st.session_state[f"{key_prefix}_choice"] = choice
+
+    with c_ok:
+        st.button(
+            "✓",
+            key=f"{key_prefix}_ok",
+            type="primary" if st.session_state[f"{key_prefix}_choice"] == "correct" else "secondary",
+            on_click=_toggle,
+            args=("correct",),
+        )
+    with c_no:
+        st.button(
+            "✗",
+            key=f"{key_prefix}_no",
+            type="primary" if st.session_state[f"{key_prefix}_choice"] == "incorrect" else "secondary",
+            on_click=_toggle,
+            args=("incorrect",),
+        )
+
+    return toggle_to_storage(st.session_state[f"{key_prefix}_choice"], is_present)
+
+
+def render_list_target(target, resolved, key_prefix, stored):
+    """
+    Per-item ✓/✗ toggle + a "missed" number input, for list/enum targets.
+    Mirrors the (now retired) radio-based logic in ``show_item_validation``
+    but stores True/False/None per item via the same lit-icon-clears toggle
+    used by ``render_leaf_toggle``. Storage shape is unchanged:
+    ``{"items": [true|false|null, ...], "missed": int}``.
+    """
+    items = resolved.get("items", []) if isinstance(resolved, dict) else []
+    stored = stored if isinstance(stored, dict) else {}
+    current_items = stored.get("items", [])
+    current_missed = stored.get("missed", 0)
+
+    item_results = []
+
+    for i, item in enumerate(items):
+        item_key = f"{key_prefix}_item_{i}"
+        saved = current_items[i] if i < len(current_items) else None
+        saved_choice = "correct" if saved is True else "incorrect" if saved is False else None
+
+        if isinstance(item, dict):
+            render_entity_card(item, key_prefix=f"{item_key}_card")
+        else:
+            st.markdown(_field_row_html(f"Item {i + 1}", item), unsafe_allow_html=True)
+
+        label_col, c_ok, c_no = st.columns([6, 1, 1], vertical_alignment="center")
+        with label_col:
+            st.markdown("<span class='mesa-toggle-row'></span>", unsafe_allow_html=True)
+
+        def _toggle(new_choice, ik=item_key):
+            st.session_state[f"{ik}_choice"] = (
+                None if st.session_state.get(f"{ik}_choice") == new_choice else new_choice
+            )
+
+        if f"{item_key}_choice" not in st.session_state:
+            st.session_state[f"{item_key}_choice"] = saved_choice
+
+        with c_ok:
+            st.button(
+                "✓",
+                key=f"{item_key}_ok",
+                type="primary" if st.session_state[f"{item_key}_choice"] == "correct" else "secondary",
+                on_click=_toggle,
+                args=("correct",),
+            )
+        with c_no:
+            st.button(
+                "✗",
+                key=f"{item_key}_no",
+                type="primary" if st.session_state[f"{item_key}_choice"] == "incorrect" else "secondary",
+                on_click=_toggle,
+                args=("incorrect",),
+            )
+
+        final_choice = st.session_state[f"{item_key}_choice"]
+        if final_choice == "correct":
+            item_results.append(True)
+        elif final_choice == "incorrect":
+            item_results.append(False)
+        else:
+            item_results.append(None)
+
+    missed = st.number_input(
+        "Number of items missed",
+        min_value=0,
+        value=current_missed or 0,
+        key=f"{key_prefix}_missed",
+    )
+
+    return {"items": item_results, "missed": missed}
+
+
+def render_group(group, extraction_data, inspector, key_prefix, doc_results, glossary, depth=0):
+    """
+    Render one Group (and its subgroups, indented) as ✓/✗ rows. Returns
+    ``{target.key: verdict}`` for every target rendered in this group and its
+    subgroups. The group itself stores no verdict of its own -- the roll-up
+    line is derived on the fly from its targets' stored results.
+    """
+    results = {}
+    summary = describe_class(group.class_name, inspector, glossary or {})
+    roll = group_rollup(group, doc_results)
+
+    # depth 0 groups already sit inside a titled expander (see 2_Validate.py);
+    # only subgroups need their own heading here.
+    if depth > 0:
+        indent = "&nbsp;" * 4 * depth
+        st.markdown(f"{indent}**{group.class_name}**", unsafe_allow_html=True)
+    if summary:
+        st.caption(summary)
+    st.caption(
+        f"▸ {roll['correct']} correct · {roll['incorrect']} incorrect · "
+        f"{roll['unvalidated']} unvalidated"
+    )
+
+    for target in group.targets:
+        resolved = resolve_target(target, extraction_data, inspector)
+        tk = f"{key_prefix}_{target.key}"
+        if target.kind == "leaf":
+            results[target.key] = render_leaf_toggle(
+                target, resolved, tk, doc_results.get(target.key)
+            )
+        else:
+            _nested_heading(target.field_name or target.title, count=len(resolved.get("items", [])))
+            results[target.key] = render_list_target(
+                target, resolved, tk, doc_results.get(target.key)
+            )
+
+    for sub in group.subgroups:
+        results.update(
+            render_group(
+                sub, extraction_data, inspector, key_prefix, doc_results, glossary, depth + 1
+            )
+        )
+    return results

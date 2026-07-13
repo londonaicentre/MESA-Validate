@@ -89,5 +89,18 @@ VALIDATE_PAGE_STYLES = """
         min-height: 1.6rem;
         line-height: 1.4rem;
     }
+    /* grouped Validate page: ✓/✗ toggle rows (leaf fields + per-list-item rows) --
+       compact icon buttons and a tight vertical rhythm between rows. */
+    div[data-testid="stHorizontalBlock"]:has(.mesa-toggle-row) {
+        gap: 0.3rem;
+        align-items: center;
+        margin-bottom: 0.05rem;
+    }
+    div[data-testid="stHorizontalBlock"]:has(.mesa-toggle-row) div[data-testid="column"] button {
+        padding: 0 0.4rem;
+        min-height: 1.6rem;
+        line-height: 1.4rem;
+        font-size: 0.95rem;
+    }
 </style>
 """
