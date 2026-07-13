@@ -5,7 +5,9 @@ from utils.schema_inspector import SchemaInspector
 from utils.validation_plan import (
     build_validation_plan,
     flatten_targets,
+    group_rollup,
     resolve_target,
+    summarize_results,
     target_key,
 )
 
@@ -89,3 +91,32 @@ def test_resolve_leaf_and_list(inspector):
     resolved = resolve_target(lst, EXTRACTION, inspector)
     assert resolved["kind"] == "list"
     assert len(resolved["items"]) == 2
+
+
+def test_summarize_counts_leaves_and_list_items(inspector):
+    groups = build_validation_plan(
+        [FieldSelection(selection_type="basemodel_class", class_name="PrimaryCancer")],
+        inspector,
+    )
+    targets = flatten_targets(groups)
+    doc_results = {
+        "primary_cancer.primary_cancer_facts.topography": "PRESENT_CORRECT",
+        "primary_cancer.primary_cancer_facts.tnm_stage": "PRESENT_INCORRECT",
+        "primary_cancer.primary_cancer_scores": {"items": [True, False], "missed": 1},
+    }
+    summary = summarize_results(targets, doc_results)
+    # topography correct; tnm_stage incorrect; scores: 1 correct item, 1 incorrect item + 1 missed
+    assert summary["correct"] == 2          # topography + 1 score item
+    assert summary["incorrect"] == 3        # tnm_stage + 1 score item + 1 missed
+    assert summary["unvalidated"] >= 1      # remaining untouched leaves
+
+
+def test_group_rollup_matches_summarize(inspector):
+    groups = build_validation_plan(
+        [FieldSelection(selection_type="basemodel_class", class_name="PrimaryCancer")],
+        inspector,
+    )
+    doc_results = {"primary_cancer.primary_cancer_facts.topography": "PRESENT_CORRECT"}
+    assert group_rollup(groups[0], doc_results) == summarize_results(
+        flatten_targets([groups[0]]), doc_results
+    )

@@ -245,3 +245,44 @@ def resolve_target(target, extraction_data, inspector):
     if target.kind == "list":
         return {"kind": "list", "items": value if isinstance(value, list) else []}
     return {"kind": "single", "value": value}
+
+
+def summarize_results(targets, doc_results):
+    """Derive correct/incorrect/unvalidated counts from stored leaf verdicts.
+
+    List items count individually; missed items count as incorrect (the model
+    failed to extract an expected item).
+    """
+    correct = incorrect = unvalidated = 0
+    doc_results = doc_results or {}
+    for t in targets:
+        value = doc_results.get(t.key)
+        if t.kind == "leaf":
+            if not isinstance(value, str) or value in ("", "NONE"):
+                unvalidated += 1
+            elif value.endswith("_CORRECT"):
+                correct += 1
+            elif value.endswith("_INCORRECT"):
+                incorrect += 1
+            else:
+                unvalidated += 1
+        else:  # list
+            items = value.get("items", []) if isinstance(value, dict) else []
+            missed = value.get("missed", 0) if isinstance(value, dict) else 0
+            if not items and not missed:
+                unvalidated += 1
+                continue
+            for item in items:
+                if item is True:
+                    correct += 1
+                elif item is False:
+                    incorrect += 1
+                else:
+                    unvalidated += 1
+            incorrect += int(missed or 0)
+    return {"correct": correct, "incorrect": incorrect, "unvalidated": unvalidated}
+
+
+def group_rollup(group, doc_results):
+    """Roll a group (and its subgroups) up to correct/incorrect/unvalidated."""
+    return summarize_results(flatten_targets([group]), doc_results)
