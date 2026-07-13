@@ -192,6 +192,16 @@
   .verdict-btn.ok.active { background: #e6f4ea; border-color: #34a853; color: #1e7e34; }
   .verdict-btn.no.active { background: #fce8e6; border-color: #ea4335; color: #a6291d; }
   .item-verdict-row { margin: -2px 0 8px; }
+  .bulk-controls {
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    margin: 0 0 8px; padding: 0 12px;
+  }
+  .bulk-label { font-size: 0.78rem; color: var(--muted); margin-right: 2px; }
+  .bulk-btn {
+    padding: 1px 8px; font-size: 0.78rem; line-height: 1.5; border-radius: 6px;
+    border: 1px solid var(--border); background: #fff; color: var(--muted); cursor: pointer;
+  }
+  .bulk-btn:hover { background: #f3f4f6; border-color: #b9bdc4; }
   .subgroup { margin: 8px 0; padding-left: 10px; border-left: 2px solid var(--border); }
   .subgroup-body { padding: 4px 0 0; }
   .group-rollup { font-size: 0.8rem; color: var(--muted); margin: 2px 0 8px; padding: 0 12px; }
@@ -660,7 +670,41 @@ function verdictButtons(current, onChange) {
   btnNo.addEventListener("click", () => pick("incorrect"));
   wrap.appendChild(btnOk);
   wrap.appendChild(btnNo);
+  // Programmatic setter for block-level bulk actions: set state, repaint, and
+  // fire the same onChange (persist + roll-up) a manual click would.
+  wrap.setChoice = (newChoice) => {
+    choice = newChoice;
+    refresh();
+    onChange(choice);
+  };
   return wrap;
+}
+
+/* Block-level bulk row: "Set all fields" + ✓ all / ✗ all / Clear. onAction is
+   called with "correct" | "incorrect" | null (null = clear). */
+function bulkControls(onAction) {
+  const row = document.createElement("div");
+  row.className = "bulk-controls";
+
+  const label = document.createElement("span");
+  label.className = "bulk-label";
+  label.textContent = "Set all fields in this block";
+  row.appendChild(label);
+
+  function mkBtn(text, verdict, title) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "bulk-btn";
+    b.textContent = text;
+    b.title = title;
+    b.addEventListener("click", () => onAction(verdict));
+    return b;
+  }
+
+  row.appendChild(mkBtn("✓ all", "correct", "Mark all unreviewed fields correct"));
+  row.appendChild(mkBtn("✗ all", "incorrect", "Mark all unreviewed fields incorrect"));
+  row.appendChild(mkBtn("Clear", null, "Reset all fields in this block to unreviewed"));
+  return row;
 }
 
 /* Hidden-by-default freetext comment for a block. Reveals when a comment
@@ -797,14 +841,19 @@ function renderLeaf(doc, target, onChange) {
   }
   row.appendChild(valueEl);
 
-  row.appendChild(
-    verdictButtons(storedChoice(getValue(doc.document_id, target.key)), (choice) => {
+  const btns = verdictButtons(
+    storedChoice(getValue(doc.document_id, target.key)),
+    (choice) => {
       setValue(doc.document_id, target.key, binaryValue(choice, value));
       onChange();
-    })
+    }
   );
+  row.appendChild(btns);
   wrap.appendChild(row);
   appendDesc(wrap, target.summary, "nested-desc");
+  // Expose this leaf's target + setter so its group's bulk controls can drive it.
+  wrap.leafTarget = target;
+  wrap.leafSetChoice = btns.setChoice;
   return wrap;
 }
 
@@ -936,13 +985,32 @@ function renderGroup(doc, group, depth, rollupRefreshers, onAnyChange) {
     onAnyChange();
   };
 
+  // ✓ all / ✗ all / Clear for this group's OWN scalar fields. ✓/✗ fill only
+  // unreviewed fields; Clear resets all. List items and subgroups are untouched
+  // (each subgroup renders its own controls). Mirrors validation_ui.bulk_apply.
+  const directLeafSetters = [];
+  function bulkApply(verdict) {
+    directLeafSetters.forEach(({ target, set }) => {
+      const cur = storedChoice(getValue(doc.document_id, target.key));
+      if (verdict === null) set(null);
+      else if (cur === null) set(verdict);
+    });
+  }
+
   group.targets.forEach((target) => {
-    body.appendChild(
-      target.kind === "list"
-        ? renderListTarget(doc, target, onChange)
-        : renderLeaf(doc, target, onChange)
-    );
+    if (target.kind === "list") {
+      body.appendChild(renderListTarget(doc, target, onChange));
+    } else {
+      const leaf = renderLeaf(doc, target, onChange);
+      directLeafSetters.push({ target: leaf.leafTarget, set: leaf.leafSetChoice });
+      body.appendChild(leaf);
+    }
   });
+
+  if (directLeafSetters.length) {
+    // insert the bulk row just above this group's fields (below its rollup)
+    body.insertBefore(bulkControls(bulkApply), body.firstChild);
+  }
 
   group.subgroups.forEach((sub) => {
     body.appendChild(renderGroup(doc, sub, depth + 1, rollupRefreshers, onAnyChange));

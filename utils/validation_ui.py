@@ -172,6 +172,20 @@ def storage_to_choice(stored):
     return None
 
 
+def bulk_apply(choices, verdict):
+    """Block-level bulk verdict rule (shared by Streamlit and the packet UI).
+
+    ``choices`` maps a field key to its current choice ('correct' | 'incorrect'
+    | None). Returns a NEW dict:
+      * verdict is None -> clear: every field back to unreviewed (None).
+      * verdict is 'correct'/'incorrect' -> fill only fields that are currently
+        unreviewed (None); already-marked fields are left untouched.
+    """
+    if verdict is None:
+        return {k: None for k in choices}
+    return {k: (verdict if cur is None else cur) for k, cur in choices.items()}
+
+
 def _is_nested_value(value):
     """A nested object or list-of-objects that must be rendered recursively
     rather than stringified into a single row."""
@@ -321,6 +335,39 @@ def render_list_target(target, resolved, key_prefix, stored):
     return {"items": item_results, "missed": missed}
 
 
+def _render_bulk_controls(group, key_prefix):
+    """✓ all / ✗ all / Clear for a group's OWN scalar (leaf) fields.
+
+    ✓/✗ fill only unreviewed fields; Clear resets all of them. Callbacks mutate
+    the per-field ``*_choice`` session keys that render_leaf_toggle reads, so the
+    ensuing rerun repaints the toggles and roll-up from the new state. List
+    items and subgroups are untouched (each subgroup renders its own controls).
+    """
+    leaf_choice_keys = [
+        f"{key_prefix}_{t.key}_choice" for t in group.targets if t.kind == "leaf"
+    ]
+    if not leaf_choice_keys:
+        return
+
+    def _bulk(verdict):
+        current = {k: st.session_state.get(k) for k in leaf_choice_keys}
+        for k, v in bulk_apply(current, verdict).items():
+            st.session_state[k] = v
+
+    bk = f"{key_prefix}_{group.path}_bulk"
+    st.caption("Set all fields in this block")
+    c_ok, c_no, c_clr, _ = st.columns([1, 1, 1, 1], vertical_alignment="center")
+    with c_ok:
+        st.button("✓ all", key=f"{bk}_ok", on_click=_bulk, args=("correct",),
+                  help="Mark all unreviewed fields correct")
+    with c_no:
+        st.button("✗ all", key=f"{bk}_no", on_click=_bulk, args=("incorrect",),
+                  help="Mark all unreviewed fields incorrect")
+    with c_clr:
+        st.button("Clear", key=f"{bk}_clear", on_click=_bulk, args=(None,),
+                  help="Reset all fields in this block to unreviewed")
+
+
 def render_group(group, extraction_data, inspector, key_prefix, doc_results, glossary, depth=0):
     """
     Render one Group (and its subgroups, indented) as ✓/✗ rows. Returns
@@ -341,6 +388,7 @@ def render_group(group, extraction_data, inspector, key_prefix, doc_results, glo
         st.markdown(f"{indent}**{group.class_name}**", unsafe_allow_html=True)
     if summary:
         st.caption(summary)
+    _render_bulk_controls(group, key_prefix)
     # The roll-up must reflect the verdicts chosen in THIS run (including a
     # click that triggered the current rerun), so reserve its slot now and
     # fill it after the rows/subgroups have been collected into ``results``.
