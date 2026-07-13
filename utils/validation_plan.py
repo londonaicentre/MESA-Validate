@@ -56,11 +56,13 @@ def target_key(obj, inspector=None):
     """Canonical results key for a FieldSelection or a target.
 
     Leaf/list fields -> dotted data path. Enum filters and list-item classes
-    have no single path, so they get a stable synthetic key. Resolving a
-    dotted path for a bare basemodel_class/basemodel_field selection requires
-    walking the schema, so an inspector must be supplied for those cases;
-    without one, None is returned (mirrors the "unresolved" state used
-    while building a plan).
+    have no single path, so they get a stable synthetic key. A whole-class
+    selection of a nested (non-list-item) object has no single group-level
+    key either -- it expands into many per-field keys -- so it returns None.
+    Resolving a dotted path for a bare basemodel_class/basemodel_field
+    selection requires walking the schema, so an inspector must be supplied
+    for those cases; without one, None is returned (mirrors the "unresolved"
+    state used while building a plan).
     """
     # already-built target
     if isinstance(obj, (LeafTarget, ListTarget)):
@@ -76,7 +78,10 @@ def target_key(obj, inspector=None):
     if obj.selection_type == "basemodel_class":
         if inspector.is_class_used_as_list_item(obj.class_name):
             return f"list::{obj.class_name}"
-        return _class_path(obj.class_name, inspector)
+        # A whole-class selection of a nested (non-list-item) object expands
+        # into many per-field keys with no single group-level key of its own,
+        # so there is nothing valid to return here.
+        return None
 
     if obj.selection_type == "basemodel_field":
         class_path = _class_path(obj.class_name, inspector)
@@ -139,7 +144,7 @@ class _PlanAccumulator:
         for field_name, meta in fields.items():
             if meta["is_basemodel"] and not meta["is_list"]:
                 sub = self._expand_class(meta["type"])
-                if sub is not None and sub not in group.subgroups:
+                if sub is not None and not any(s is sub for s in group.subgroups):
                     group.subgroups.append(sub)
             else:
                 self.add_target(

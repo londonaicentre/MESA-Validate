@@ -64,6 +64,14 @@ def test_scalar_field_key_is_dotted_path(inspector):
     assert target_key(sel, inspector) == "primary_cancer.primary_cancer_facts.topography"
 
 
+def test_whole_nonlist_class_key_is_none(inspector):
+    # A whole-class selection of a nested (non-list-item) object has no
+    # single group-level results key -- it expands into many per-field
+    # keys -- so target_key must return None rather than a bare class path.
+    sel = FieldSelection(selection_type="basemodel_class", class_name="PrimaryCancer")
+    assert target_key(sel, inspector) is None
+
+
 def test_resolve_leaf_and_list(inspector):
     groups = build_validation_plan(
         [FieldSelection(selection_type="basemodel_class", class_name="PrimaryCancer")],
