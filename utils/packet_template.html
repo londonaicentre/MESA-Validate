@@ -196,6 +196,7 @@
     margin-top: 6px; padding-top: 6px;
     border-top: 1px solid #f0f2f4;
   }
+  .leaf-verdict-row { display: flex; justify-content: flex-end; margin: 4px 0 8px; }
   .bulk-controls {
     display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
     margin: 0 0 8px; padding: 0 12px;
@@ -824,6 +825,31 @@ function renderLeaf(doc, target, onChange) {
   const wrap = document.createElement("div");
   wrap.className = "leaf-target";
 
+  const mkVerdict = () =>
+    verdictButtons(storedChoice(getValue(doc.document_id, target.key)), (choice) => {
+      setValue(doc.document_id, target.key, binaryValue(choice, value));
+      onChange();
+    });
+
+  // Nested BaseModel leaf -> render as a card (not raw "[object Object]"), with
+  // the verdict on its own row below.
+  if (isPlainObject(value) && Object.keys(value).length) {
+    const heading = document.createElement("div");
+    heading.className = "nested-label";
+    heading.textContent = target.field_name;
+    wrap.appendChild(heading);
+    appendDesc(wrap, target.summary, "nested-desc");
+    wrap.appendChild(entityCard(value));
+    const vrow = document.createElement("div");
+    vrow.className = "leaf-verdict-row";
+    const btns = mkVerdict();
+    vrow.appendChild(btns);
+    wrap.appendChild(vrow);
+    wrap.leafTarget = target;
+    wrap.leafSetChoice = btns.setChoice;
+    return wrap;
+  }
+
   const row = document.createElement("div");
   row.className = "field-row leaf-row";
 
@@ -845,13 +871,7 @@ function renderLeaf(doc, target, onChange) {
   }
   row.appendChild(valueEl);
 
-  const btns = verdictButtons(
-    storedChoice(getValue(doc.document_id, target.key)),
-    (choice) => {
-      setValue(doc.document_id, target.key, binaryValue(choice, value));
-      onChange();
-    }
-  );
+  const btns = mkVerdict();
   row.appendChild(btns);
   wrap.appendChild(row);
   appendDesc(wrap, target.summary, "nested-desc");
