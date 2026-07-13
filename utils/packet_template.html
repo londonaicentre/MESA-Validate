@@ -927,6 +927,9 @@ function renderGroup(doc, group, depth, rollupRefreshers, onAnyChange) {
   const body = document.createElement("div");
   body.className = depth === 0 ? "block-body" : "subgroup-body";
   wrap.appendChild(body);
+  // expose the inner body so callers (e.g. renderDocument's group-level
+  // comment area) can append inside .block-body rather than outside it
+  wrap.blockBody = body;
 
   const onChange = () => {
     rollupRefreshers.forEach((fn) => fn());
@@ -997,7 +1000,7 @@ function renderDocument() {
     };
     const section = renderGroup(doc, group, 0, rollupRefreshers, onAnyChange);
     commentApi = appendCommentArea(
-      section,
+      section.blockBody,
       doc,
       { key: group.path },
       groupIsIncorrect(doc, group)

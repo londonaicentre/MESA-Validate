@@ -9,8 +9,6 @@ import html as html_lib
 import streamlit as st
 
 from utils.glossary import describe_class, describe_field_by_name
-from utils.schema_inspector import SchemaInspector
-from utils.selection_resolver import resolve_selection, selection_kind
 from utils.validation_plan import group_rollup, resolve_target
 
 EXCERPT_SUFFIXES = ("_desc", "_name_desc", "_summary")
@@ -139,43 +137,6 @@ def render_entity_card(item, key_prefix, describe_heading=None):
             _render_field(field_name, value, key_prefix, describe_heading)
 
 
-def display_field_value(value, field_name="", key_prefix="", describe_heading=None):
-    """
-    Display a field value with compact formatting
-    """
-    if value is None:
-        st.markdown(
-            f"<div style='color:#666; font-style:italic;'>{field_name}: Not present</div>",
-            unsafe_allow_html=True,
-        )
-    elif isinstance(value, dict):
-        render_entity_card(
-            value, key_prefix=f"{key_prefix}_{field_name}", describe_heading=describe_heading
-        )
-    elif isinstance(value, list):
-        if not value:
-            st.markdown(
-                f"<div style='color:#666; font-style:italic;'>{field_name}: Empty list</div>",
-                unsafe_allow_html=True,
-            )
-        else:
-            for i, item in enumerate(value, 1):
-                if isinstance(item, dict):
-                    render_entity_card(
-                        item,
-                        key_prefix=f"{key_prefix}_{field_name}_{i}",
-                        describe_heading=describe_heading,
-                    )
-                else:
-                    st.markdown(
-                        f"<div style='margin-left:10px;'>{i}. {item}</div>",
-                        unsafe_allow_html=True,
-                    )
-    else:
-        with st.container(border=True):
-            _render_scalar_field(field_name, value, key_prefix)
-
-
 def is_value_present(value):
     """
     Detect if a field value is present (not null/empty)
@@ -188,231 +149,6 @@ def is_value_present(value):
     if isinstance(value, (list, dict)) and len(value) == 0:
         return False
     return True
-
-
-def map_storage_to_ui(storage_value):
-    """
-    Convert storage format to UI display value
-    UI only shows NONE/CORRECT/INCORRECT
-    """
-    mapping = {
-        "PRESENT_CORRECT": "CORRECT",
-        "ABSENT_CORRECT": "CORRECT",
-        "PRESENT_INCORRECT": "INCORRECT",
-        "ABSENT_INCORRECT": "INCORRECT",
-        "NONE": "NONE",
-        "NOT_APPLICABLE": "NOT_APPLICABLE",
-    }
-    return mapping.get(storage_value, "NONE")
-
-
-def show_item_validation(
-    items, key_prefix, current_value=None, show_missed_count=False
-):
-    """
-    Show radio buttons for each item + optional missed count for list/enum items
-    """
-    ui_options = ["None", "Correct", "Incorrect"]
-
-    # determine if this is single-item (binary) or multi-item (list)
-    is_binary = len(items) == 1 and not show_missed_count
-
-    if is_binary:
-        item = items[0]
-        is_present = is_value_present(item)
-
-        default_index = 0
-        if current_value:
-            ui_value = map_storage_to_ui(current_value)
-            if ui_value == "CORRECT":
-                default_index = 1
-            elif ui_value == "INCORRECT":
-                default_index = 2
-
-        user_choice = st.radio(
-            "Validation choice",
-            options=ui_options,
-            index=default_index,
-            key=f"{key_prefix}_item_0",
-            horizontal=True,
-            label_visibility="collapsed",
-        )
-
-        if user_choice == "None":
-            return None
-        elif user_choice == "Correct":
-            return "PRESENT_CORRECT" if is_present else "ABSENT_CORRECT"
-        elif user_choice == "Incorrect":
-            return "PRESENT_INCORRECT" if is_present else "ABSENT_INCORRECT"
-
-    else:
-        if isinstance(current_value, dict):
-            current_items = current_value.get("items", [])
-            current_missed = current_value.get("missed", 0)
-        else:
-            current_items = []
-            current_missed = 0
-
-        item_results = []
-
-        # only show items if there are actual items (not none placeholders)
-        if items and items[0] is not None:
-            for i, item in enumerate(items):
-                if isinstance(item, dict):
-                    render_entity_card(item, key_prefix=f"{key_prefix}_card_{i}")
-                else:
-                    st.markdown(f"**Item {i + 1}:** {item}")
-
-                default_index = 0
-                if i < len(current_items):
-                    saved = current_items[i]
-                    if saved is True:
-                        default_index = 1
-                    elif saved is False:
-                        default_index = 2
-
-                user_choice = st.radio(
-                    "Validation choice",
-                    options=ui_options,
-                    index=default_index,
-                    key=f"{key_prefix}_item_{i}",
-                    horizontal=True,
-                    label_visibility="collapsed",
-                )
-
-                # convert to storage: none -> null, correct -> true, incorrect -> false
-                if user_choice == "None":
-                    item_results.append(None)
-                elif user_choice == "Correct":
-                    item_results.append(True)
-                else:
-                    item_results.append(False)
-
-        # show missed count for lists (always show, even if no items)
-        missed = st.number_input(
-            "Number of items missed",
-            min_value=0,
-            value=current_missed,
-            key=f"{key_prefix}_missed",
-        )
-
-        return {"items": item_results, "missed": missed}
-
-
-def generate_validation_block(
-    selection,
-    extraction_data,
-    inspector: SchemaInspector,
-    key_prefix,
-    current_value=None,
-    glossary=None,
-):
-    """
-    Generate validation UI for any given selection
-
-    Args:
-        selection: FieldSelection object
-        extraction_data: Extracted data from prediction
-        inspector: SchemaInspector instance
-        key_prefix: Prefix for UI keys
-        current_value: Current saved value (optional)
-        glossary: Section-summary glossary dict (optional) used to caption
-            nested sub-object headings
-
-    Returns:
-        Validation result
-    """
-    if not extraction_data:
-        st.warning("No extraction data available")
-        return None
-
-    result = None
-
-    def describe_heading(field_name):
-        return describe_field_by_name(field_name, inspector, glossary or {})
-
-    try:
-        if selection.selection_type in ("basemodel_class", "enum_value"):
-            class_info = inspector.classes.get(selection.class_name)
-            if not class_info:
-                st.error(f"Class {selection.class_name} not found in schema")
-                return None
-
-        block = resolve_selection(selection, extraction_data, inspector)
-        kind = selection_kind(selection, inspector)
-
-        if selection.selection_type == "basemodel_field":
-            item_key_prefix = (
-                f"{key_prefix}_{selection.class_name}_{selection.field_name}"
-            )
-        elif selection.selection_type == "enum_value":
-            item_key_prefix = (
-                f"{key_prefix}_{selection.class_name}_{selection.enum_value}"
-            )
-        else:
-            item_key_prefix = f"{key_prefix}_{selection.class_name}"
-
-        if kind == "list":
-            found_items = block["items"]
-            if not found_items:
-                if selection.selection_type == "enum_value":
-                    st.info(
-                        f"No items found with {selection.class_name} = {selection.enum_value}"
-                    )
-                else:
-                    st.info(f"No {selection.class_name} items found in prediction")
-
-            result = show_item_validation(
-                found_items,
-                key_prefix=item_key_prefix,
-                current_value=current_value,
-                show_missed_count=True,
-            )
-
-        else:
-            value = block["value"]
-
-            if selection.selection_type == "basemodel_class":
-                if value:
-                    if isinstance(value, dict):
-                        render_entity_card(
-                            value,
-                            key_prefix=item_key_prefix,
-                            describe_heading=describe_heading,
-                        )
-                    else:
-                        display_field_value(
-                            value,
-                            selection.class_name,
-                            key_prefix=item_key_prefix,
-                            describe_heading=describe_heading,
-                        )
-                else:
-                    st.info(f"No {selection.class_name} data found in prediction")
-            else:
-                if value is not None:
-                    display_field_value(
-                        value,
-                        selection.field_name,
-                        key_prefix=item_key_prefix,
-                        describe_heading=describe_heading,
-                    )
-                else:
-                    st.info(f"No data found for {selection.field_name}")
-
-            result = show_item_validation(
-                [value],
-                key_prefix=item_key_prefix,
-                current_value=current_value,
-                show_missed_count=False,
-            )
-
-    except Exception as e:
-        st.error(f"Error generating validation UI: {e}")
-        st.exception(e)
-        return None
-
-    return result
 
 
 # --- Grouped, per-field validation UI (validation plan driven) -------------
@@ -574,6 +310,9 @@ def render_group(group, extraction_data, inspector, key_prefix, doc_results, glo
     results = {}
     summary = describe_class(group.class_name, inspector, glossary or {})
 
+    def describe_heading(fname):
+        return describe_field_by_name(fname, inspector, glossary or {})
+
     # depth 0 groups already sit inside a titled expander (see 2_Validate.py);
     # only subgroups need their own heading here.
     if depth > 0:
@@ -594,7 +333,11 @@ def render_group(group, extraction_data, inspector, key_prefix, doc_results, glo
                 target, resolved, tk, doc_results.get(target.key)
             )
         else:
-            _nested_heading(target.field_name or target.title, count=len(resolved.get("items", [])))
+            _nested_heading(
+                target.field_name or target.title,
+                count=len(resolved.get("items", [])),
+                describe_heading=describe_heading,
+            )
             results[target.key] = render_list_target(
                 target, resolved, tk, doc_results.get(target.key)
             )
