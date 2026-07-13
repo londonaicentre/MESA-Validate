@@ -3,6 +3,7 @@ import re
 
 import pytest
 
+from utils.glossary import describe_enum_value, describe_field, load_glossary
 from utils.models import FieldSelection, Session
 from utils.packet_builder import build_packet_data, build_packet_html, write_packet
 from utils.schema_inspector import SchemaInspector
@@ -91,9 +92,39 @@ def test_plan_targets_carry_summaries(session, document_ids):
     data = build_packet_data(session, document_ids, "dr_smith")
     group = next(g for g in data["plan"] if g["class_name"] == "PrimaryCancerFacts")
     topo = next(t for t in group["targets"] if t["field_name"] == "topography")
-    assert topo["summary"] == "Most suitable anatomical site of primary cancer."
+
+    inspector = SchemaInspector(session.schema_module, session.root_class)
+    glossary = load_glossary(session.schema_module)
+    expected = describe_field("PrimaryCancerFacts", "topography", inspector, glossary)
+
+    # the curated glossary override for the qualified key must win over the
+    # bare-field-name / raw-schema-description fallback
+    assert glossary["PrimaryCancerFacts.topography"] == expected
+    assert topo["summary"] == expected
+    assert topo["summary"] == (
+        "The body site where the primary cancer started (e.g. breast, lung)."
+    )
+
     # field_glossary is available for nested sub-object headings
     assert isinstance(data["field_glossary"], dict)
+
+
+def test_plan_enum_target_summary_uses_qualified_glossary_key(session, document_ids):
+    data = build_packet_data(session, document_ids, "dr_smith")
+    group = next(g for g in data["plan"] if g["class_name"] == "TimelineEventType")
+    enum_target = next(
+        t
+        for t in group["targets"]
+        if t["field_name"] == "evidence_of_metastatic_progression"
+    )
+
+    inspector = SchemaInspector(session.schema_module, session.root_class)
+    glossary = load_glossary(session.schema_module)
+    expected = describe_enum_value(
+        "TimelineEventType", "evidence_of_metastatic_progression", glossary
+    )
+
+    assert enum_target["summary"] == expected
 
 
 def test_packet_data_has_no_comments(session, document_ids):

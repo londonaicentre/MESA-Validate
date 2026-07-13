@@ -12,6 +12,8 @@ from pathlib import Path
 
 from utils.glossary import (
     describe_class,
+    describe_enum_value,
+    describe_field,
     describe_field_by_name,
     load_glossary,
 )
@@ -24,6 +26,26 @@ TEMPLATE_PATH = Path(__file__).parent / "packet_template.html"
 TEXTMATCH_PATH = Path(__file__).parent / "textmatch.js"
 PACKET_DATA_PLACEHOLDER = "__PACKET_DATA__"
 TEXTMATCH_PLACEHOLDER = "__TEXTMATCH_JS__"
+
+
+def _target_summary(target, inspector, glossary):
+    """Resolve a validation_plan target's one-line summary via qualified glossary keys.
+
+    Targets are distinguished by key prefix (see utils/validation_plan.py
+    target_key()):
+      - "enum::Class.value" targets store the enum value in field_name.
+      - "list::Class" targets have an empty field_name and represent a
+        list-item class rather than a single field.
+      - everything else is a dotted-path leaf or list-field target keyed by
+        "Class.field_name".
+    """
+    if target.key.startswith("enum::"):
+        return describe_enum_value(target.class_name, target.field_name, glossary)
+    if target.key.startswith("list::") and not target.field_name:
+        return describe_class(target.class_name, inspector, glossary)
+    if not target.field_name:
+        return None
+    return describe_field(target.class_name, target.field_name, inspector, glossary)
 
 
 def _group_to_dict(group, inspector, glossary):
@@ -39,9 +61,7 @@ def _group_to_dict(group, inspector, glossary):
                 "kind": t.kind,
                 "field_name": t.field_name,
                 "title": t.title,
-                "summary": describe_field_by_name(t.field_name, inspector, glossary)
-                if t.field_name
-                else None,
+                "summary": _target_summary(t, inspector, glossary),
             }
             for t in group.targets
         ],
