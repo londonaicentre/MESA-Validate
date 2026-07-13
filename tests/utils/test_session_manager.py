@@ -78,3 +78,61 @@ def test_migration_remaps_scalar_field_and_drops_whole_class():
     assert "basemodel_field_PrimaryCancerFacts_topography" not in doc
     assert "basemodel_class_PrimaryCancer" not in doc
     assert "basemodel_class_PrimaryCancer" in dropped
+
+
+def test_migration_carries_over_enum_value_verdict():
+    inspector = SchemaInspector("oncollamaschemav3", "OncoLlamaModel")
+    session = _session([
+        FieldSelection(selection_type="enum_value",
+                       class_name="BiomarkerStatus", enum_value="altered"),
+    ])
+    progress = {
+        "results": {
+            "doc1": {"enum_value_BiomarkerStatus_altered": "PRESENT_CORRECT"},
+        },
+        "completed_files": [], "comments": {},
+    }
+    migrated, dropped = migrate_results_to_paths(progress, session, inspector)
+    doc = migrated["results"]["doc1"]
+    assert doc["enum::BiomarkerStatus.altered"] == "PRESENT_CORRECT"
+    assert "enum_value_BiomarkerStatus_altered" not in doc
+    assert dropped == []
+
+
+def test_migration_drops_list_typed_field_verdict():
+    inspector = SchemaInspector("oncollamaschemav3", "OncoLlamaModel")
+    session = _session([
+        FieldSelection(selection_type="basemodel_field",
+                       class_name="PrimaryCancer", field_name="primary_cancer_scores"),
+    ])
+    progress = {
+        "results": {
+            "doc1": {"basemodel_field_PrimaryCancer_primary_cancer_scores": "PRESENT_CORRECT"},
+        },
+        "completed_files": [], "comments": {},
+    }
+    migrated, dropped = migrate_results_to_paths(progress, session, inspector)
+    doc = migrated["results"]["doc1"]
+    assert "basemodel_field_PrimaryCancer_primary_cancer_scores" not in doc
+    assert doc == {}
+    assert "basemodel_field_PrimaryCancer_primary_cancer_scores" in dropped
+
+
+def test_migration_is_idempotent_on_already_migrated_progress():
+    inspector = SchemaInspector("oncollamaschemav3", "OncoLlamaModel")
+    session = _session([
+        FieldSelection(selection_type="basemodel_field",
+                       class_name="PrimaryCancerFacts", field_name="topography"),
+    ])
+    progress = {
+        "results": {
+            "doc1": {"primary_cancer.primary_cancer_facts.topography": "PRESENT_CORRECT"},
+        },
+        "completed_files": [], "comments": {},
+        "schema_keys_version": 2,
+    }
+    migrated, dropped = migrate_results_to_paths(progress, session, inspector)
+    doc = migrated["results"]["doc1"]
+    assert doc == {"primary_cancer.primary_cancer_facts.topography": "PRESENT_CORRECT"}
+    assert dropped == []
+    assert migrated["schema_keys_version"] == 2

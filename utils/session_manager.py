@@ -19,7 +19,6 @@ from pathlib import Path
 from utils.models import Session
 from utils.predictions_loader import get_prediction_files, validate_and_filter_files
 from utils.schema_inspector import SchemaInspector
-from utils.validation_plan import target_key
 
 
 def _old_to_new_key(selection, inspector):
@@ -45,7 +44,12 @@ def _old_to_new_key(selection, inspector):
 
 
 def migrate_results_to_paths(progress, session, inspector):
-    """Best-effort in-place remap of legacy build_key() results to path keys.
+    """Best-effort remap of legacy build_key() results to path keys.
+
+    Builds entirely new results/comments dicts and only assigns them onto
+    `progress` after the full pass succeeds, so a mid-pass exception (e.g. a
+    malformed per-document value) leaves the caller's `progress` untouched
+    instead of half-migrated and unversioned.
 
     Returns (progress, dropped_keys). Idempotent: sets schema_keys_version=2.
     """
@@ -55,7 +59,11 @@ def migrate_results_to_paths(progress, session, inspector):
         mapping[old] = new
 
     dropped = []
-    for _document_id, doc_results in progress.get("results", {}).items():
+    new_results = {}
+    for document_id, doc_results in progress.get("results", {}).items():
+        if not isinstance(doc_results, dict):
+            new_results[document_id] = doc_results
+            continue
         remapped = {}
         for old_key, value in doc_results.items():
             new_key = mapping.get(old_key, old_key)
@@ -63,17 +71,25 @@ def migrate_results_to_paths(progress, session, inspector):
                 dropped.append(old_key)
                 continue
             remapped[new_key] = value
-        doc_results.clear()
-        doc_results.update(remapped)
+        new_results[document_id] = remapped
 
     # comments are keyed by group/selection; remap where we can, else keep
-    for _document_id, doc_comments in progress.get("comments", {}).items():
-        remapped = {k: v for k, v in (
-            (mapping.get(ck, ck), cv) for ck, cv in doc_comments.items()
-        ) if k is not None}
-        doc_comments.clear()
-        doc_comments.update(remapped)
+    new_comments = {}
+    has_comments = "comments" in progress
+    for document_id, doc_comments in progress.get("comments", {}).items():
+        if not isinstance(doc_comments, dict):
+            new_comments[document_id] = doc_comments
+            continue
+        remapped = {
+            mapping.get(ck, ck): cv
+            for ck, cv in doc_comments.items()
+            if mapping.get(ck, ck) is not None
+        }
+        new_comments[document_id] = remapped
 
+    progress["results"] = new_results
+    if has_comments:
+        progress["comments"] = new_comments
     progress["schema_keys_version"] = 2
     return progress, dropped
 
