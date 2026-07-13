@@ -573,7 +573,6 @@ def render_group(group, extraction_data, inspector, key_prefix, doc_results, glo
     """
     results = {}
     summary = describe_class(group.class_name, inspector, glossary or {})
-    roll = group_rollup(group, doc_results)
 
     # depth 0 groups already sit inside a titled expander (see 2_Validate.py);
     # only subgroups need their own heading here.
@@ -582,10 +581,10 @@ def render_group(group, extraction_data, inspector, key_prefix, doc_results, glo
         st.markdown(f"{indent}**{group.class_name}**", unsafe_allow_html=True)
     if summary:
         st.caption(summary)
-    st.caption(
-        f"▸ {roll['correct']} correct · {roll['incorrect']} incorrect · "
-        f"{roll['unvalidated']} unvalidated"
-    )
+    # The roll-up must reflect the verdicts chosen in THIS run (including a
+    # click that triggered the current rerun), so reserve its slot now and
+    # fill it after the rows/subgroups have been collected into ``results``.
+    roll_placeholder = st.empty()
 
     for target in group.targets:
         resolved = resolve_target(target, extraction_data, inspector)
@@ -606,4 +605,10 @@ def render_group(group, extraction_data, inspector, key_prefix, doc_results, glo
                 sub, extraction_data, inspector, key_prefix, doc_results, glossary, depth + 1
             )
         )
+
+    roll = group_rollup(group, results)
+    roll_placeholder.caption(
+        f"▸ {roll['correct']} correct · {roll['incorrect']} incorrect · "
+        f"{roll['unvalidated']} unvalidated"
+    )
     return results
