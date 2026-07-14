@@ -286,14 +286,22 @@ CLINICAL_BLOCK_ORDER = [
 _ORDER_RANK = {name: i for i, name in enumerate(CLINICAL_BLOCK_ORDER)}
 
 
+def _clinical_rank(group):
+    """Sort rank for a top-level block: the root class (empty path) leads,
+    then CLINICAL_BLOCK_ORDER; unranked classes fall to the end."""
+    if group.path == "":  # the root class group, whatever it is named
+        return -1
+    return _ORDER_RANK.get(group.class_name, len(_ORDER_RANK))
+
+
 def _clinical_sort(groups):
-    """Order top-level groups by CLINICAL_BLOCK_ORDER, stably. Unranked classes
-    keep their existing relative order at the end (never dropped)."""
+    """Order top-level groups: root class first, then CLINICAL_BLOCK_ORDER,
+    stably. Unranked classes keep their existing relative order at the end
+    (never dropped)."""
     return [
         g
         for _, g in sorted(
-            enumerate(groups),
-            key=lambda p: (_ORDER_RANK.get(p[1].class_name, len(_ORDER_RANK)), p[0]),
+            enumerate(groups), key=lambda p: (_clinical_rank(p[1]), p[0])
         )
     ]
 
