@@ -52,9 +52,18 @@ class Group:
 
 
 def _class_path(class_name, inspector):
-    """Dotted data path to a class object, or None if it is not reachable."""
+    """Dotted data path to a class object, or None if it is not reachable.
+
+    The root class is reachable at an empty path (""), which is distinct from
+    None ("not found") -- so its own scalar/list fields still get validated.
+    """
     parts = inspector.find_class_path(class_name)
-    return ".".join(parts) if parts else None
+    return None if parts is None else ".".join(parts)
+
+
+def _field_path(class_path, field_name):
+    """Data path for a field, without a leading dot for root-class fields."""
+    return f"{class_path}.{field_name}" if class_path else field_name
 
 
 def target_key(obj, inspector=None):
@@ -92,7 +101,7 @@ def target_key(obj, inspector=None):
         class_path = _class_path(obj.class_name, inspector)
         if class_path is None:
             return None
-        return f"{class_path}.{obj.field_name}"
+        return _field_path(class_path, obj.field_name)
 
     return None
 
@@ -129,7 +138,7 @@ def _list_item_class_name(owner_class_name, field_name, inspector):
 
 
 def _leaf_or_list_target(class_name, field_name, field_meta, class_path, inspector=None):
-    path = f"{class_path}.{field_name}"
+    path = _field_path(class_path, field_name)
     if field_meta["is_list"]:
         item_class_name = (
             _list_item_class_name(class_name, field_name, inspector)

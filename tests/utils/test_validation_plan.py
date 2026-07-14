@@ -149,3 +149,39 @@ def test_group_rollup_matches_summarize(inspector):
     assert group_rollup(groups[0], doc_results) == summarize_results(
         flatten_targets([groups[0]]), doc_results
     )
+
+
+def test_root_class_expands_with_its_scalar_fields(inspector):
+    # Selecting the root class must not drop its own direct fields: the root is
+    # reachable at an empty path (distinct from "not found").
+    plan = build_validation_plan(
+        [FieldSelection(selection_type="basemodel_class", class_name="OncoLlamaModel")],
+        inspector,
+    )
+    root = next(g for g in plan if g.class_name == "OncoLlamaModel")
+    assert root.path == ""
+    field_names = {t.field_name for t in root.targets}
+    assert "document_has_primary_cancer_flag" in field_names
+    # a root-field path has no leading dot, so it resolves against the top level
+    flag = next(
+        t for t in root.targets if t.field_name == "document_has_primary_cancer_flag"
+    )
+    assert flag.path == "document_has_primary_cancer_flag"
+    resolved = resolve_target(flag, {"document_has_primary_cancer_flag": True}, inspector)
+    assert resolved == {"kind": "single", "value": True}
+
+
+def test_root_class_field_selected_directly(inspector):
+    # A single root scalar field selected on its own also gets a valid key/path.
+    sel = FieldSelection(
+        selection_type="basemodel_field",
+        class_name="OncoLlamaModel",
+        field_name="document_has_primary_cancer_flag",
+    )
+    assert target_key(sel, inspector) == "document_has_primary_cancer_flag"
+    plan = build_validation_plan([sel], inspector)
+    flag = next(
+        t for g in plan for t in g.targets
+        if t.field_name == "document_has_primary_cancer_flag"
+    )
+    assert flag.path == "document_has_primary_cancer_flag"

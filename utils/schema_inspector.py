@@ -100,6 +100,11 @@ class SchemaInspector:
         if self.root_class is None:
             return None
 
+        # The root class is not a field of itself; its data lives at the top of
+        # the extraction dict, so its path is empty (not None = "not found").
+        if target_class_name == self.root_class.__name__:
+            return list(path)
+
         return self._find_class_path_recursive(self.root_class, target_class_name, path)
 
     def find_enum_containers(self, enum_class_name):
