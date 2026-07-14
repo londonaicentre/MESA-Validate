@@ -264,21 +264,21 @@ class _PlanAccumulator:
         return [self._by_path[p] for p in self._order]
 
 
-# Canonical clinical order for top-level validation blocks. Groups whose
-# class_name appears here are shown in this order; anything not listed (future
-# classes, leftover enum blocks) keeps its first-seen order after these. The
-# through-line is: case overview -> primary cancer core -> biology ->
-# staging/spread -> history -> patient status/findings -> other cancers -> plan.
+# Canonical order for top-level validation blocks, by class_name. Anything not
+# listed (future classes, leftover enum blocks) keeps its first-seen order after
+# these. The root class (e.g. OncologyModel) is ranked by name here too, so it
+# can sit anywhere in the sequence.
 CLINICAL_BLOCK_ORDER = [
     "ContextSummary",
-    "PrimaryCancer",
     "PrimaryCancerFacts",
     "PrimaryCancerTumourFacts",
+    "PrimaryCancer",
+    "OncologyModel",
+    "PerformanceStatus",
     "MolecularBiomarkerProfile",
     "PrimaryCancerScore",
     "PrimaryCancerSpread",
     "PrimaryCancerTimelineEvent",
-    "PerformanceStatus",
     "PatientFinding",
     "OtherCancerFacts",
     "FuturePlan",
@@ -287,17 +287,14 @@ _ORDER_RANK = {name: i for i, name in enumerate(CLINICAL_BLOCK_ORDER)}
 
 
 def _clinical_rank(group):
-    """Sort rank for a top-level block: the root class (empty path) leads,
-    then CLINICAL_BLOCK_ORDER; unranked classes fall to the end."""
-    if group.path == "":  # the root class group, whatever it is named
-        return -1
+    """Sort rank for a top-level block by CLINICAL_BLOCK_ORDER; unranked classes
+    fall to the end."""
     return _ORDER_RANK.get(group.class_name, len(_ORDER_RANK))
 
 
 def _clinical_sort(groups):
-    """Order top-level groups: root class first, then CLINICAL_BLOCK_ORDER,
-    stably. Unranked classes keep their existing relative order at the end
-    (never dropped)."""
+    """Order top-level groups by CLINICAL_BLOCK_ORDER, stably. Unranked classes
+    keep their existing relative order at the end (never dropped)."""
     return [
         g
         for _, g in sorted(
