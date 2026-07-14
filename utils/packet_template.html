@@ -136,7 +136,32 @@
     font-weight: 600;
     font-size: 0.92rem;
     word-break: break-word;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
   }
+  .block-title-text { min-width: 0; word-break: break-word; }
+  .desc-toggle {
+    flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px;
+    font-size: 0.72rem; font-weight: 400; color: var(--muted);
+    padding: 2px 4px; border: none; background: transparent; cursor: pointer;
+    white-space: nowrap;
+  }
+  .desc-toggle .switch {
+    position: relative; width: 26px; height: 15px; border-radius: 8px;
+    background: #c3c9d0; transition: background 0.15s; flex: 0 0 auto;
+  }
+  .desc-toggle .knob {
+    position: absolute; top: 2px; left: 2px; width: 11px; height: 11px;
+    border-radius: 50%; background: #fff; transition: left 0.15s;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  }
+  .desc-toggle.on .switch { background: var(--accent); }
+  .desc-toggle.on .knob { left: 13px; }
+  .desc-toggle.on .switch-label { color: #1f2328; }
+  .selection-block.hide-desc .block-desc,
+  .selection-block.hide-desc .nested-desc { display: none; }
   .block-body { padding: 10px 12px; }
   .entity-card {
     border: 1px solid var(--border);
@@ -1099,8 +1124,39 @@ function renderGroup(doc, group, depth, rollupRefreshers, onAnyChange) {
     wrap.className = "selection-block";
     const title = document.createElement("div");
     title.className = "block-title";
-    title.textContent = group.title || group.class_name;
+    const titleText = document.createElement("span");
+    titleText.className = "block-title-text";
+    titleText.textContent = group.title || group.class_name;
+    title.appendChild(titleText);
+    // switch to show/hide this block's grey description text (hidden by
+    // default; persisted per block)
+    const descToggle = document.createElement("button");
+    descToggle.type = "button";
+    descToggle.className = "desc-toggle";
+    descToggle.title = "Show or hide the grey description text in this block";
+    const sw = document.createElement("span");
+    sw.className = "switch";
+    sw.appendChild(document.createElement("span")).className = "knob";
+    const swLabel = document.createElement("span");
+    swLabel.className = "switch-label";
+    swLabel.textContent = "descriptions";
+    descToggle.appendChild(sw);
+    descToggle.appendChild(swLabel);
+    const applyDesc = () => {
+      const shown = descShown.has(group.path);
+      wrap.classList.toggle("hide-desc", !shown);
+      descToggle.classList.toggle("on", shown);
+      descToggle.setAttribute("aria-pressed", shown ? "true" : "false");
+    };
+    descToggle.addEventListener("click", () => {
+      if (descShown.has(group.path)) descShown.delete(group.path);
+      else descShown.add(group.path);
+      persistDescShown();
+      applyDesc();
+    });
+    title.appendChild(descToggle);
     wrap.appendChild(title);
+    applyDesc();
   } else {
     wrap.className = "subgroup";
     wrap.style.marginLeft = depth * 16 + "px";
@@ -1171,6 +1227,14 @@ function renderGroup(doc, group, depth, rollupRefreshers, onAnyChange) {
 
 let blockFilter = "all";  // "all" | "extracted" | "empty"
 try { blockFilter = localStorage.getItem("mesa-block-filter") || "all"; } catch (_) {}
+
+// descriptions are hidden by default; this set holds the block paths a reviewer
+// has switched ON (persisted).
+let descShown = new Set();
+try { descShown = new Set(JSON.parse(localStorage.getItem("mesa-desc-shown") || "[]")); } catch (_) {}
+function persistDescShown() {
+  try { localStorage.setItem("mesa-desc-shown", JSON.stringify([...descShown])); } catch (_) {}
+}
 
 /* A (top-level) group is "extracted" if any of its recursive targets has a
    present value / non-empty list. Mirrors _group_has_extracted. */
