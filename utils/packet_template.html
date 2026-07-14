@@ -305,7 +305,7 @@
   <section class="pane" id="doc-pane">
     <h2 class="doc-heading">
       <span>Document <span id="doc-id" style="font-weight:400;color:var(--muted);font-size:0.8rem"></span></span>
-      <label class="reflow-toggle" title="Insert a line break wherever the document has 3 or more spaces in a row">
+      <label class="reflow-toggle" title="Insert a line break wherever the document has 3+ spaces in a row, and collapse runs of blank lines to at most one">
         <input type="checkbox" id="reflow-check"> Reflow spaces
       </label>
     </h2>
@@ -505,11 +505,14 @@ function goTo(index) {
 
 /* ---------- document pane ---------- */
 
-let reflow = false;      // replace runs of 3+ spaces with line breaks
+let reflow = true;       // on by default: collapse runs of 3+ spaces to a line
+                         // break and cap consecutive blank lines
 let currentQuery = null; // last located query, so the toggle can re-highlight
 
 function reflowText(text) {
-  return text.replace(/ {3,}/g, "\n");
+  return text
+    .replace(/ {3,}/g, "\n")                 // runs of 3+ spaces -> line break
+    .replace(/(\r?\n[ \t]*){3,}/g, "\n\n");  // cap consecutive newlines at 2
 }
 
 /* The text currently shown in the pane; all highlighting matches against
@@ -1441,7 +1444,8 @@ document.getElementById("reflow-check").addEventListener("change", (e) => {
   }
 });
 
-try { reflow = localStorage.getItem("mesa-reflow") === "1"; } catch (_) {}
+// default on when unset; only an explicit "0" turns it off
+try { reflow = (localStorage.getItem("mesa-reflow") || "1") === "1"; } catch (_) {}
 document.getElementById("reflow-check").checked = reflow;
 
 function renderPacketInfo() {
