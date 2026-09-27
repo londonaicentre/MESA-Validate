@@ -55,7 +55,7 @@ class PredictionDocument(DocumentInput, FilesystemInferenceRecord):
     def from_inference(cls, inference):
         return cls(
             document_id=inference.document_id,
-            document_content="",
+            document_content=inference.document_source.get("document_content") or "",
             document_update_dt=None,
             document_source=inference.document_source,
             document_inference=inference.document_inference,
@@ -81,7 +81,10 @@ class PredictionDocument(DocumentInput, FilesystemInferenceRecord):
             "document_inference",
             "metadata",
         ):
-            if value := getattr(record, field):
+            if (value := getattr(record, field)) and not (
+                field == "document_content"
+                and (self.document_source or {}).get("document_content")
+            ):
                 setattr(self, field, value)
         if "is_valid" in record.model_fields_set:
             self.is_valid = record.is_valid
