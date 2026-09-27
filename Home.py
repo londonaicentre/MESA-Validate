@@ -41,6 +41,7 @@ This is a basic validation tool for LLM outputs generated via the MESA (Medical-
 
 - Place JSON prediction files subfolders in the `predictions/` directory (e.g. `predictions/project1/`)
 - Preferred format assumes two documents with at least the respective fields: `"document_content"` for source text and `"document_inference"` for the LLM extraction result
+- A single inference file is sufficient if `"document_source"` contains `"document_content"`
 - Legacy per-document files with `"content"` and `"output"` are still supported and are converted internally on load
 - The contents of `"document_inference"` must be valid according to the selected schema and are validated on load
 

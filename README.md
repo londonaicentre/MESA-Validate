@@ -53,6 +53,7 @@ Default URL: http://localhost:8501
 
 The preferred format uses document-level fields.
 Source content and inference output should be provided in separate aggregate JSON or JSONL files, with records sharing a `document_id`.
+If the inference records carry the content in `document_source.document_content`, the separate content file can be omitted.
 
 ```json
 [
