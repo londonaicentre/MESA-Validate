@@ -87,6 +87,16 @@ class TestFromInference:
         assert prediction.metadata == {"model": "xyzzy"}
         assert prediction.is_valid is False
 
+    @pytest.mark.parametrize(("content", "expected"), [("bar", "bar"), (None, "")])
+    def test_from_inference_source_with_content_uses_source_content(
+        self, content: str | None, expected: str
+    ) -> None:
+        inference = FilesystemInferenceRecord(
+            document_id="foo", document_source={"document_content": content}
+        )
+        prediction = PredictionDocument.from_inference(inference)
+        assert prediction.document_content == expected
+
 
 class TestFromLegacy:
     def test_from_legacy_maps_content_and_inference(self) -> None:
@@ -131,6 +141,20 @@ class TestUpdateFrom:
         )
         prediction.update_from(record)
         assert prediction.document_content == "foobar"
+
+    @pytest.mark.parametrize(
+        ("source_content", "expected"), [("foobar", "foobar"), (None, "baz")]
+    )
+    def test_update_from_document_content_held_in_source_is_kept(
+        self, source_content: str | None, expected: str
+    ) -> None:
+        prediction = self._base()
+        prediction.document_source = {"document_content": source_content}
+        record = PredictionDocument(
+            document_id="foo", document_content="baz", document_update_dt=None
+        )
+        prediction.update_from(record)
+        assert prediction.document_content == expected
 
     def test_update_from_document_update_dt_present_overwrites(self) -> None:
         prediction = self._base()
