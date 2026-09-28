@@ -49,6 +49,22 @@ streamlit run Home.py
 
 Default URL: http://localhost:8501
 
+### Docker
+
+The app can also be run behind an nginx proxy that adds HTTPS and basic authentication.
+Create a credentials file, then start both containers:
+
+```bash
+htpasswd -cB nginx/.htpasswd <username>
+docker compose up -d --build
+```
+
+Default URL: https://localhost
+
+Set `PORT` (e.g. `PORT=8443 docker compose up -d`) to use a different port.
+A self-signed certificate is generated unless `cert.pem` and `key.pem` are placed in `nginx/certs/`.
+`predictions/` is mounted from the host and sessions are kept in a Docker volume.
+
 ## Prediction File Format
 
 The preferred format uses document-level fields.
