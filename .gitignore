@@ -30,3 +30,7 @@ SCHEMA_MISMATCH_REPORT.md
 
 # Streamlit
 .streamlit/
+
+# Proxy credentials
+nginx/certs/
+nginx/.htpasswd
