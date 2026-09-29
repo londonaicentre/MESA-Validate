@@ -1,0 +1,19 @@
+services:
+  streamlit:
+    build: .
+    volumes:
+      - ./predictions:/app/predictions
+      - sessions:/app/sessions
+
+  nginx:
+    build: nginx
+    ports:
+      - "${PORT:-443}:443"
+    volumes:
+      - ./nginx/certs:/etc/nginx/certs
+      - ./nginx/.htpasswd:/etc/nginx/.htpasswd
+    depends_on:
+      - streamlit
+
+volumes:
+  sessions:
