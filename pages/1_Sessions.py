@@ -7,7 +7,10 @@ import uuid
 import streamlit as st
 
 from mesa_validate.models import FieldSelection, Session
-from mesa_validate.predictions_loader import list_prediction_folders
+from mesa_validate.predictions_loader import (
+    get_prediction_files,
+    list_prediction_folders,
+)
 from mesa_validate.schema_inspector import SchemaInspector
 from mesa_validate.schema_loader import get_schema_list
 from mesa_validate.session_manager import SessionManager
@@ -336,22 +339,19 @@ with st.expander("Create New Session", expanded=False):
             )
 
             folder_info = folder_options[selected_folder]
-            num_files = int(folder_info["num_files"])
+            num_documents = len(get_prediction_files(str(folder_info["path"])))
 
             sample_size = st.number_input(
                 "Sample size",
                 min_value=1,
-                max_value=num_files,
-                value=min(10, num_files),
+                max_value=max(num_documents, 1),
+                value=min(10, num_documents) or 1,
             )
 
-            percentage = (
-                (sample_size / num_files * 100)
-                if num_files > 0
-                else 0
-            )
+            percentage = (sample_size / num_documents * 100) if num_documents else 0
             st.info(
-                f"Selected {sample_size} of {num_files} files ({percentage:.1f}%)"
+                f"Selected {sample_size} of {num_documents} documents "
+                f"({percentage:.1f}%)"
             )
 
             st.markdown("---")
