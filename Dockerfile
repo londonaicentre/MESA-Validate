@@ -4,6 +4,6 @@ RUN apt-get update && apt-get install -y git
 WORKDIR /app
 COPY . .
 RUN uv sync --locked
-RUN useradd app && mkdir sessions && chown app sessions
+RUN useradd app && chown -R app sessions
 USER app
 CMD [".venv/bin/streamlit", "run", "Home.py"]
