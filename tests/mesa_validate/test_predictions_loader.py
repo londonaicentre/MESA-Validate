@@ -264,6 +264,35 @@ class TestLoadPredictionFolder:
         assert _load_prediction_folder("foo") == {"baz": prediction}
         prediction.update_from.assert_not_called()
 
+    def test_load_prediction_folder_aggregate_file_returns_every_record(
+        self,
+        load_prediction_folder_mocks: LoadPredictionFolderMocks,
+        mocker: MockerFixture,
+    ) -> None:
+        load_prediction_folder_mocks.exists.return_value = True
+        load_prediction_folder_mocks.is_dir.return_value = True
+        load_prediction_folder_mocks.glob.side_effect = lambda pattern: (
+            [Path("foo/bar.jsonl")] if pattern == "*.jsonl" else []
+        )
+        load_prediction_folder_mocks.load_json_records.return_value = [
+            {"document_id": "baz"},
+            {"document_id": "qux"},
+            {"document_id": "quux"},
+        ]
+        predictions = [
+            mocker.Mock(document_id="baz"),
+            mocker.Mock(document_id="qux"),
+            mocker.Mock(document_id="quux"),
+        ]
+        load_prediction_folder_mocks.normalise_record.side_effect = [
+            (Ok(), prediction) for prediction in predictions
+        ]
+        assert _load_prediction_folder("foo") == {
+            "baz": predictions[0],
+            "qux": predictions[1],
+            "quux": predictions[2],
+        }
+
     def test_load_prediction_folder_duplicate_document_id_merges_records(
         self,
         load_prediction_folder_mocks: LoadPredictionFolderMocks,
