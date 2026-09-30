@@ -10,3 +10,5 @@ schemas:
     root_class: OncoLlamaModel
   - module: oncoschema.schema
     root_class: OncologyModel
+  - module: paedacuteschema.schema
+    root_class: PaedAcuteSchemaModel

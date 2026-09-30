@@ -1010,6 +1010,19 @@ wheels = [
 ]
 
 [[package]]
+name = "londonaicentre-paedacuteschema"
+version = "1.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "londonaicentre-mesa-utils" },
+    { name = "pydantic" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/1f/67/a0926b6aadc8f30ef655092a60732dd814e06ed39052fe9275fc0447c388/londonaicentre_paedacuteschema-1.2.0.tar.gz", hash = "sha256:e904734fc5e427a7a86b91c2554ffefee1ad2e9474a303a4fe6df5fb5e7ab2db", size = 20580, upload-time = "2026-07-20T15:35:47.465Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/74/5f/f447ed3002d16f8d0e2f0cd84318524910e6a2ae8504db7543339a4a34bf/londonaicentre_paedacuteschema-1.2.0-py3-none-any.whl", hash = "sha256:adc135560d963b871ab15e6cc75129916c429a2f1303313dd393b7a9122c255c", size = 23166, upload-time = "2026-07-20T15:35:46.484Z" },
+]
+
+[[package]]
 name = "markdown"
 version = "3.10.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1098,6 +1111,7 @@ source = { editable = "." }
 dependencies = [
     { name = "londonaicentre-mesa-runner" },
     { name = "londonaicentre-oncoschema" },
+    { name = "londonaicentre-paedacuteschema" },
     { name = "oncollamaschemav3" },
     { name = "pydantic" },
     { name = "pyyaml" },
@@ -1116,6 +1130,7 @@ dev = [
 requires-dist = [
     { name = "londonaicentre-mesa-runner", specifier = ">=1.4.2" },
     { name = "londonaicentre-oncoschema", specifier = ">=2.1.0" },
+    { name = "londonaicentre-paedacuteschema", specifier = ">=1.2.0" },
     { name = "oncollamaschemav3", git = "https://github.com/londonaicentre/oncollamaschemav3.git" },
     { name = "pydantic", specifier = ">=2.13.4" },
     { name = "pyyaml", specifier = ">=6.0.3" },
