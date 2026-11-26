@@ -38,3 +38,4 @@ jobs:
           context: ${{ matrix.image.context }}
           push: true
           tags: ghcr.io/londonaicentre/mesa-validate${{ matrix.image.suffix }}:latest
+          labels: org.opencontainers.image.licenses=LicenseRef-Proprietary
